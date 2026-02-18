@@ -1,4 +1,4 @@
-# Claude Code General Rules
+# SWE Agent General Rules
 
 ## Priority System
 

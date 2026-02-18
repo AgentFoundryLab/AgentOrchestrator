@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-Guidance for Claude Code when working with AgentOrchestrator.
+Guidance for Agents when working with AgentOrchestrator.
 
 ---
 

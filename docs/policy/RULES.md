@@ -1,6 +1,6 @@
-# Claude Code Behavioral Rules
+# SWE Agent Behavioral Rules
 
-Actionable rules for enhanced Claude Code framework operation.
+Actionable rules for enhanced SWE Agent framework operation.
 
 ## Rule Priority System
 
@@ -45,7 +45,7 @@ Actionable rules for enhanced Claude Code framework operation.
 
 **Task Execution Layer**:
 
-- **Auto-Selection**: Claude Code selects specialist agents based on context
+- **Auto-Selection**: SWE Agent selects specialist agents based on context
 - **Keywords**: Security, performance, frontend, backend, architecture keywords trigger specialists
 - **File Types**: `.py`, `.jsx`, `.ts`, etc. trigger language/framework specialists
 - **Complexity**: Simple to enterprise levels inform agent selection
