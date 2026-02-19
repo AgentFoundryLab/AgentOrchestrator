@@ -66,23 +66,36 @@ Before writing code:
 Outline the approach:
 - Files to modify/create
 - Functions/classes needed
-- Test approach
+- Test approach (derive test cases directly from AC)
 - Edge cases to handle
 
-### 5. Implement
-Write code following these principles:
+**Skip TDD** (go directly to step 6) for: bug fixes in existing code, localized edits,
+refactors with no behavior change, documentation-only changes.
+
+### 5. Write Tests — Red
+From the AC, write failing tests **before** writing implementation:
+- One test per acceptance criterion
+- Tests must fail (red) — confirms they actually test the right thing
+- Use contracts/interfaces from `docs/architecture/technical/contracts.md` if available
+- Follow existing test patterns and file layout
+
+Run tests and confirm they fail as expected.
+
+### 6. Implement — Green
+Write the minimum code to make the failing tests pass:
 - **Read Before Write**: Understand existing code
-- **Minimal Changes**: Only modify what's necessary
+- **Minimal Changes**: Only what's needed to go green
 - **Follow Patterns**: Match existing style
 - **No Over-Engineering**: Simple solutions preferred
 - **Security Aware**: Avoid common vulnerabilities
 
-### 6. Write Tests
-For new functionality:
-- Unit tests for core logic
-- Integration tests if crossing boundaries
-- Edge case coverage
-- Follow existing test patterns
+Run tests after each logical unit of code. Stop when all tests pass.
+
+### 6b. Refactor (if needed)
+With tests green, clean up without changing behavior:
+- Remove duplication
+- Improve naming/readability
+- Re-run tests after each refactor step to stay green
 
 ### 7. Verify
 Check against acceptance criteria:
@@ -126,11 +139,13 @@ Types: feat, fix, refactor, test, docs, chore
 
 ## Validation Checklist
 Before completing:
-- [ ] All acceptance criteria met
+- [ ] All AC from task definition met (each criterion explicitly verified)
 - [ ] Tests written and passing
+- [ ] No TODO/mock/placeholder left in code
 - [ ] Code follows existing patterns
 - [ ] No hardcoded secrets or credentials
-- [ ] Commit message prepared
+- [ ] Commit message references task ID (Refs: T-XXX)
+- [ ] No unintended side effects on other components
 - [ ] Task ready to mark complete
 
 ## Error Handling

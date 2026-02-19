@@ -79,7 +79,7 @@ Artifacts produced by each phase:
 **Use when**: New product, complex system, multiple components, unclear requirements
 
 ```
-/onboard → /spec → /design → /plan → /implement → /validate → /deploy → /document
+/onboard → /spec → /design → /plan → /review → /implement → /validate → /deploy → /document
 ```
 
 Phases:
@@ -87,23 +87,25 @@ Phases:
 2. **Specification**: Elicit requirements, define acceptance criteria
 3. **Design**: Architecture, components, ADRs
 4. **Planning**: Milestones, epics, tasks
-5. **Implementation**: Code and tests
-6. **Validation**: Testing, verification
-7. **Deployment**: Build, deploy, release
-8. **Documentation**: User docs, runbooks
+5. **Review**: Cross-artifact consistency check (spawn tech-writer for /review)
+6. **Implementation**: Code and tests
+7. **Validation**: Testing, verification
+8. **Deployment**: Build, deploy, release
+9. **Documentation**: User docs, runbooks
 
 ### Medium Workflow
 **Use when**: New feature, moderate complexity, clear scope
 
 ```
-/onboard → /spec → /plan → /implement → /validate
+/onboard → /spec → /plan → /review → /implement → /validate
 ```
 
 Phases:
 1. **Specification**: Quick PRD with acceptance criteria
 2. **Planning**: Task breakdown
-3. **Implementation**: Code and tests
-4. **Validation**: Testing
+3. **Review**: Cross-artifact consistency check (spawn tech-writer for /review)
+4. **Implementation**: Code and tests
+5. **Validation**: Testing
 
 ### Light Workflow
 **Use when**: Simple change, bug fix, clear task
@@ -174,9 +176,24 @@ Task(subagent_type="developer", prompt="Implement task T-001: ...")
 
 **IMPORTANT**: Always use Option A. The orchestrator coordinates; subagents execute.
 
+### 3b. HITL Relay Loop
+After each agent returns, check for QUESTIONS block:
+1. If QUESTIONS block present:
+   a. Parse questions and options
+   b. Use `AskUserQuestion` to present each to user
+   c. Collect answers
+   d. Re-invoke same agent with answers prepended to prompt
+   e. Repeat until no QUESTIONS block
+2. If no QUESTIONS block: proceed to next phase
+
 ### 4. Checkpoint Between Phases
-After each major phase:
-- Verify artifacts were produced
+After each major phase, verify:
+- [ ] Expected artifacts produced (not just "agent returned")
+- [ ] No QUESTIONS block pending
+- [ ] No blockers in ISSUES.md from this phase
+- [ ] User confirmed if phase has significant outputs
+
+Then:
 - Check for blockers or issues
 - Consult user if decisions needed
 - Proceed to next phase
@@ -218,6 +235,7 @@ Consult user at these points:
 3. **Trade-offs**: When design decisions have significant impact
 4. **Blockers**: When unable to proceed
 5. **Phase completion**: Before major transitions (design → implement)
+6. **Review findings**: After /review, if blocking issues found — route back to appropriate agent before proceeding to /implement
 
 ## Example Session
 
@@ -269,8 +287,10 @@ All three run concurrently, results collected together.
 ## Validation Checklist
 - [ ] Workflow depth matches complexity
 - [ ] User confirmed workflow selection
-- [ ] Each phase produced expected artifacts
+- [ ] Each phase produced expected artifacts (not just "agent returned")
 - [ ] Artifacts flow correctly between phases
+- [ ] HITL relay loop executed for each agent response with QUESTIONS block
+- [ ] /review completed between /plan and /implement; blocking issues resolved
 - [ ] Decision points consulted user appropriately
 - [ ] Context stayed lean (no code/detail clutter)
 - [ ] Blockers documented if any

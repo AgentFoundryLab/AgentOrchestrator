@@ -5,6 +5,8 @@ argument-hint: <idea or feature description>
 user-invocable: true
 allowed-tools:
   - Read
+  - Write
+  - Edit
   - Grep
   - Glob
   - WebSearch

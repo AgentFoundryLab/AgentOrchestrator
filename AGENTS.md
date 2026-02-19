@@ -57,6 +57,7 @@ docs/
 | `/spec` | Business Analyst | PRD |
 | `/design` | Architect | ARCHITECTURE, ADRs |
 | `/plan` | Project Manager | ROADMAP, BACKLOG |
+| `/review` | Tech Writer | Review Report, ISSUES |
 | `/implement` | Developer | Code, Tests |
 | `/validate` | Validator | Validation Report |
 | `/deploy` | Deployer | Deployment Artifacts |
@@ -65,7 +66,7 @@ docs/
 ## Workflow
 
 ```
-/spec → PRD → /design → ARCHITECTURE + ADRs → /plan → ROADMAP + BACKLOG → /implement → /validate → /deploy → /document
+/spec → PRD → /design → ARCHITECTURE + ADRs → /plan → ROADMAP + BACKLOG → /review → /implement → /validate → /deploy → /document
 ```
 
 ## Task Hierarchy (ADR-005)
@@ -89,6 +90,28 @@ Milestone (Release)      → Tag
 ```
 US-001 → COMP-003 → ADR-005 → EPIC-007 → TASK-015 → commit [refs: US-001]
 ```
+
+---
+
+## HITL Escalation
+
+Sub-agents spawned via `Task` tool cannot call `AskUserQuestion`. When an agent needs
+clarification before proceeding, it must return a structured QUESTIONS block:
+
+```
+## QUESTIONS FOR USER
+
+Q1: [Question] *(Required before proceeding)*
+- Option A: [description]
+- Option B: [description]
+
+Q2: [Question] *(Optional — default: [default])*
+- Option A: [description]
+- Option B: [description]
+```
+
+The Orchestrator detects this block, relays questions via `AskUserQuestion`, then
+re-invokes the agent with answers prepended to the prompt.
 
 ---
 

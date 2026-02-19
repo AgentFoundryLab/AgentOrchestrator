@@ -145,6 +145,18 @@ status: pass | fail | partial
 - Performance baseline
 - Integration tests
 
+## Validation Checklist
+Before completing:
+- [ ] Tests pass (no regressions)
+- [ ] Each AC explicitly verified with evidence (not assumed)
+- [ ] Code follows established patterns
+- [ ] Documentation accurate (matches implementation)
+- [ ] Security considerations addressed
+- [ ] Validation report produced and written to `reports/analysis/`
+- [ ] Test results captured (pass/fail counts)
+- [ ] If any failures: ISSUES.md updated with findings
+- [ ] Recommendation stated (Pass / Fix issues / Block deployment)
+
 ## Policy References
 
 **Should-read** from `~/.claude/policy/RULES.md`:

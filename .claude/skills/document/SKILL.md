@@ -98,18 +98,7 @@ Check `$ARGUMENTS` for `--full` flag:
 
 **Cost**: ~5min, ~70k tokens
 
-Read current state of ALL key docs to detect cross-document inconsistencies:
-
-- `docs/objectives/VISION.md`
-- `docs/objectives/BLUEPRINT.md`
-- `docs/architecture/PRD.md`
-- `docs/architecture/ARCHITECTURE.md`
-- `docs/development/BACKLOG.md`
-- `docs/development/ISSUES.md`
-- `README.md`
-- `CLAUDE.md`
-
-Then proceed to step 1 with full scope.
+Read all docs listed in the **Outputs** column of the Area Classification table, then proceed to step 1 with full scope.
 
 #### 0b. Incremental Mode (default)
 
@@ -123,7 +112,7 @@ Only read docs that are directly affected by recent changes. Skip full consisten
 
 ```bash
 # Find the most recent commit that updated docs
-LAST_DOCS_COMMIT=$(git log --oneline --all \
+LAST_DOCS_COMMIT=$(git log --oneline \
   --grep="^docs:" \
   --grep="^docs(" \
   -- README.md CLAUDE.md 'docs/**' '.claude/hooks/README.md' \
@@ -175,19 +164,15 @@ For each changed file/feature, determine BOTH dimensions:
 
 #### Area Classification
 
-| File Pattern | Area |
-|--------------|------|
-| `install.sh`, MCP config, hooks broken | **System** |
-| `docs/objectives/VISION.md`, goals, OKRs | **Product** |
-| `docs/objectives/BLUEPRINT.md`, capabilities, scope | **Solution** |
-| `.claude/skills/` behavior, requirements | **Specification** |
-| `docs/architecture/PRD.md`, user stories | **Specification** |
-| `docs/architecture/ARCHITECTURE.md`, `adr/` | **Architecture** |
-| `.claude/hooks/scripts/`, `.claude/agents/` structure | **Architecture** |
-| `docs/objectives/ROADMAP.md`, `docs/development/` | **Development** |
-| `README.md`, `CLAUDE.md` | **Documentation** |
-| `docs/policy/`, `global/policy/` | **Documentation** |
-| `docs/knowledge/` | **Documentation** |
+| Area | Triggers | Outputs |
+|------|---------|---------|
+| **System** | hooks/MCP/install broken; agents/skills fail | `ISSUES.md`, `BACKLOG.md` |
+| **Product** | `VISION.md`, goals, OKRs, target users | `VISION.md` |
+| **Solution** | `BLUEPRINT.md`, capabilities, feature matrix | `BLUEPRINT.md` |
+| **Specification** | `PRD.md`, `.claude/skills/`, user stories | `PRD.md` |
+| **Architecture** | `ARCHITECTURE.md`, `adr/`, `DESIGN-PRINCIPLES.md`, hooks/agents structure | `ARCHITECTURE.md`, `DESIGN-PRINCIPLES.md`, `adr/NNN-*.md` |
+| **Development** | `ROADMAP.md`, `docs/development/` | `ROADMAP.md`, `BACKLOG.md` |
+| **Documentation** | `README.md`, `CLAUDE.md`, `docs/policy/`, `docs/knowledge/`, `docs/architecture/technical/` | `README.md`, `CLAUDE.md`, `docs/policy/{STANDARDS,GUIDELINES}.md`, `docs/architecture/{PRD,ARCHITECTURE,DESIGN-PRINCIPLES}.md`, `docs/architecture/{api/,technical/{data-model,contracts}.md}`, `docs/knowledge/{domain,patterns,decisions,runbooks}/`, `docs/development/{BACKLOG,ISSUES}.md` |
 
 #### Criticality Assessment
 
@@ -265,38 +250,27 @@ Detect conflicts between:
 
 #### When Inconsistencies Found
 
-**NEVER silently overwrite.** Present each conflict to user:
+**NEVER silently overwrite.** Return a QUESTIONS block to the Orchestrator:
 
 ```
-AskUserQuestion:
-  question: "Inconsistency detected: [describe conflict]. How should we resolve?"
-  header: "Conflict"
-  options:
-    - label: "Update old to match new"
-      description: "The new change is correct, update prior docs"
-    - label: "Keep old, flag new"
-      description: "The prior decision stands, new change needs review"
-    - label: "Document both (tentative)"
-      description: "Record conflict in ISSUES for later resolution"
-    - label: "Pause for full review"
-      description: "Stop and suggest appropriate agent for deep analysis"
+## QUESTIONS FOR USER
+
+Q1: Inconsistency detected: [describe conflict]. How should we resolve? *(blocking)*
+- Option A: Update old to match new — the new change is correct
+- Option B: Keep old, flag new — the prior decision stands, new change needs review
+- Option C: Document both (tentative) — record conflict in ISSUES for later resolution
+- Option D: Pause for full review — stop and escalate to appropriate agent
 ```
 
 #### If Decision Conflicts with ADR
 
-When new changes contradict an existing ADR decision:
-
 ```
-AskUserQuestion:
-  question: "Change contradicts ADR-XXX: [summary]. This is a significant decision reversal."
-  header: "ADR Conflict"
-  options:
-    - label: "Supersede ADR (Recommended)"
-      description: "Create new ADR explaining why decision changed"
-    - label: "Revert approach"
-      description: "The ADR decision should stand, flag change for revision"
-    - label: "Document conflict"
-      description: "Record in ISSUES as unresolved architectural debt"
+## QUESTIONS FOR USER
+
+Q1: Change contradicts ADR-XXX: [summary]. This is a significant decision reversal. *(blocking)*
+- Option A: Supersede ADR — create new ADR explaining why decision changed
+- Option B: Revert approach — the ADR decision stands, flag change for revision
+- Option C: Document conflict — record in ISSUES as unresolved architectural debt
 ```
 
 ### 5. Handle Tentative or Rejected Decisions
@@ -335,23 +309,19 @@ If user selects "tentative", "pause", or rejects a proposed update:
 | ADR contradiction | `/design` (Architect) | Architectural decision needed |
 | PRD specification drift | `/spec` (Business Analyst) | Requirements clarification needed |
 | Implementation mismatch | `/implement` (Developer) | Code review needed |
-| Cross-doc inconsistency | `/document` (Tech Writer) | Documentation alignment needed |
+| Cross-doc inconsistency | `/review` (Tech Writer) | Cross-artifact consistency review |
 
 ### 6. Present to User for Confirmation
 
-After resolving all conflicts, present final update plan:
+After resolving all conflicts, return update plan to the Orchestrator:
 
 ```
-AskUserQuestion:
-  question: "Proceed with documentation updates? [N resolved, M logged to ISSUES]"
-  header: "Confirm"
-  options:
-    - label: "Proceed (Recommended)"
-      description: "Update docs following propagation paths"
-    - label: "Modify selection"
-      description: "Let me adjust which items to update"
-    - label: "Critical only"
-      description: "Only address CRITICAL items now"
+## QUESTIONS FOR USER
+
+Q1: Proceed with documentation updates? [N resolved, M logged to ISSUES] *(blocking)*
+- Option A: Proceed — update docs following propagation paths
+- Option B: Modify selection — specify which items to include/exclude
+- Option C: Critical only — address only CRITICAL items now
 ```
 
 ### 7. Execute Updates
@@ -362,25 +332,9 @@ For each Area (process CRITICAL items first across all areas):
 2. **Propagate downstream** (skip levels with no impact)
 3. **Verify cross-references**
 
-#### Update Order (Criticality First, Then by Area)
+Always follow the propagation paths (information flows upstream → downstream). Criticality determines what to tackle first, not the order within a path.
 
-```
-1. ALL CRITICAL items (any area)
-   └── System: ISSUES.md → BACKLOG.md
-
-2. ALL HIGH items
-   └── Product: VISION → BLUEPRINT → PRD → ARCHITECTURE → BACKLOG
-   └── Solution: BLUEPRINT → PRD → ARCHITECTURE → BACKLOG
-
-3. ALL MEDIUM items
-   └── Specification: PRD → ARCHITECTURE → BACKLOG
-   └── Architecture: ARCHITECTURE.md → BACKLOG.md
-   └── Documentation: Direct updates
-
-4. ALL LOW items
-   └── Development: BACKLOG.md
-   └── Documentation: README.md typos
-```
+Sort items by criticality (CRITICAL → HIGH → MEDIUM → LOW) before starting. For each item, walk its propagation path in order — skip levels with no impact.
 
 ### 8. Validate
 
@@ -398,111 +352,6 @@ Check documentation quality:
 - [ ] All cross-document references consistent
 - [ ] No stale references to removed components
 - [ ] Version numbers aligned across docs
-
----
-
-## Area Boundaries (Detailed)
-
-### System
-**What belongs here:**
-- Hooks not firing or erroring
-- MCP servers failing to connect
-- Install script broken
-- Agents fail to spawn
-- Skills fail to load
-
-**Does NOT belong:**
-- New hook added (→ Architecture)
-- Hook behavior changed (→ Specification or Architecture)
-
-### Product
-**What belongs here:**
-- Vision/goals changes
-- Target user changes
-- Success metrics changes
-- OKR changes
-
-**Does NOT belong:**
-- Capability changes (→ Solution)
-- Feature behavior (→ Specification)
-
-### Solution
-**What belongs here:**
-- New capability in feature matrix
-- Removing a capability
-- Technical scope changes
-- Feature matrix updates
-
-**Does NOT belong:**
-- How features behave (→ Specification)
-- How it's implemented (→ Architecture)
-
-### Specification
-**What belongs here:**
-- New user story
-- Changed acceptance criteria
-- New functional requirement
-- Skill behavior changes
-- Feature behavior details
-
-**Does NOT belong:**
-- How components interact (→ Architecture)
-- Task tracking (→ Development)
-
-### Architecture
-**What belongs here:**
-- New component added
-- Design pattern change
-- Dependency added/removed
-- Hook system structure
-- File structure changes
-- Internal refactoring
-
-**Does NOT belong:**
-- What the component does for users (→ Specification)
-- Task tracking (→ Development)
-
-### Development
-**What belongs here:**
-- Task status updates
-- Priority changes
-- Sprint/milestone progress
-- Work item details
-- Blockers (non-system)
-
-**Does NOT belong:**
-- New requirements (→ Specification)
-- Design decisions (→ Architecture)
-
-### Documentation
-**What belongs here:**
-- README updates
-- CLAUDE.md updates
-- Architecture docs (ARCHITECTURE.md)
-- Policy docs (PRINCIPLES, RULES, GUIDELINES)
-- Knowledge base (docs/knowledge/)
-- User runbooks
-- API docs
-
-**Includes both:**
-- Specification docs (PRD, ARCHITECTURE, ADRs)
-- Developer docs (README, CLAUDE.md, runbooks)
-
----
-
-## Policy Locations
-
-```
-global/policy/        # Orchestrator framework policies (→ ~/.claude/policy/)
-├── PRINCIPLES.md     # SW engineering principles (for Orchestrator)
-├── RULES.md          # Behavioral rules (for Orchestrator)
-└── GUIDELINES.md     # User guidance (for users)
-
-docs/policy/          # Project-local policies (supplement global)
-├── PRINCIPLES.md     # Project-specific principles
-├── RULES.md          # Project-specific rules
-└── GUIDELINES.md     # Project-specific user guidance
-```
 
 ---
 

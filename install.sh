@@ -58,6 +58,9 @@ What gets installed:
     - docs/policy/      STANDARDS.md, GUIDELINES.md templates (from global/templates/)
     - docs/knowledge/   README.md (from global/templates/)
     - reports/          analysis/, research/ directories
+    - .claude/templates/ Templates (project-local copy, agents prefer over global)
+    - .claude/policy/   PRINCIPLES.md, RULES.md (project-local copies)
+    - .claude/workflows/ SWE.md, meta-learning.md (project-local copies)
     - .serena/          project.yml (auto-detected languages, requires uvx)
     - Injects @policy refs into existing CLAUDE.md/AGENTS.md/GEMINI.md
 
@@ -320,7 +323,7 @@ install_project() {
     done
 
     # 2. Deploy knowledge README from template
-    copy_markdown "${SCRIPT_DIR}/global/templates/knowledge-readme.md" \
+    copy_markdown "${SCRIPT_DIR}/global/templates/knowledge.md" \
                   "${target}/docs/knowledge/README.md" "$backup_dir" "docs/knowledge/README.md"
 
     # 3. Deploy policy templates (scaffolds for /onboard to hydrate)
@@ -333,7 +336,18 @@ install_project() {
     inject_policy_refs "$target" "orchestrator:project-refs" \
         "$(printf 'Read @docs/policy/STANDARDS.md\nRead @docs/policy/GUIDELINES.md')" "$backup_dir"
 
-    # 5. Initialize Serena project if uvx is available
+    # 5. Deploy templates to project-local .claude/templates/
+    copy_directory "${SCRIPT_DIR}/global/templates" "${target}/.claude/templates" "$backup_dir"
+
+    # 6. Deploy policy to project-local .claude/policy/ (read-only copies, /onboard hydrates docs/policy/)
+    copy_directory "${SCRIPT_DIR}/global/policy" "${target}/.claude/policy" "$backup_dir"
+
+    # 7. Deploy workflows to project-local .claude/workflows/
+    if [ -d "${SCRIPT_DIR}/global/workflows" ]; then
+        copy_directory "${SCRIPT_DIR}/global/workflows" "${target}/.claude/workflows" "$backup_dir"
+    fi
+
+    # 8. Initialize Serena project if uvx is available
     init_serena_project "$target"
 
     log_success "Project installation complete"
@@ -494,7 +508,8 @@ cleanup_project() {
 
     # Remove installed directories
     local dirs_to_remove=(".serena" "docs/policy" "docs/objectives" "docs/architecture"
-                          "docs/development" "docs/knowledge" "reports/analysis" "reports/research")
+                          "docs/development" "docs/knowledge" "reports/analysis" "reports/research"
+                          ".claude/templates" ".claude/policy" ".claude/workflows")
     for dir in "${dirs_to_remove[@]}"; do
         if [ -d "${target:?}/${dir}" ]; then
             rm -rf "${target:?}/${dir}"

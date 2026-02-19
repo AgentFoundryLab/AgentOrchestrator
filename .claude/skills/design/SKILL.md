@@ -5,8 +5,11 @@ argument-hint: PRD path or architecture focus area
 user-invocable: true
 allowed-tools:
   - Read
+  - Write
+  - Edit
   - Grep
   - Glob
+  - Bash
   - WebSearch
   - AskUserQuestion
 context: fork
@@ -54,6 +57,16 @@ Load and understand the PRD:
 - Functional requirements define WHAT to build
 - Non-functional requirements define HOW it must perform
 - User stories provide context for design decisions
+
+### 1b. Gap & Constraint Check (HITL)
+Before designing, identify:
+- Underspecified functional areas (FR missing detail)
+- Missing NFRs (performance, security, scalability targets)
+- Unresolved technology constraints
+- Competing design forces with no clear winner
+
+If any blocking gaps found: return QUESTIONS block to Orch (see AGENTS.md HITL Escalation).
+Do NOT proceed to design with open blocking questions.
 
 ### 2. Research Patterns
 - Search for established patterns matching requirements
@@ -181,6 +194,7 @@ Full templates available at `~/.claude/templates/` (or `.claude/templates/`):
 
 ## Validation Checklist
 - [ ] Project standards checked (if `docs/policy/STANDARDS.md` exists)
+- [ ] HITL gap check completed (step 1b) — no blocking questions pending
 - [ ] All FRs have corresponding components
 - [ ] All components have clear responsibilities
 - [ ] Interfaces are defined between components
@@ -189,3 +203,4 @@ Full templates available at `~/.claude/templates/` (or `.claude/templates/`):
 - [ ] Significant decisions have ADRs
 - [ ] Data model documented (entities, relationships)
 - [ ] Contracts defined (APIs, events, interfaces)
+- [ ] No blocking QUESTIONS pending before passing to /plan

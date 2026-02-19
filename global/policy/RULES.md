@@ -107,6 +107,26 @@
 - Never assume from knowledge cutoff
 - Base all time calculations on verified date
 
+## Decision Boundary [CRITICAL]
+
+### Orchestrator/Agent Authority (can decide autonomously)
+- Workflow depth selection (Full/Medium/Light) based on complexity scoring
+- Task decomposition and ordering within a phase
+- Implementation approach when patterns are clear
+- Code style, formatting, naming within established conventions
+- Test strategy for given acceptance criteria
+- Document structure and organization
+
+### Human Authority (MUST escalate via HITL)
+- Product scope changes (goals, non-goals, target users)
+- Technology or framework selection not established by STANDARDS.md
+- Architectural decisions with significant trade-offs (must confirm via /design HITL)
+- Acceptance criteria changes
+- Deployment to production environments
+- Any action with irreversible external effects (data deletion, external API writes)
+- Budget/resource allocation
+- Security decisions affecting data privacy
+
 ## Quick Reference
 
 **CRITICAL**: git status first, read before write, feature branches only, root cause analysis, absolute paths

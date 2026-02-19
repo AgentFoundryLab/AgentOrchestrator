@@ -112,15 +112,41 @@ For each epic, create atomic tasks:
 **Commit**: `type(scope): description`
 ```
 
+**Write AC as test specifications** (enables TDD in `/implement`):
+- Bad: "User can log in"
+- Good: "Given valid credentials, POST /auth/login returns 200 with token"
+
 ### 6. Set Priorities
 - **P0**: Critical path - blocks other tasks
 - **P1**: Important - core functionality
 - **P2**: Nice to have - can defer
 
-### 7. Establish Dependencies
-- Identify blockedBy relationships
+### 7. Establish Dependencies + Parallelization Map
+
+For each task, define:
+- `blockedBy: [T-XXX, T-YYY]` — cannot start until these complete
+- `parallel: [T-XXX, T-YYY]` — can run concurrently with these
+
+**Parallelization Rules**:
+- Tasks sharing no state/artifacts can run in parallel
+- Tasks within same component are usually sequential
+- Research tasks are almost always parallel
+- Implementation tasks across independent components can parallel
+
+**Output in BACKLOG**: Note blockedBy and parallel groups in task detail:
+```
+### T-005: Implement AuthService
+**blockedBy**: T-001 (schema), T-002 (DB setup)
+**parallel**: T-006 (implement UserService), T-007 (implement TokenService)
+```
+
+**ROADMAP output**: Include parallelization summary:
+```
+Parallel Group A: T-005, T-006, T-007 (all blocked by T-001, T-002)
+```
+
 - Ensure no circular dependencies
-- Critical path is clear
+- Critical path is clear (P0 tasks that are not parallelizable)
 
 ## ROADMAP Template
 
@@ -199,4 +225,5 @@ Full templates available at `~/.claude/templates/` (or `.claude/templates/`):
 - [ ] Tasks are atomic (testable, committable)
 - [ ] Dependencies are explicit and acyclic
 - [ ] Critical path is identified (P0 tasks)
+- [ ] Parallelization opportunities identified and noted
 - [ ] Traceability: FR -> Component -> Epic -> Task
