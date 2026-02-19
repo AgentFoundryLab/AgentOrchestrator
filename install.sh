@@ -4,6 +4,7 @@
 #   ./install.sh --global              Install to ~/.claude/
 #   ./install.sh --project <path>      Install project templates to <path>
 #   ./install.sh [--claude|--gemini|--codex]  Limit policy-ref targets (default: all)
+#   ./install.sh [--namespace <name>]  Optional agent/skill namespace (default: flat)
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
 #   ./install.sh --restore             Remove installed artifacts, restore settings
 
@@ -12,7 +13,7 @@ set -e
 VERSION="0.1.0 "
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_DIR="${SCRIPT_DIR}/package"
-NAMESPACE="jarvis"
+NAMESPACE=""
 
 # Colors for output
 RED='\033[0;31m'
@@ -46,6 +47,7 @@ Usage:
     ./install.sh --claude              Target CLAUDE.md refs only
     ./install.sh --gemini              Target GEMINI.md refs only
     ./install.sh --codex               Target AGENTS.md refs only
+    ./install.sh --namespace <name>    Optional namespace for agents/skills paths
     ./install.sh --overwrite           Overwrite existing markdown files (backup to .backup/)
     ./install.sh --restore             Remove installed artifacts, restore settings from backup
     ./install.sh --help                Show this help
@@ -56,8 +58,10 @@ If none are provided, installer targets all three: --claude + --gemini + --codex
 What gets installed:
 
 --global installs to ~/.claude/:
-    - agents/jarvis/    Agent definitions (7 files)
-    - skills/jarvis/    Skill definitions (15 directories)
+    - agents/           Agent definitions (7 files, default flat)
+    - skills/           Skill definitions (15 directories, default flat)
+    - agents/<ns>/      Optional namespaced agents (if --namespace set)
+    - skills/<ns>/      Optional namespaced skills (if --namespace set)
     - hooks/scripts/    Hook scripts (5 files)
     - settings.json     Hook and MCP configuration
     - policy/           PRINCIPLES.md, RULES.md
@@ -69,8 +73,10 @@ What gets installed:
     - docs/policy/      STANDARDS.md, GUIDELINES.md templates (from package/templates/)
     - docs/knowledge/   README.md (from package/templates/)
     - reports/          analysis/, research/ directories
-    - .claude/agents/jarvis/ Agent definitions (project-local namespace)
-    - .claude/skills/jarvis/ Skill definitions (project-local namespace)
+    - .claude/agents/   Agent definitions (project-local, default flat)
+    - .claude/skills/   Skill definitions (project-local, default flat)
+    - .claude/agents/<ns>/ Optional namespaced agents (if --namespace set)
+    - .claude/skills/<ns>/ Optional namespaced skills (if --namespace set)
     - .claude/templates/ Templates (project-local copy, agents prefer over global)
     - .claude/policy/   PRINCIPLES.md, RULES.md (project-local copies)
     - .claude/workflows/ SWE.md, meta-learning.md (project-local copies)
@@ -205,7 +211,7 @@ copy_directory() {
     local target_dir="$2"
     local backup_dir="$3"
     local component_name
-    component_name="$(basename "$target_dir")"
+    component_name="$(basename "$source_dir")"
 
     if [ ! -d "$source_dir" ]; then
         log_warning "Source directory not found: $source_dir"
@@ -333,14 +339,21 @@ inject_policy_refs() {
 install_global() {
     local target="${HOME}/.claude"
     log_info "Installing global components to $target"
+    local ns_path=""
+    if [ -n "$NAMESPACE" ]; then
+        ns_path="/${NAMESPACE}"
+        log_info "Using namespace for agents/skills: ${NAMESPACE}"
+    else
+        log_info "Using flat agents/skills paths (no namespace)"
+    fi
 
     local backup_dir
     backup_dir=$(create_backup_dir "$target")
 
     # Install package/ contents (source-of-truth in repository)
     if [ -d "${PACKAGE_DIR}" ]; then
-        copy_directory "${PACKAGE_DIR}/agents" "${target}/agents/${NAMESPACE}" "$backup_dir"
-        copy_directory "${PACKAGE_DIR}/skills" "${target}/skills/${NAMESPACE}" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/agents" "${target}/agents${ns_path}" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/skills" "${target}/skills${ns_path}" "$backup_dir"
         copy_directory "${PACKAGE_DIR}/hooks" "${target}/hooks" "$backup_dir"
         copy_directory "${PACKAGE_DIR}/policy" "${target}/policy" "$backup_dir"
         copy_directory "${PACKAGE_DIR}/workflows" "${target}/workflows" "$backup_dir"
@@ -358,17 +371,20 @@ install_global() {
     fi
 
     # Inject @-references for global policies into selected runtime docs.
+    # Use home-scoped absolute refs to avoid project-relative resolution.
+    local global_refs
+    global_refs="$(printf 'Read @~/.claude/policy/PRINCIPLES.md\nRead @~/.claude/policy/RULES.md')"
     if [ "$REF_CLAUDE" = true ]; then
         inject_policy_refs "${HOME}/.claude" "orchestrator:global-refs" \
-            "$(printf 'Read @policy/PRINCIPLES.md\nRead @policy/RULES.md')" "$backup_dir" "claude" "CLAUDE.md"
+            "$global_refs" "$backup_dir" "claude" "CLAUDE.md"
     fi
     if [ "$REF_GEMINI" = true ]; then
         inject_policy_refs "${HOME}/.gemini" "orchestrator:global-refs" \
-            "$(printf 'Read @policy/PRINCIPLES.md\nRead @policy/RULES.md')" "$backup_dir" "gemini" "GEMINI.md"
+            "$global_refs" "$backup_dir" "gemini" "GEMINI.md"
     fi
     if [ "$REF_CODEX" = true ]; then
         inject_policy_refs "${HOME}/.codex" "orchestrator:global-refs" \
-            "$(printf 'Read @policy/PRINCIPLES.md\nRead @policy/RULES.md')" "$backup_dir" "codex" "AGENTS.md"
+            "$global_refs" "$backup_dir" "codex" "AGENTS.md"
     fi
 
     log_success "Global installation complete"
@@ -377,6 +393,7 @@ install_global() {
 # Install project scaffolding to specified path
 install_project() {
     local target="$1"
+    local ns_path=""
 
     if [ -z "$target" ]; then
         log_error "Project path required for --project"
@@ -385,6 +402,12 @@ install_project() {
     fi
 
     log_info "Installing project scaffolding to $target"
+    if [ -n "$NAMESPACE" ]; then
+        ns_path="/${NAMESPACE}"
+        log_info "Using namespace for agents/skills: ${NAMESPACE}"
+    else
+        log_info "Using flat agents/skills paths (no namespace)"
+    fi
 
     local backup_dir
     backup_dir=$(create_backup_dir "$target")
@@ -430,10 +453,10 @@ install_project() {
 
     # 8. Deploy project-local agent/skill namespaces (dogfood-safe)
     if [ -d "${PACKAGE_DIR}/agents" ]; then
-        copy_directory "${PACKAGE_DIR}/agents" "${target}/.claude/agents/${NAMESPACE}" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/agents" "${target}/.claude/agents${ns_path}" "$backup_dir"
     fi
     if [ -d "${PACKAGE_DIR}/skills" ]; then
-        copy_directory "${PACKAGE_DIR}/skills" "${target}/.claude/skills/${NAMESPACE}" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/skills" "${target}/.claude/skills${ns_path}" "$backup_dir"
     fi
 
     # 9. Initialize Serena project if uvx is available
@@ -632,12 +655,31 @@ restore_policy_refs() {
 restore_global() {
     local target="${HOME}/.claude"
     log_info "Restoring global installation from $target"
+    local ns_path=""
+    if [ -n "$NAMESPACE" ]; then
+        ns_path="/${NAMESPACE}"
+        log_info "Restoring namespace for agents/skills: ${NAMESPACE}"
+    else
+        log_info "Restoring flat agents/skills paths (no namespace)"
+    fi
 
     local backup_dir
     backup_dir=$(find_latest_backup "$target")
 
-    # Remove namespaced agent/skill directories to avoid conflicts with other installed packs
-    local dirs_to_remove=("agents/${NAMESPACE}" "skills/${NAMESPACE}" "hooks" "policy" "workflows" "templates")
+    # Restore/remove installed agents/skills surgically.
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/agents" \
+        "${target}/agents${ns_path}" \
+        "$backup_dir" \
+        "agents"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/skills" \
+        "${target}/skills${ns_path}" \
+        "$backup_dir" \
+        "skills"
+
+    # Remove managed shared directories.
+    local dirs_to_remove=("hooks" "policy" "workflows" "templates")
     for dir in "${dirs_to_remove[@]}"; do
         if [ -d "${target:?}/${dir}" ]; then
             rm -rf "${target:?}/${dir}"
@@ -691,6 +733,7 @@ restore_global() {
 # Restore project installation (remove installed artifacts + strip refs)
 restore_project() {
     local target="$1"
+    local ns_path=""
 
     if [ -z "$target" ]; then
         log_error "Project path required for --restore with --project"
@@ -699,6 +742,12 @@ restore_project() {
     fi
 
     log_info "Restoring project installation from $target"
+    if [ -n "$NAMESPACE" ]; then
+        ns_path="/${NAMESPACE}"
+        log_info "Restoring namespace for agents/skills: ${NAMESPACE}"
+    else
+        log_info "Restoring flat agents/skills paths (no namespace)"
+    fi
 
     local backup_dir
     backup_dir=$(find_latest_backup "$target")
@@ -742,15 +791,17 @@ restore_project() {
         "$backup_dir" \
         "workflows"
 
-    # Remove namespaced agents/skills only (isolated namespace).
-    local dirs_to_remove=(".claude/agents/${NAMESPACE}" ".claude/skills/${NAMESPACE}")
-    for dir in "${dirs_to_remove[@]}"; do
-        if [ -d "${target:?}/${dir}" ]; then
-            rm -rf "${target:?}/${dir}"
-            log_success "Removed: ${target}/${dir}"
-            ((++CREATED))
-        fi
-    done
+    # Restore/remove managed agents/skills surgically.
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/agents" \
+        "${target}/.claude/agents${ns_path}" \
+        "$backup_dir" \
+        "agents"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/skills" \
+        "${target}/.claude/skills${ns_path}" \
+        "$backup_dir" \
+        "skills"
 
     # Remove Serena project file only if this installer created it.
     local serena_marker="${target}/.serena/.orchestrator-created-project-yml"
@@ -801,6 +852,20 @@ main() {
                     --gemini) REF_GEMINI=true ;;
                     --codex) REF_CODEX=true ;;
                 esac
+                shift
+                ;;
+            --namespace)
+                shift
+                if [ $# -eq 0 ] || [[ "$1" =~ ^-- ]]; then
+                    log_error "--namespace requires a value (use empty by omitting the flag)"
+                    usage
+                    exit 1
+                fi
+                NAMESPACE="$1"
+                if [[ "$NAMESPACE" == *"/"* ]]; then
+                    log_error "Invalid namespace '$NAMESPACE' (must not contain '/')"
+                    exit 1
+                fi
                 shift
                 ;;
             --global)

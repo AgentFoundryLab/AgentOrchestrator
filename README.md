@@ -54,17 +54,18 @@ cd orchestrator
 ### What Gets Installed
 
 **`--global` installs to `~/.claude/`:**
-- `agents/jarvis/` - Agent definitions (7 files, namespaced)
-- `skills/jarvis/` - Skill definitions (15 directories, namespaced)
+- `agents/` - Agent definitions (7 files, default flat)
+- `skills/` - Skill definitions (15 directories, default flat)
 - `hooks/scripts/` - Hook scripts (5 files) + shared library
 - `settings.json` - Hook and MCP configuration
 - `policy/` - PRINCIPLES.md, RULES.md, GUIDELINES.md
 - `workflows/` - SWE.md, meta-learning.md
 - `templates/` - Vision, Blueprint, PRD, Architecture, ADR, Roadmap, Backlog, Issues
+Optional: pass `--namespace <name>` to install as `agents/<name>/` and `skills/<name>/`.
 
 **`--project` installs to `<path>/`:**
-- `.claude/agents/jarvis/` - Project-local agent namespace
-- `.claude/skills/jarvis/` - Project-local skill namespace
+- `.claude/agents/` - Project-local agents (default flat)
+- `.claude/skills/` - Project-local skills (default flat)
 - `.claude/templates/` - Project-local template copies
 - `.claude/policy/` - Project-local policy copies
 - `.claude/workflows/` - Project-local workflow copies
@@ -177,9 +178,9 @@ After installation, your project will have:
 your-project/
 ├── .claude/
 │   ├── agents/
-│   │   └── jarvis/       # Project-local AgentOrchestrator agents
+│   │   └── *.md          # Project-local AgentOrchestrator agents
 │   ├── skills/
-│   │   └── jarvis/       # Project-local AgentOrchestrator skills
+│   │   └── <skill>/      # Project-local AgentOrchestrator skills
 │   ├── templates/        # Project-local templates
 │   ├── policy/           # Project-local policy copies
 │   └── workflows/        # Project-local workflow copies

@@ -182,8 +182,9 @@ package/policy/             # Framework source (→ ~/.claude/policy/, auto-load
 ```
 
 **Installation flow**:
-- `./install.sh --global` → `package/*` → `~/.claude/` (`agents/jarvis`, `skills/jarvis`, policy/workflows/templates/hooks/settings) + injects `@`-refs into `~/.claude/CLAUDE.md`
-- `./install.sh --project <path>` → provisions docs tree + deploys `.claude/agents/jarvis`, `.claude/skills/jarvis`, templates, policy, workflows + injects `@`-refs
+- `./install.sh --global` → `package/*` → `~/.claude/` (`agents/`, `skills/`, policy/workflows/templates/hooks/settings) + injects `@`-refs into runtime docs
+- `./install.sh --project <path>` → provisions docs tree + deploys `.claude/agents`, `.claude/skills`, templates, policy, workflows + injects `@`-refs
+- Optional: `--namespace <name>` installs agents/skills under namespaced paths instead of flat
 - `/onboard` → analyzes project, hydrates STANDARDS.md + GUIDELINES.md from templates
 
 ### Policy Loading
