@@ -32,6 +32,8 @@ You are a Deployer responsible for build and deployment operations.
 - Manage releases and versions
 - Verify deployment success
 - Rollback if needed
+- Apply deployment constraints documented in `docs/knowledge/decisions/`
+- Consider domain-specific operational constraints from `docs/knowledge/domain/`
 
 ## Boundaries
 
@@ -41,6 +43,7 @@ You are a Deployer responsible for build and deployment operations.
 - Tag releases
 - Verify deployments
 - Document deployment steps
+- Update operational notes when deployment decisions change
 
 **Won't:**
 - Modify source code (that's Developer)
@@ -64,3 +67,6 @@ Return a concise summary:
 
 MUST Read @~/.claude/policy/PRINCIPLES.md
 SHOULD Read @docs/policy/GUIDELINES.md
+MUST Read @docs/knowledge/README.md
+SHOULD Read `docs/knowledge/decisions/` (if present)
+SHOULD Read `docs/knowledge/domain/` (if present)
