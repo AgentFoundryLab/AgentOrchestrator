@@ -5,32 +5,28 @@ REPOSITORY                              INSTALLATION TARGETS
 
 orchestrator/
 |
-+-- .claude/                ---------------------> ~/.claude/
-|   +-- agents/                                   +-- agents/
++-- package/                ---------------------> ~/.claude/
+|   +-- agents/                                   +-- agents/jarvis/
 |   |   +-- *.md            [warn if different]   |   +-- *.md
-|   +-- skills/                                   +-- skills/
+|   +-- skills/                                   +-- skills/jarvis/
 |   |   +-- */SKILL.md      [warn if different]   |   +-- */SKILL.md
 |   +-- hooks/                                    +-- hooks/
-|       +-- scripts/*.sh    [backup + overwrite]      +-- scripts/*.sh
-|
-+-- global/                 ---------------------> ~/.claude/
+|   |   +-- scripts/*.sh    [backup + overwrite]      +-- scripts/*.sh
 |   +-- settings.json       [patch/merge]         +-- settings.json
+|   +-- mcp.json            [patch/merge]         +-- ~/.claude.json:mcpServers
 |   +-- policy/                                   +-- policy/
-|   |   +-- RULES.md        [warn if different]   |   +-- RULES.md
-|   |   +-- PRINCIPLES.md   [warn if different]   |   +-- PRINCIPLES.md
 |   +-- workflows/                                +-- workflows/
-|   |   +-- *.md            [warn if different]   |   +-- *.md
 |   +-- templates/                                +-- templates/
-|       +-- *.md            [warn if different]       +-- *.md
 |
-+-- project/                ---------------------> <target-project>/
-    +-- settings.json       [patch/merge]         +-- .claude/settings.json
-    +-- objectives/                               +-- docs/objectives/
-    |   +-- *.md.template   [create only]         |   +-- *.md
-    +-- knowledge/                                +-- docs/knowledge/
-    |   +-- README.md       [create only]         |   +-- README.md
-    +-- reports/                                  +-- reports/
-        +-- */              [create only]             +-- */
++-- package/                ---------------------> <target-project>/
+    +-- agents/                                   +-- .claude/agents/jarvis/
+    +-- skills/                                   +-- .claude/skills/jarvis/
+    +-- policy/                                   +-- .claude/policy/
+    +-- workflows/                                +-- .claude/workflows/
+    +-- templates/                                +-- .claude/templates/
+    +-- templates/{knowledge,standards,guidelines}.md
+        [create/warn]                             +-- docs/{knowledge,policy}/...
+    +-- (scaffold dirs)                           +-- docs/*, reports/*, .serena/
 ```
 
 ## Installation Behavior by File Type
@@ -38,7 +34,6 @@ orchestrator/
 | File Type | Behavior |
 |-----------|----------|
 | `*.json` (settings, mcp) | **PATCH**: Deep merge, preserve user keys, backup first |
-| `*.md` (agents, skills) | **WARN**: If exists and different, warn + create .scz copy. Don't overwrite user changes. |
+| `*.md` (agents, skills) | **WARN**: If exists and different, warn (or overwrite with `--overwrite`). |
 | `*.sh` (hooks) | **BACKUP + OVERWRITE**: Scripts must match Orchestrator version. Backup to ~/.claude/backups/ |
 | New files | **CREATE**: No conflict, just copy |
-| `*.template` (project init) | **CREATE ONLY**: Skip if target exists. User owns these. |

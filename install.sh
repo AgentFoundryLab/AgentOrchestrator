@@ -3,14 +3,15 @@
 # Usage:
 #   ./install.sh --global              Install to ~/.claude/
 #   ./install.sh --project <path>      Install project templates to <path>
-#   ./install.sh --all <path>          Both global and project installation
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
-#   ./install.sh --cleanup             Remove installed artifacts, restore settings
+#   ./install.sh --restore             Remove installed artifacts, restore settings
 
 set -e
 
 VERSION="0.1.0 "
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PACKAGE_DIR="${SCRIPT_DIR}/package"
+NAMESPACE="jarvis"
 
 # Colors for output
 RED='\033[0;31m'
@@ -37,16 +38,15 @@ AgentOrchestrator Installer v${VERSION}
 Usage:
     ./install.sh --global              Install to ~/.claude/
     ./install.sh --project <path>      Install project templates to <path>
-    ./install.sh --all <path>          Both global and project installation
     ./install.sh --overwrite           Overwrite existing markdown files (backup to .backup/)
-    ./install.sh --cleanup             Remove installed artifacts, restore settings from backup
+    ./install.sh --restore             Remove installed artifacts, restore settings from backup
     ./install.sh --help                Show this help
 
 What gets installed:
 
 --global installs to ~/.claude/:
-    - agents/           Agent definitions (7 files)
-    - skills/           Skill definitions (14 directories)
+    - agents/jarvis/    Agent definitions (7 files)
+    - skills/jarvis/    Skill definitions (14 directories)
     - hooks/scripts/    Hook scripts (5 files)
     - settings.json     Hook and MCP configuration
     - policy/           PRINCIPLES.md, RULES.md
@@ -55,9 +55,11 @@ What gets installed:
 
 --project installs to <path>/:
     - docs/             Provisioned folder tree with .gitkeep
-    - docs/policy/      STANDARDS.md, GUIDELINES.md templates (from global/templates/)
-    - docs/knowledge/   README.md (from global/templates/)
+    - docs/policy/      STANDARDS.md, GUIDELINES.md templates (from package/templates/)
+    - docs/knowledge/   README.md (from package/templates/)
     - reports/          analysis/, research/ directories
+    - .claude/agents/jarvis/ Agent definitions (project-local namespace)
+    - .claude/skills/jarvis/ Skill definitions (project-local namespace)
     - .claude/templates/ Templates (project-local copy, agents prefer over global)
     - .claude/policy/   PRINCIPLES.md, RULES.md (project-local copies)
     - .claude/workflows/ SWE.md, meta-learning.md (project-local copies)
@@ -266,28 +268,24 @@ install_global() {
     local backup_dir
     backup_dir=$(create_backup_dir "$target")
 
-    # Install .claude/ contents (agents, skills, hooks)
-    if [ -d "${SCRIPT_DIR}/.claude" ]; then
-        copy_directory "${SCRIPT_DIR}/.claude/agents" "${target}/agents" "$backup_dir"
-        copy_directory "${SCRIPT_DIR}/.claude/skills" "${target}/skills" "$backup_dir"
-        copy_directory "${SCRIPT_DIR}/.claude/hooks" "${target}/hooks" "$backup_dir"
-    fi
-
-    # Install global/ contents (policy, workflows, templates, settings)
-    if [ -d "${SCRIPT_DIR}/global" ]; then
-        copy_directory "${SCRIPT_DIR}/global/policy" "${target}/policy" "$backup_dir"
-        copy_directory "${SCRIPT_DIR}/global/workflows" "${target}/workflows" "$backup_dir"
-        copy_directory "${SCRIPT_DIR}/global/templates" "${target}/templates" "$backup_dir"
+    # Install package/ contents (source-of-truth in repository)
+    if [ -d "${PACKAGE_DIR}" ]; then
+        copy_directory "${PACKAGE_DIR}/agents" "${target}/agents/${NAMESPACE}" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/skills" "${target}/skills/${NAMESPACE}" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/hooks" "${target}/hooks" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/policy" "${target}/policy" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/workflows" "${target}/workflows" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/templates" "${target}/templates" "$backup_dir"
 
         # Handle global settings.json
-        if [ -f "${SCRIPT_DIR}/global/settings.json" ]; then
-            merge_json "${SCRIPT_DIR}/global/settings.json" "${target}/settings.json" "$backup_dir"
+        if [ -f "${PACKAGE_DIR}/settings.json" ]; then
+            merge_json "${PACKAGE_DIR}/settings.json" "${target}/settings.json" "$backup_dir"
         fi
     fi
 
     # Install global MCP servers to ~/.claude.json (user-scope)
-    if [ -f "${SCRIPT_DIR}/global/mcp.json" ]; then
-        merge_json "${SCRIPT_DIR}/global/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
+    if [ -f "${PACKAGE_DIR}/mcp.json" ]; then
+        merge_json "${PACKAGE_DIR}/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
     fi
 
     # Inject @-references for global policies into CLAUDE/AGENTS/GEMINI.md
@@ -323,13 +321,13 @@ install_project() {
     done
 
     # 2. Deploy knowledge README from template
-    copy_markdown "${SCRIPT_DIR}/global/templates/knowledge.md" \
+    copy_markdown "${PACKAGE_DIR}/templates/knowledge.md" \
                   "${target}/docs/knowledge/README.md" "$backup_dir" "docs/knowledge/README.md"
 
     # 3. Deploy policy templates (scaffolds for /onboard to hydrate)
-    copy_markdown "${SCRIPT_DIR}/global/templates/standards.md" \
+    copy_markdown "${PACKAGE_DIR}/templates/standards.md" \
                   "${target}/docs/policy/STANDARDS.md" "$backup_dir" "docs/policy/STANDARDS.md"
-    copy_markdown "${SCRIPT_DIR}/global/templates/guidelines.md" \
+    copy_markdown "${PACKAGE_DIR}/templates/guidelines.md" \
                   "${target}/docs/policy/GUIDELINES.md" "$backup_dir" "docs/policy/GUIDELINES.md"
 
     # 4. Inject @-references for project policies into CLAUDE/AGENTS/GEMINI.md
@@ -337,17 +335,25 @@ install_project() {
         "$(printf 'Read @docs/policy/STANDARDS.md\nRead @docs/policy/GUIDELINES.md')" "$backup_dir"
 
     # 5. Deploy templates to project-local .claude/templates/
-    copy_directory "${SCRIPT_DIR}/global/templates" "${target}/.claude/templates" "$backup_dir"
+    copy_directory "${PACKAGE_DIR}/templates" "${target}/.claude/templates" "$backup_dir"
 
     # 6. Deploy policy to project-local .claude/policy/ (read-only copies, /onboard hydrates docs/policy/)
-    copy_directory "${SCRIPT_DIR}/global/policy" "${target}/.claude/policy" "$backup_dir"
+    copy_directory "${PACKAGE_DIR}/policy" "${target}/.claude/policy" "$backup_dir"
 
     # 7. Deploy workflows to project-local .claude/workflows/
-    if [ -d "${SCRIPT_DIR}/global/workflows" ]; then
-        copy_directory "${SCRIPT_DIR}/global/workflows" "${target}/.claude/workflows" "$backup_dir"
+    if [ -d "${PACKAGE_DIR}/workflows" ]; then
+        copy_directory "${PACKAGE_DIR}/workflows" "${target}/.claude/workflows" "$backup_dir"
     fi
 
-    # 8. Initialize Serena project if uvx is available
+    # 8. Deploy project-local agent/skill namespaces (dogfood-safe)
+    if [ -d "${PACKAGE_DIR}/agents" ]; then
+        copy_directory "${PACKAGE_DIR}/agents" "${target}/.claude/agents/${NAMESPACE}" "$backup_dir"
+    fi
+    if [ -d "${PACKAGE_DIR}/skills" ]; then
+        copy_directory "${PACKAGE_DIR}/skills" "${target}/.claude/skills/${NAMESPACE}" "$backup_dir"
+    fi
+
+    # 9. Initialize Serena project if uvx is available
     init_serena_project "$target"
 
     log_success "Project installation complete"
@@ -455,16 +461,63 @@ restore_settings() {
     fi
 }
 
-# Cleanup global installation
-cleanup_global() {
+# Restore file from backup if present
+restore_file_from_backup() {
+    local backup_file="$1"
+    local target_file="$2"
+
+    if [ -n "$backup_file" ] && [ -f "$backup_file" ]; then
+        mkdir -p "$(dirname "$target_file")"
+        cp "$backup_file" "$target_file"
+        log_success "Restored: $target_file from backup"
+        ((++PATCHED))
+        return 0
+    fi
+
+    return 1
+}
+
+# Strip injected ref block by sentinel if backup is unavailable
+strip_ref_block_if_present() {
+    local target_file="$1"
+    local sentinel="$2"
+
+    if [ -f "$target_file" ] && grep -q "$sentinel" "$target_file" 2>/dev/null; then
+        sed -i "/<!-- ${sentinel} -->/,\$d" "$target_file"
+        log_success "Stripped refs from: $target_file"
+        ((++PATCHED))
+    fi
+}
+
+# Restore CLAUDE/AGENTS/GEMINI refs from backup, fallback to sentinel stripping
+restore_policy_refs() {
+    local target_dir="$1"
+    local backup_dir="$2"
+    local sentinel="$3"
+
+    for md_file in CLAUDE.md AGENTS.md GEMINI.md; do
+        local target_file="${target_dir}/${md_file}"
+        local backup_file=""
+        if [ -n "$backup_dir" ]; then
+            backup_file="${backup_dir}/${md_file}"
+        fi
+
+        if ! restore_file_from_backup "$backup_file" "$target_file"; then
+            strip_ref_block_if_present "$target_file" "$sentinel"
+        fi
+    done
+}
+
+# Restore global installation (remove installed artifacts + restore settings)
+restore_global() {
     local target="${HOME}/.claude"
-    log_info "Cleaning up global installation from $target"
+    log_info "Restoring global installation from $target"
 
     local backup_dir
     backup_dir=$(find_latest_backup "$target")
 
-    # Remove installed directories
-    local dirs_to_remove=("agents" "skills" "hooks" "policy" "workflows" "templates")
+    # Remove namespaced agent/skill directories to avoid conflicts with other installed packs
+    local dirs_to_remove=("agents/${NAMESPACE}" "skills/${NAMESPACE}" "hooks" "policy" "workflows" "templates")
     for dir in "${dirs_to_remove[@]}"; do
         if [ -d "${target:?}/${dir}" ]; then
             rm -rf "${target:?}/${dir}"
@@ -476,32 +529,48 @@ cleanup_global() {
     # Restore settings.json from backup
     restore_settings "$target" "$backup_dir"
 
-    # Remove mcpServers from ~/.claude.json
-    if command -v jq &> /dev/null && [ -f "${HOME}/.claude.json" ]; then
-        if jq 'has("mcpServers")' "${HOME}/.claude.json" | grep -q true; then
-            local claude_backup="${backup_dir}/.claude.json"
-            cp "${HOME}/.claude.json" "$claude_backup"
-            jq 'del(.mcpServers)' "${HOME}/.claude.json" > "${HOME}/.claude.json.tmp"
-            mv "${HOME}/.claude.json.tmp" "${HOME}/.claude.json"
-            log_success "Removed mcpServers from ~/.claude.json (backup: $claude_backup)"
-            ((++BACKUPS))
+    # Restore ~/.claude.json from backup if present, fallback to mcpServers deletion
+    local claude_json_backup=""
+    if [ -n "$backup_dir" ]; then
+        claude_json_backup="${backup_dir}/.claude.json"
+    fi
+    if ! restore_file_from_backup "$claude_json_backup" "${HOME}/.claude.json"; then
+        if command -v jq &> /dev/null && [ -f "${HOME}/.claude.json" ]; then
+            if jq 'has("mcpServers")' "${HOME}/.claude.json" | grep -q true; then
+                local effective_backup_dir="$backup_dir"
+                if [ -z "$effective_backup_dir" ]; then
+                    effective_backup_dir=$(create_backup_dir "$target")
+                    log_warning "No prior backup found. Created backup directory: $effective_backup_dir"
+                fi
+
+                local fallback_backup="${effective_backup_dir}/.claude.json"
+                mkdir -p "$(dirname "$fallback_backup")"
+                cp "${HOME}/.claude.json" "$fallback_backup"
+                jq 'del(.mcpServers)' "${HOME}/.claude.json" > "${HOME}/.claude.json.tmp"
+                mv "${HOME}/.claude.json.tmp" "${HOME}/.claude.json"
+                log_success "Removed mcpServers from ~/.claude.json (backup: $fallback_backup)"
+                ((++BACKUPS))
+            fi
         fi
     fi
 
-    log_success "Global cleanup complete"
+    # Restore global injected refs in CLAUDE/AGENTS/GEMINI.md
+    restore_policy_refs "$target" "$backup_dir" "orchestrator:global-refs"
+
+    log_success "Global restore complete"
 }
 
-# Cleanup project installation
-cleanup_project() {
+# Restore project installation (remove installed artifacts + strip refs)
+restore_project() {
     local target="$1"
 
     if [ -z "$target" ]; then
-        log_error "Project path required for --cleanup with --project"
+        log_error "Project path required for --restore with --project"
         usage
         exit 1
     fi
 
-    log_info "Cleaning up project installation from $target"
+    log_info "Restoring project installation from $target"
 
     local backup_dir
     backup_dir=$(find_latest_backup "$target")
@@ -509,6 +578,7 @@ cleanup_project() {
     # Remove installed directories
     local dirs_to_remove=(".serena" "docs/policy" "docs/objectives" "docs/architecture"
                           "docs/development" "docs/knowledge" "reports/analysis" "reports/research"
+                          ".claude/agents/${NAMESPACE}" ".claude/skills/${NAMESPACE}"
                           ".claude/templates" ".claude/policy" ".claude/workflows")
     for dir in "${dirs_to_remove[@]}"; do
         if [ -d "${target:?}/${dir}" ]; then
@@ -522,18 +592,10 @@ cleanup_project() {
     rmdir "${target}/docs" 2>/dev/null || true
     rmdir "${target}/reports" 2>/dev/null || true
 
-    # Strip policy ref sentinel blocks from CLAUDE/AGENTS/GEMINI.md
-    local sentinel="orchestrator:project-refs"
-    for md_file in CLAUDE.md AGENTS.md GEMINI.md; do
-        local f="${target}/${md_file}"
-        if [ -f "$f" ] && grep -q "$sentinel" "$f" 2>/dev/null; then
-            sed -i "/<!-- ${sentinel} -->/,\$d" "$f"
-            log_success "Stripped refs from: $f"
-            ((++PATCHED))
-        fi
-    done
+    # Restore project injected refs in CLAUDE/AGENTS/GEMINI.md
+    restore_policy_refs "$target" "$backup_dir" "orchestrator:project-refs"
 
-    log_success "Project cleanup complete"
+    log_success "Project restore complete"
 }
 
 # Main
@@ -545,7 +607,7 @@ main() {
 
     local do_global=false
     local do_project=false
-    local do_cleanup=false
+    local do_restore=false
     local project_path=""
 
     while [ $# -gt 0 ]; do
@@ -562,21 +624,12 @@ main() {
                     shift
                 fi
                 ;;
-            --all)
-                do_global=true
-                do_project=true
-                shift
-                if [ $# -gt 0 ] && [[ ! "$1" =~ ^-- ]]; then
-                    project_path="$1"
-                    shift
-                fi
-                ;;
             --overwrite)
                 OVERWRITE=true
                 shift
                 ;;
-            --cleanup)
-                do_cleanup=true
+            --restore)
+                do_restore=true
                 shift
                 ;;
             --help|-h)
@@ -596,18 +649,18 @@ main() {
     echo "=================================="
     echo ""
 
-    if [ "$do_cleanup" = true ]; then
+    if [ "$do_restore" = true ]; then
         if [ "$do_global" = true ]; then
-            cleanup_global
+            restore_global
             echo ""
         fi
         if [ "$do_project" = true ]; then
-            cleanup_project "$project_path"
+            restore_project "$project_path"
             echo ""
         fi
-        # If neither specified, default to global cleanup
+        # If neither specified, default to global restore
         if [ "$do_global" = false ] && [ "$do_project" = false ]; then
-            cleanup_global
+            restore_global
             echo ""
         fi
     else

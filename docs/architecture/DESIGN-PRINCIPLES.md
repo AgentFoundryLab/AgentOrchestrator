@@ -85,8 +85,8 @@ Use Claude Code's built-in mechanisms.
 **Rationale**: Native features are maintained, documented, and integrated.
 
 **Application**:
-- `.claude/agents/` for agent definitions
-- `.claude/skills/` for skill definitions
+- `package/agents/` for agent definition sources (installed to `.claude/agents/jarvis/`)
+- `package/skills/` for skill definition sources (installed to `.claude/skills/jarvis/`)
 - Task tool for agent spawning
 - Hook system for lifecycle events
 

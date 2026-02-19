@@ -96,7 +96,7 @@ Both paths use **content injection**, not runtime invocation:
 ### Skill Definition (Agent-backed)
 
 ```yaml
-# .claude/skills/spec/SKILL.md
+# .claude/skills/jarvis/spec/SKILL.md
 ---
 name: spec
 description: Generate PRD from idea or requirements
@@ -124,7 +124,7 @@ Write PRD to: docs/architecture/PRD.md
 ### Agent Definition
 
 ```yaml
-# .claude/agents/business-analyst.md
+# .claude/agents/jarvis/business-analyst.md
 ---
 name: business-analyst
 description: Requirements elicitation and PRD generation
@@ -227,7 +227,7 @@ Result: Architect agent spawns with BOTH:
 ### Configuration Example
 
 ```yaml
-# .claude/agents/architect.md
+# .claude/agents/jarvis/architect.md
 ---
 name: architect
 description: System design and architecture
@@ -243,7 +243,7 @@ You are an Architect responsible for system design.
 ```
 
 ```yaml
-# .claude/skills/analyse/SKILL.md
+# .claude/skills/jarvis/analyse/SKILL.md
 ---
 name: analyse
 description: Investigation and troubleshooting

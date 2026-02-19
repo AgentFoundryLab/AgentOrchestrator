@@ -48,16 +48,16 @@
 | T-048 | v0 | Initial | Templates | issues.md | FR4.4 | P2 | ✅ |
 | T-049 | v0 | Initial | Templates | vision.md | FR4.4 | P2 | ✅ |
 | T-050 | v0 | Initial | Templates | blueprint.md | FR4.4 | P2 | ✅ |
-| T-035 | v0 | Initial | Settings & Installer | global/settings.json | FR3 | P0 | ✅ |
-| T-036 | v0 | Initial | Settings & Installer | project/settings.json | PRD | P1 | ✅ |
+| T-035 | v0 | Initial | Settings & Installer | package/settings.json | FR3 | P0 | ✅ |
+| T-036 | v0 | Initial | Settings & Installer | project-local install scaffolding | PRD | P1 | ✅ |
 | T-037 | v0 | Initial | Settings & Installer | .claude/settings.json | PRD | P0 | ✅ |
 | T-038 | v0 | Initial | Settings & Installer | install.sh | PRD, NFR3 | P0 | ✅ |
 | T-039 | v0 | Validation | Integration | E2E /orchestrate test | US4 | P0 | ✅ |
 | T-040 | v0 | Validation | Integration | Dogfood Orchestrator docs | PRD | P1 | ✅ |
 | T-041 | v0 | Validation | Integration | Update README.md | PRD | P0 | ✅ |
 | T-042 | v0 | Initial | Policy | DESIGN-PRINCIPLES.md | PRD | P1 | ✅ |
-| T-043 | v0 | Initial | Hooks | .claude/hooks/README.md | PRD | P2 | ✅ |
-| T-044 | v0 | Initial | Project Templates | project/ structure | PRD | P1 | ✅ |
+| T-043 | v0 | Initial | Hooks | package/hooks/README.md | PRD | P2 | ✅ |
+| T-044 | v0 | Initial | Project Templates | package-driven project scaffolding | PRD | P1 | ✅ |
 | T-045 | v0 | Initial | Memory | .serena/README.md | PRD | P2 | ✅ |
 | T-046 | v0 | Initial | Settings | Fix $schema in settings.json | PRD | P0 | ✅ |
 
@@ -185,7 +185,7 @@
 - Inputs: `$ARGUMENTS` (idea description)
 - Outputs: PRD at `docs/architecture/PRD.md`
 - Workflow: clarifying questions → goals → requirements → user stories → AC
-- Template reference: `global/templates/prd.md`
+- Template reference: `package/templates/prd.md`
 
 ---
 
@@ -307,7 +307,7 @@
 - Implements workflow depth selection (Full/Medium/Light)
 - Calls agents per workflow template
 - Consults user at key decision points
-- References workflow templates from `global/workflows/`
+- References workflow templates from `package/workflows/`
 
 ---
 
@@ -419,7 +419,7 @@
 
 ---
 
-### T-035: global/settings.json
+### T-035: package/settings.json
 **AC**:
 - Hook configuration for SessionStart, Stop, SessionEnd
 - References hook scripts at `./hooks/scripts/`
@@ -427,7 +427,7 @@
 
 ---
 
-### T-036: project/settings.json
+### T-036: project-local install scaffolding
 **AC**:
 - Per-project settings template
 - Minimal configuration (inherits from global)
@@ -445,9 +445,9 @@
 
 ### T-038: install.sh
 **AC**:
-- `--global` flag: installs `.claude/` + `global/` to `~/.claude/`
-- `--project <path>` flag: installs `project/` to target
-- `--all <path>` flag: both targets
+- `--global` flag: installs `package/` to `~/.claude/` (`agents/jarvis`, `skills/jarvis`, plus shared assets)
+- `--project <path>` flag: installs package assets + scaffolding to target
+- `--global --project <path>`: both targets in one run
 - JSON patching for settings.json (merge, don't overwrite)
 - MD file handling (warn if different, don't overwrite)
 - SH file handling (backup + overwrite)
@@ -523,8 +523,7 @@
 ### T-046: Fix $schema in settings.json
 **AC**:
 - Add valid $schema to `.claude/settings.json`
-- Add valid $schema to `global/settings.json`
-- Add valid $schema to `project/settings.json`
+- Add valid $schema to `package/settings.json`
 - Schema: `https://json.schemastore.org/claude-code-settings.json`
 
 ---

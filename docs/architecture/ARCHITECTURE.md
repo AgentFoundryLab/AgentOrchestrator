@@ -13,7 +13,7 @@ This document defines the technical architecture for AgentOrchestrator, a minima
 
 **Key Architectural Decisions**:
 - Pure markdown/JSON configuration (zero Python dependencies)
-- Claude Code native structures (`.claude/agents/`, `.claude/skills/`)
+- Flat package source (`package/agents/`, `package/skills/`) deployed into Claude Code structures (`.claude/agents/jarvis/`, `.claude/skills/jarvis/`)
 - 2-3 MCP servers (Serena required, Context7 required, Playwright optional)
 - Hook-based lifecycle management (reminder pattern, not enforcement)
 - Four-tier memory system (Session, Semantic, Reflexion, Transient)
@@ -43,7 +43,7 @@ This document defines the technical architecture for AgentOrchestrator, a minima
 
 ### 1. Skill System
 
-Skills are the primary user interface. They are markdown files in `.claude/skills/` with YAML frontmatter. Claude Code natively routes `/skill` invocations to the corresponding SKILL.md file.
+Skills are the primary user interface. Source files live in `package/skills/` and install under `.claude/skills/jarvis/` (or `~/.claude/skills/jarvis/`) with YAML frontmatter. Claude Code natively routes `/skill` invocations to the corresponding SKILL.md file.
 
 #### 1.1 Skill Categories
 
@@ -172,7 +172,7 @@ Agents load skill content via `skills:` frontmatter. The skill instructions are 
 - Permission mode
 
 ```markdown
-# Example: .claude/agents/business-analyst.md
+# Example: .claude/agents/jarvis/business-analyst.md
 ---
 name: business-analyst
 description: Requirements elicitation and PRD generation
@@ -206,7 +206,7 @@ Agents can receive skills through two mechanisms - both triggered by the **USER*
 **Example: Architect with /design (primary) + /analyse (secondary)**
 
 ```yaml
-# .claude/agents/architect.md
+# .claude/agents/jarvis/architect.md
 ---
 name: architect
 description: System design and architecture
@@ -223,7 +223,7 @@ You are an Architect responsible for system design.
 ```
 
 ```yaml
-# .claude/skills/analyse/SKILL.md
+# .claude/skills/jarvis/analyse/SKILL.md
 ---
 name: analyse
 description: Investigation and troubleshooting
@@ -633,7 +633,7 @@ orchestrator/
 │           ├── remind-reflect.sh       # Stop: orchestrator /reflect
 │           └── checkpoint-session.sh   # SessionEnd: cleanup, checkpoint
 │
-├── global/                             # Global abstractions
+├── package/                            # Flat package source (install input)
 │   ├── settings.json                   # Global settings template
 │   ├── policy/
 │   │   ├── RULES.md
@@ -651,18 +651,7 @@ orchestrator/
 │       ├── backlog.md
 │       └── issues.md
 │
-├── project/                            # Per-project templates
-│   ├── settings.json
-│   ├── objectives/
-│   │   ├── GOALS.md.template
-│   │   └── ROADMAP.md.template
-│   ├── knowledge/
-│   │   └── README.md
-│   └── reports/
-│       ├── analysis/
-│       │   └── .gitkeep
-│       └── research/
-│           └── .gitkeep
+├── docs/ + reports/                    # Project scaffolding produced by --project
 │
 └── .serena/                            # Serena MCP local storage
     └── README.md
@@ -672,9 +661,9 @@ orchestrator/
 
 | Source | Flag | Target | Purpose |
 |--------|------|--------|---------|
-| `.claude/` | `--global` | `~/.claude/` | Claude-native (agents, skills, hooks) |
-| `global/` | `--global` | `~/.claude/` | Higher-level (policy, workflows, templates) |
-| `project/` | `--project <path>` | `<path>/` | Per-project (objectives, knowledge, reports) |
+| `package/agents`, `package/skills` | `--global` | `~/.claude/agents/jarvis/`, `~/.claude/skills/jarvis/` | Claude-native agent/skill installation |
+| `package/{hooks,settings,mcp,policy,workflows,templates}` | `--global` | `~/.claude/`, `~/.claude.json` | Shared runtime/global config |
+| `package/*` + scaffold dirs | `--project <path>` | `<path>/.claude/*`, `<path>/docs/*`, `<path>/reports/*` | Project-local install / dogfooding |
 | `docs/` | - | Not deployed | Orchestrator's own documentation |
 
 #### 7.3 Installation Behavior
@@ -717,8 +706,8 @@ if [ -f "$TARGET" ]; then
         echo "WARNING: $TARGET exists and differs from Orchestrator version"
         echo "  Orchestrator version: $Orchestrator_SOURCE"
         echo "  Your version preserved. Review manually if needed."
-        # Optionally copy Orchestrator version with .scz suffix for comparison
-        cp "$Orchestrator_SOURCE" "$TARGET.scz"
+        # Optionally copy Orchestrator version with .backup suffix for comparison
+        cp "$Orchestrator_SOURCE" "$TARGET.backup"
     else
         echo "Unchanged: $TARGET"
     fi
@@ -751,8 +740,6 @@ Patched:   2 files (settings.json, mcp.json)
 Unchanged: 3 files
 Warnings:  1 file (see above)
 Backups:   ~/.claude/backups/2026-01-24/
-
-Run 'scz doctor' to verify installation.
 ```
 
 ---

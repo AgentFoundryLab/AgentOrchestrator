@@ -165,14 +165,14 @@ DOCUMENTATION → Direct to target doc (README, CLAUDE.md, docs/policy/, docs/kn
 | Task completed | Development | LOW | BACKLOG |
 | ARCHITECTURE.md outdated | Documentation | MEDIUM | ARCHITECTURE.md directly |
 | README typo | Documentation | LOW | README.md directly |
-| Policy update | Documentation | MEDIUM | docs/policy/ or global/policy/ |
+| Policy update | Documentation | MEDIUM | docs/policy/ or package/policy/ |
 
 ### Policy Locations
 
 Two-tier policy structure:
 
 ```
-global/policy/              # Framework (→ ~/.claude/policy/, auto-loaded)
+package/policy/             # Framework source (→ ~/.claude/policy/, auto-loaded)
 ├── PRINCIPLES.md           # SW engineering principles
 └── RULES.md                # Agent behavioral rules
 
@@ -182,8 +182,8 @@ global/policy/              # Framework (→ ~/.claude/policy/, auto-loaded)
 ```
 
 **Installation flow**:
-- `./install.sh --global` → `global/policy/` → `~/.claude/policy/` + injects `@`-refs into `~/.claude/CLAUDE.md`
-- `./install.sh --project <path>` → provisions docs tree + deploys templates + injects `@`-refs
+- `./install.sh --global` → `package/*` → `~/.claude/` (`agents/jarvis`, `skills/jarvis`, policy/workflows/templates/hooks/settings) + injects `@`-refs into `~/.claude/CLAUDE.md`
+- `./install.sh --project <path>` → provisions docs tree + deploys `.claude/agents/jarvis`, `.claude/skills/jarvis`, templates, policy, workflows + injects `@`-refs
 - `/onboard` → analyzes project, hydrates STANDARDS.md + GUIDELINES.md from templates
 
 ### Policy Loading
@@ -213,7 +213,7 @@ Files may not exist until `/onboard` runs — missing `@`-refs are silently skip
 
 ### Templates
 
-Available at `~/.claude/templates/` (after `install --global`):
+Source in `package/templates/`, installed to `~/.claude/templates/` (global) and `<project>/.claude/templates/` (project-local):
 
 | Template | Output | Hydrated by |
 |----------|--------|-------------|
@@ -240,7 +240,7 @@ uv pip install package           # Install dependencies
 # Installation
 ./install.sh --global            # Install to ~/.claude/
 ./install.sh --project <path>    # Install project templates
-./install.sh --all <path>        # Both
+./install.sh --global --project <path>  # Both
 ```
 
 ### Python Script Convention

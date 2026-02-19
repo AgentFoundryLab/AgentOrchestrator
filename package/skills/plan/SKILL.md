@@ -216,7 +216,7 @@ Parallel Group A: T-005, T-006, T-007 (all blocked by T-001, T-002)
 
 ## Template References
 
-Full templates available at `~/.claude/templates/` (or `.claude/templates/`):
+Template source: `package/templates/` (installed to `~/.claude/templates/` or `.claude/templates/`):
 - `roadmap.md` - Complete ROADMAP structure
 - `backlog.md` - Complete BACKLOG structure
 

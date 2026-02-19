@@ -169,7 +169,7 @@ For each changed file/feature, determine BOTH dimensions:
 | **System** | hooks/MCP/install broken; agents/skills fail | `ISSUES.md`, `BACKLOG.md` |
 | **Product** | `VISION.md`, goals, OKRs, target users | `VISION.md` |
 | **Solution** | `BLUEPRINT.md`, capabilities, feature matrix | `BLUEPRINT.md` |
-| **Specification** | `PRD.md`, `.claude/skills/`, user stories | `PRD.md` |
+| **Specification** | `PRD.md`, `package/skills/` (source) or `.claude/skills/jarvis/` (installed), user stories | `PRD.md` |
 | **Architecture** | `ARCHITECTURE.md`, `adr/`, `DESIGN-PRINCIPLES.md`, hooks/agents structure | `ARCHITECTURE.md`, `DESIGN-PRINCIPLES.md`, `adr/NNN-*.md` |
 | **Development** | `ROADMAP.md`, `docs/development/` | `ROADMAP.md`, `BACKLOG.md` |
 | **Documentation** | `README.md`, `CLAUDE.md`, `docs/policy/`, `docs/knowledge/`, `docs/architecture/technical/` | `README.md`, `CLAUDE.md`, `docs/policy/{STANDARDS,GUIDELINES}.md`, `docs/architecture/{PRD,ARCHITECTURE,DESIGN-PRINCIPLES}.md`, `docs/architecture/{api/,technical/{data-model,contracts}.md}`, `docs/knowledge/{domain,patterns,decisions,runbooks}/`, `docs/development/{BACKLOG,ISSUES}.md` |

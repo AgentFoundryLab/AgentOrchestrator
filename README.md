@@ -39,8 +39,8 @@ cd orchestrator
 # Install project templates to a target project
 ./install.sh --project /path/to/your/project
 
-# Install both
-./install.sh --all /path/to/your/project
+# Install both in one run
+./install.sh --global --project /path/to/your/project
 
 # Overwrite existing markdown files during reinstall
 ./install.sh --global --overwrite
@@ -49,8 +49,8 @@ cd orchestrator
 ### What Gets Installed
 
 **`--global` installs to `~/.claude/`:**
-- `agents/` - Agent definitions (7 files)
-- `skills/` - Skill definitions (14 directories)
+- `agents/jarvis/` - Agent definitions (7 files, namespaced)
+- `skills/jarvis/` - Skill definitions (14 directories, namespaced)
 - `hooks/scripts/` - Hook scripts (5 files) + shared library
 - `settings.json` - Hook and MCP configuration
 - `policy/` - PRINCIPLES.md, RULES.md, GUIDELINES.md
@@ -58,7 +58,11 @@ cd orchestrator
 - `templates/` - Vision, Blueprint, PRD, Architecture, ADR, Roadmap, Backlog, Issues
 
 **`--project` installs to `<path>/`:**
-- `.claude/settings.json` - Project settings with prompt-based hook examples
+- `.claude/agents/jarvis/` - Project-local agent namespace
+- `.claude/skills/jarvis/` - Project-local skill namespace
+- `.claude/templates/` - Project-local template copies
+- `.claude/policy/` - Project-local policy copies
+- `.claude/workflows/` - Project-local workflow copies
 - `.serena/project.yml` - Auto-generated via `uvx` (language auto-detection)
 - `docs/policy/` - RULES.md, GUIDELINES.md templates
 - `docs/knowledge/` - Project knowledge base
@@ -167,7 +171,13 @@ After installation, your project will have:
 ```
 your-project/
 ├── .claude/
-│   └── settings.json     # Project settings with prompt-based hooks
+│   ├── agents/
+│   │   └── jarvis/       # Project-local AgentOrchestrator agents
+│   ├── skills/
+│   │   └── jarvis/       # Project-local AgentOrchestrator skills
+│   ├── templates/        # Project-local templates
+│   ├── policy/           # Project-local policy copies
+│   └── workflows/        # Project-local workflow copies
 ├── .serena/
 │   └── project.yml       # Auto-generated Serena project config
 ├── docs/
@@ -235,7 +245,7 @@ Installed to `~/.claude/settings.json`:
 
 ### Project Hooks (prompt-based)
 
-Installed to `.claude/settings.json`:
+Optional in `.claude/settings.json` (not auto-provisioned by `--project`):
 
 | Event | Type | Purpose |
 |-------|------|---------|
@@ -259,7 +269,7 @@ Installed by `--global` flag. Contains:
 
 ### Project Settings (`.claude/settings.json`)
 
-Installed by `--project` flag. Contains:
+Not auto-installed by `--project` (add manually if needed). Typical contents:
 - Project-specific hooks (prompt-based examples)
 - Inherits MCP and permissions from global
 
@@ -271,9 +281,9 @@ Three-tier policy structure:
 
 | Location | Purpose | Installed To |
 |----------|---------|--------------|
-| `global/policy/` | Framework-wide policies for all projects | `~/.claude/policy/` |
-| `docs/policy/` | Orchestrator project-specific policies | Not installed |
-| `project/docs/policy/` | Project template (RULES.md, GUIDELINES.md) | `<project>/docs/policy/` |
+| `package/policy/` | Framework-wide policy source in this repo | `~/.claude/policy/` and `<project>/.claude/policy/` |
+| `docs/policy/` | Orchestrator repo policy docs | In-repo only |
+| `<project>/docs/policy/` | Project template output (STANDARDS, GUIDELINES) | `<project>/docs/policy/` |
 
 **Policy files**:
 - `PRINCIPLES.md` - Core software engineering principles
@@ -286,7 +296,7 @@ Projects can customize `<project>/docs/policy/` files to supplement (not replace
 
 ## Templates
 
-Orchestrator provides templates for all artifact types in `~/.claude/templates/`:
+Orchestrator template source lives in `package/templates/` and is installed to `~/.claude/templates/` (global) and `<project>/.claude/templates/` (project-local):
 
 | Template | Purpose | Output Location |
 |----------|---------|-----------------|
@@ -331,9 +341,9 @@ Milestone (v0, v1)     -> Git Tag
 - [Roadmap](docs/objectives/ROADMAP.md) - Milestones and phases
 - [Backlog](docs/development/BACKLOG.md) - Task tracking
 - [Serena Integration](.serena/README.md) - Memory system guide
-- [Hook System](.claude/hooks/README.md) - Hook documentation
-- [Principles](global/policy/PRINCIPLES.md) - Software engineering principles
-- [Rules](global/policy/RULES.md) - Agent behavioral rules
+- [Hook System](package/hooks/README.md) - Hook documentation
+- [Principles](package/policy/PRINCIPLES.md) - Software engineering principles
+- [Rules](package/policy/RULES.md) - Agent behavioral rules
 - [Standards](docs/policy/STANDARDS.md) - Project technical standards
 - [Guidelines](docs/policy/GUIDELINES.md) - User guidance
 

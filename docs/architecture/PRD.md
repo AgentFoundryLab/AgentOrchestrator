@@ -69,7 +69,7 @@ Create a minimalist orchestration layer where the **main Claude agent** coordina
 
 ### FR1: Agent System
 
-> **Terminology**: Claude Code's Task tool uses `subagent_type` to invoke agents defined in `.claude/agents/`. This PRD uses "agent" consistently; "sub-agent" in diagrams refers to the Task tool invocation pattern.
+> **Terminology**: Claude Code's Task tool uses `subagent_type` to invoke installed agents (global `~/.claude/agents/jarvis/` or project-local `.claude/agents/jarvis/`). This PRD uses "agent" consistently; "sub-agent" in diagrams refers to the Task tool invocation pattern.
 
 Seven agents, each with clear responsibilities:
 
@@ -83,7 +83,7 @@ Seven agents, each with clear responsibilities:
 | **Deployer** | Build, deploy, release | Deployment artifacts |
 | **Tech Writer** | Documentation, runbooks | Docs, README |
 
-**FR1.1**: Each agent defined in `.claude/agents/<name>.md`
+**FR1.1**: Agent source files live in `package/agents/<name>.md` and install to `~/.claude/agents/jarvis/<name>.md` (global) or `<project>/.claude/agents/jarvis/<name>.md` (project-local)
 **FR1.2**: Agents invoked via Claude Code's Task tool with `subagent_type` parameter
 **FR1.3**: Agents have explicit boundaries (will do / won't do)
 **FR1.4**: Agents produce typed artifacts
@@ -115,7 +115,7 @@ You are [agent role]. Your task is to invoke the [skill-name] skill and...
 
 ### FR2: Skill Interface
 
-> **Note**: AgentOrchestrator uses skills exclusively (`.claude/skills/`). Skills support additional features over legacy commands: context forking, agent delegation, and lifecycle hooks.
+> **Note**: AgentOrchestrator skill source lives in `package/skills/` and installs to `~/.claude/skills/jarvis/` (global) or `<project>/.claude/skills/jarvis/` (project-local). Skills support additional features over legacy commands: context forking, agent delegation, and lifecycle hooks.
 
 Fourteen user-facing skills:
 
@@ -194,14 +194,14 @@ Artifacts: Requirements > Criteria > Rationale > Background > Examples
 **Invocation**:
 ```
 /distill <path|type> [level]           # Specific item or all of type
-/distill global/policy/RULES.md        # Single file
+/distill package/policy/RULES.md       # Single file (repo source)
 /distill --all policy                  # All policy files
 /distill --all memory                  # All Serena memories
 ```
 
 **Out of scope**: Conversation context (use built-in `/compact`)
 
-**FR2.1**: Skills installed from `.claude/skills/` to `~/.claude/skills/`
+**FR2.1**: Skills installed from `package/skills/` to `~/.claude/skills/jarvis/` (and optionally `<project>/.claude/skills/jarvis/`)
 **FR2.2**: Skills with `disable-model-invocation: false` (default) can be auto-invoked by Claude
 **FR2.3**: Agents are slim wrappers that invoke corresponding skills
 **FR2.4**: `/orchestrate` calls agents per defined workflows; agents invoke skills
@@ -237,7 +237,7 @@ Skill instructions with:
 #### Skill Directory Structure
 
 ```text
-.claude/skills/
+package/skills/
 └── my-skill/
     ├── SKILL.md           # Main instructions (required)
     ├── template.md        # Template for Claude to fill in
@@ -298,7 +298,7 @@ Roadmap item → /spec → /plan → /implement → /validate
 Roadmap item → /plan → /implement
 ```
 
-**FR4.1**: Full workflow defined in `global/workflows/<name>.md`; Light workflow embedded as fallback
+**FR4.1**: Full workflow defined in `package/workflows/<name>.md`; Light workflow embedded as fallback
 **FR4.2**: Each step produces artifact file in target project repo
 **FR4.3**: `/orchestrate` determines appropriate workflow depth based on complexity
 **FR4.4**: Templates renamed during install (skipped if file already exists)
@@ -420,13 +420,13 @@ orchestrator/
 │       └── README.md
 │
 │   # ════════════════════════════════════════════════════════════════
-│   # .claude/ - CLAUDE-NATIVE (maps to Claude Code structures)
+│   # package/ - SOURCE LAYOUT (deployed into Claude Code structures)
 │   # ════════════════════════════════════════════════════════════════
 │
-├── .claude/
+├── package/
 │   ├── settings.json            # Claude Code settings
 │   │
-│   ├── agents/                  # → Task tool subagent_type (slim wrappers)
+│   ├── agents/                  # → ~/.claude/agents/jarvis/ and <target>/.claude/agents/jarvis/
 │   │   ├── business-analyst.md  # BA for /spec
 │   │   ├── architect.md
 │   │   ├── project-manager.md
@@ -435,7 +435,7 @@ orchestrator/
 │   │   ├── deployer.md
 │   │   └── tech-writer.md
 │   │
-│   ├── skills/                  # → ~/.claude/skills/
+│   ├── skills/                  # → ~/.claude/skills/jarvis/ and <target>/.claude/skills/jarvis/
 │   │   ├── orchestrate/         # Orchestration
 │   │   │   └── SKILL.md
 │   │   ├── spec/                # Agent-backed (BA)
@@ -469,11 +469,11 @@ orchestrator/
 │       └── README.md
 │
 │   # ════════════════════════════════════════════════════════════════
-│   # global/ - HIGHER-LEVEL ABSTRACTIONS (deployed to ~/.claude/)
+│   # package/ - SHARED ABSTRACTIONS (deployed to ~/.claude/)
 │   # ════════════════════════════════════════════════════════════════
 │
-├── global/
 │   ├── settings.json            # Global settings template
+│   ├── mcp.json                 # Global MCP servers template
 │   ├── policy/                  # Principles/Rules/Guidelines
 │   │   ├── RULES.md
 │   │   └── PRINCIPLES.md
@@ -491,21 +491,15 @@ orchestrator/
 │       └── issues.md
 │
 │   # ════════════════════════════════════════════════════════════════
-│   # project/ - PER-PROJECT TEMPLATES (instantiated in target repo)
+│   # project installation output (same repo dogfood or external target)
 │   # ════════════════════════════════════════════════════════════════
 │
-├── project/                     # ══ PER-PROJECT TEMPLATES ══
-│   ├── settings.json            # Project settings template
-│   ├── objectives/              # Goals/Roadmap
-│   │   ├── GOALS.md.template
-│   │   └── ROADMAP.md.template
-│   ├── knowledge/               # Knowledge Base setup
-│   │   └── README.md            # Instructions (Serena memories)
-│   └── reports/                 # Skill output reports (git-versioned)
-│       ├── analysis/            # /analyse output
-│       │   └── .gitkeep
-│       └── research/            # /research output
-│           └── .gitkeep
+│   # <target>/.claude/agents/jarvis/*
+│   # <target>/.claude/skills/jarvis/*
+│   # <target>/.claude/{policy,workflows,templates}
+│   # <target>/docs/{policy,objectives,architecture,development,knowledge}
+│   # <target>/reports/{analysis,research}
+│   # <target>/.serena/project.yml
 │
 └── .serena/                     # Local storage for Serena MCP (transient artifacts)
     └── README.md                # /validate, /reflect, /reflexion → stored here
@@ -514,31 +508,30 @@ orchestrator/
 **Installation targets:**
 
 ```bash
-install.sh --global                    # .claude/ + global/ → ~/.claude/
-install.sh --project <path>            # project/ → <path>/ (rel or abs)
-install.sh --all <path>                # Both targets
+install.sh --global                    # package/ → ~/.claude/ (agents/skills under jarvis namespace)
+install.sh --project <path>            # package/ → <path>/ (project-local .claude/ + docs/reports scaffolding)
+install.sh --global --project <path>   # Both targets
 ```
 
 **Abstraction layers:**
 
 | Layer | Contents | Install Flag | Target |
 | ----- | -------- | ------------ | ------ |
-| `.claude/` | agents, skills, hooks, settings | `--global` | `~/.claude/` (CC-native) |
-| `global/` | policy, workflows, templates | `--global` | `~/.claude/` (higher-level) |
-| `project/` | objectives, knowledge, reports | `--project <path>` | `<path>/` (per-project) |
+| `package/agents`, `package/skills` | agent/skill source | `--global` | `~/.claude/agents/jarvis/`, `~/.claude/skills/jarvis/` |
+| `package/{hooks,settings,mcp,policy,workflows,templates}` | runtime/shared assets | `--global` | `~/.claude/`, `~/.claude.json` |
+| `package/*` + docs/reports scaffolding | project-local installation | `--project <path>` | `<path>/.claude/*`, `<path>/docs/*`, `<path>/reports/*`, `<path>/.serena/` |
 | `docs/` | Orchestrator's own project docs (dogfooding) | - | Not deployed |
 
 **Data Foundation mapping:**
 
 | Data Category | Orchestrator Location | Deployed via | Target |
 | --------------- | ------------ | ------------ | ------ |
-| Policy | `global/policy/` | `--global` | `~/.claude/policy/` |
-| Procedures (workflows) | `global/workflows/` | `--global` | `~/.claude/workflows/` |
-| Procedures (skills) | `.claude/skills/` | `--global` | `~/.claude/skills/` |
-| Actors | `.claude/agents/` | `--global` | `~/.claude/agents/` |
-| Objectives | `project/objectives/` | `--project <path>` | `<path>/objectives/` |
-| Knowledge Base | `project/knowledge/` | `--project <path>` | `<path>/knowledge/` + Serena |
-| Reports (file) | `project/reports/` | `--project <path>` | `<path>/reports/` (analysis, research) |
+| Policy | `package/policy/` | `--global`, `--project` | `~/.claude/policy/`, `<path>/.claude/policy/` |
+| Procedures (workflows) | `package/workflows/` | `--global`, `--project` | `~/.claude/workflows/`, `<path>/.claude/workflows/` |
+| Procedures (skills) | `package/skills/` | `--global`, `--project` | `~/.claude/skills/jarvis/`, `<path>/.claude/skills/jarvis/` |
+| Actors | `package/agents/` | `--global`, `--project` | `~/.claude/agents/jarvis/`, `<path>/.claude/agents/jarvis/` |
+| Knowledge docs | `package/templates/{knowledge,standards,guidelines}.md` | `--project <path>` | `<path>/docs/knowledge/README.md`, `<path>/docs/policy/*` |
+| Reports (file) | scaffolded directories | `--project <path>` | `<path>/reports/{analysis,research}/` |
 | Transient | Serena memories (project) | - | Serena (validation, reflection, reflexion) |
 
 **Total: ~40 files**

@@ -44,13 +44,15 @@ Priority order for preservation (highest → lowest):
 ### 1. Run Estimation Script
 
 ```bash
-.claude/skills/distill/scripts/estimate_distill.py "$FILE" [content_type]
+package/skills/distill/scripts/estimate_distill.py "$FILE" [content_type]
+# Installed alternative:
+# .claude/skills/jarvis/distill/scripts/estimate_distill.py "$FILE" [content_type]
 ```
 
 ### 2. Present Results & Confirm
 
 ```
-/distill global/policy/RULES.md
+/distill package/policy/RULES.md
 
 Tokens: ~4364
 
@@ -77,7 +79,9 @@ Remove ONLY what "May Remove" permits for selected level.
 After writing, measure actual tokens:
 
 ```bash
-.claude/skills/distill/scripts/estimate_distill.py "$FILE" [content_type]
+package/skills/distill/scripts/estimate_distill.py "$FILE" [content_type]
+# Installed alternative:
+# .claude/skills/jarvis/distill/scripts/estimate_distill.py "$FILE" [content_type]
 ```
 
 Report (compare against initial estimation, not generic range):

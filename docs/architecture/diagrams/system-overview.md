@@ -11,7 +11,7 @@
 |                      CLAUDE CODE (Native Runtime)                        |
 |                                                                          |
 |  Built-in capabilities (NOT Orchestrator components):                            |
-|  - Skill routing: /skill -> ~/.claude/skills/skill/SKILL.md              |
+|  - Skill routing: /skill -> ~/.claude/skills/jarvis/skill/SKILL.md       |
 |  - Task tool: spawns subagents with subagent_type                       |
 |  - Hook execution: runs lifecycle event scripts                         |
 |                                                                          |

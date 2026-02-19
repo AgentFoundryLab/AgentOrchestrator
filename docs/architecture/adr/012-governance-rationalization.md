@@ -10,7 +10,7 @@
 
 AgentOrchestrator's policy structure had accumulated several problems:
 
-1. **Duplication**: `docs/policy/RULES.md` (323 lines) was a superset of `global/policy/RULES.md` (115 lines) — first 115 lines identical, rest was elaboration
+1. **Duplication**: `docs/policy/RULES.md` (323 lines) was a superset of `package/policy/RULES.md` (115 lines) — first 115 lines identical, rest was elaboration
 2. **Dead files**: Neither `docs/policy/RULES.md` nor `docs/policy/GUIDELINES.md` were loaded into agent context
 3. **Naming collision**: Both tiers used `RULES.md`, making it unclear which rules applied where
 4. **Missing onboarding**: No skill existed to generate project-specific policies from codebase analysis

@@ -93,7 +93,7 @@ Before completing, verify:
 
 ## Template Reference
 
-Full template available at `~/.claude/templates/` (or `.claude/templates/`):
+Template source: `package/templates/` (installed to `~/.claude/templates/` or `.claude/templates/`):
 - `prd.md`
 
 Use the PRD template structure:

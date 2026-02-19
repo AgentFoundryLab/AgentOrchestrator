@@ -212,7 +212,7 @@ Keep policies as documentation only.
 
 ## References
 
-- [PRINCIPLES.md](../../../global/policy/PRINCIPLES.md)
-- [RULES.md](../../../global/policy/RULES.md)
-- [GUIDELINES.md](../../../global/policy/GUIDELINES.md)
+- [PRINCIPLES.md](../../../package/policy/PRINCIPLES.md)
+- [RULES.md](../../../package/policy/RULES.md)
+- [GUIDELINES.md](../../../package/templates/guidelines.md)
 - [PRD.md](../PRD.md)

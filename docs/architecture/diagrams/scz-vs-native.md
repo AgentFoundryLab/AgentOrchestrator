@@ -7,7 +7,7 @@
 |              Orchestrator PROVIDES (Configuration)                                 |
 +==========================================================================+
 |                                                                          |
-|  SKILLS (.claude/skills/)        AGENTS (.claude/agents/)               |
+|  SKILLS (package/skills/)        AGENTS (package/agents/)               |
 |  +------------------------+      +------------------------+             |
 |  | spec/SKILL.md          |      | business-analyst.md    |             |
 |  | design/SKILL.md        |      | architect.md           |             |
@@ -18,7 +18,7 @@
 |  | document/SKILL.md      |      | tech-writer.md         |             |
 |  | orchestrate/SKILL.md   |      +------------------------+             |
 |  | reflexion/SKILL.md     |                                             |
-|  | reflect/SKILL.md       |      HOOKS (.claude/hooks/scripts/)         |
+|  | reflect/SKILL.md       |      HOOKS (package/hooks/scripts/)         |
 |  | optimize/SKILL.md      |      +------------------------+             |
 |  | analyse/SKILL.md       |      | inject-context.sh      |             |
 |  | research/SKILL.md      |      | remind-validate.sh     |             |
@@ -26,7 +26,7 @@
 |  +------------------------+      | checkpoint-session.sh  |             |
 |                                   +------------------------+             |
 |                                                                          |
-|  POLICY (global/policy/)         WORKFLOWS (global/workflows/)          |
+|  POLICY (package/policy/)        WORKFLOWS (package/workflows/)         |
 |  +------------------------+      +------------------------+             |
 |  | RULES.md               |      | SWE |             |
 |  | PRINCIPLES.md          |      | meta-learning|            |

@@ -202,11 +202,11 @@ What can be optimized:
 
 | Target | Location | Example Change |
 |--------|----------|----------------|
-| Agent instructions | `.claude/agents/*.md` | Add clarifying guidance |
-| Skill workflows | `.claude/skills/*/SKILL.md` | Improve process steps |
-| Hook prompts | `.claude/hooks/scripts/*.sh` | Refine reminder text |
-| Rules | `global/policy/RULES.md` | Add new rule from pattern |
-| Workflow templates | `global/workflows/*.md` | Adjust decision criteria |
+| Agent instructions | `package/agents/*.md` or `.claude/agents/jarvis/*.md` | Add clarifying guidance |
+| Skill workflows | `package/skills/*/SKILL.md` or `.claude/skills/jarvis/*/SKILL.md` | Improve process steps |
+| Hook prompts | `package/hooks/scripts/*.sh` or `.claude/hooks/scripts/*.sh` | Refine reminder text |
+| Rules | `package/policy/RULES.md` or `~/.claude/policy/RULES.md` | Add new rule from pattern |
+| Workflow templates | `package/workflows/*.md` or `~/.claude/workflows/*.md` | Adjust decision criteria |
 
 ---
 
