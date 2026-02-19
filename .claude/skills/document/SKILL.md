@@ -61,7 +61,7 @@ Documentation updates organized by impact area with propagation paths.
 | **Specification** | Features, requirements, user stories, acceptance criteria | PRD |
 | **Architecture** | Components, patterns, dependencies, decisions | ARCHITECTURE |
 | **Development** | Task organization, priorities, status | ROADMAP/BACKLOG |
-| **Documentation** | All docs: arch docs, policies, knowledge, guides | Varies |
+| **Documentation** | All docs: arch docs, policies, knowledge, runbooks | Varies |
 
 ### Criticality (Severity - Independent of Area)
 
@@ -481,12 +481,12 @@ Check documentation quality:
 - Architecture docs (ARCHITECTURE.md)
 - Policy docs (PRINCIPLES, RULES, GUIDELINES)
 - Knowledge base (docs/knowledge/)
-- User guides
+- User runbooks
 - API docs
 
 **Includes both:**
 - Specification docs (PRD, ARCHITECTURE, ADRs)
-- Developer docs (README, CLAUDE.md, guides)
+- Developer docs (README, CLAUDE.md, runbooks)
 
 ---
 

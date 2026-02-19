@@ -90,7 +90,7 @@ Phases:
 5. **Implementation**: Code and tests
 6. **Validation**: Testing, verification
 7. **Deployment**: Build, deploy, release
-8. **Documentation**: User docs, guides
+8. **Documentation**: User docs, runbooks
 
 ### Medium Workflow
 **Use when**: New feature, moderate complexity, clear scope

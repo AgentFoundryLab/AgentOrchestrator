@@ -10,7 +10,7 @@ Store domain-specific information that helps agents understand your project:
 - Domain concepts and terminology
 - API patterns and conventions
 - Architecture decisions and rationale
-- Troubleshooting guides
+- Troubleshooting runbooks
 - Team conventions
 
 ---
@@ -38,7 +38,7 @@ knowledge/
 │   └── testing.md      # Testing patterns
 ├── decisions/          # Key decisions
 │   └── tech-stack.md   # Technology choices
-└── guides/             # How-to guides
+└── runbooks/             # Procedures, SOPs, workflows
     └── debugging.md    # Common issues
 ```
 

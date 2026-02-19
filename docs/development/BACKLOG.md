@@ -174,7 +174,7 @@
 - Valid agent frontmatter
 - `skills:` includes `document`
 - `hooks.SubagentStop` configured
-- Boundaries: Will (docs, guides) / Won't (code)
+- Boundaries: Will (docs, runbooks) / Won't (code)
 - Tools: Read, Write, Grep
 
 ---

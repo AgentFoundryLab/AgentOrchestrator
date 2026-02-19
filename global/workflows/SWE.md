@@ -37,7 +37,7 @@ Three workflow depths based on project complexity:
                                    │               │               │
                                    ▼               ▼               ▼
                               Validation      Deployed         README +
-                               Report         Artifacts         Guides
+                               Report         Artifacts         Runbooks
 ```
 
 **Phases**:
@@ -75,7 +75,7 @@ Three workflow depths based on project complexity:
 7. **Documentation** (`/document` → Tech Writer)
    - Input: Deployed feature
    - Output: `docs/`, `README.md`
-   - Activities: User docs, API docs, guides
+   - Activities: User docs, API docs, runbooks
 
 ---
 

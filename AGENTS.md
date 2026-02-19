@@ -106,7 +106,7 @@ Changes are classified by two orthogonal dimensions: **Area** (what changed) and
 | **Specification** | Features, requirements, user stories, acceptance criteria | PRD |
 | **Architecture** | Components, patterns, dependencies, decisions | ARCHITECTURE |
 | **Development** | Task organization, priorities, status | ROADMAP/BACKLOG |
-| **Documentation** | All docs: arch docs, policies, knowledge, guides | Varies |
+| **Documentation** | All docs: arch docs, policies, knowledge, runbooks | Varies |
 
 ### Criticality Levels
 
@@ -186,7 +186,7 @@ Files may not exist until `/onboard` runs — missing `@`-refs are silently skip
 | `docs/objectives/` | VISION.md, BLUEPRINT.md, ROADMAP.md |
 | `docs/architecture/` | PRD.md, ARCHITECTURE.md, adr/ |
 | `docs/development/` | BACKLOG.md, ISSUES.md |
-| `docs/knowledge/` | Domain concepts, patterns, guides |
+| `docs/knowledge/` | Domain concepts, patterns, runbooks |
 
 ### Templates
 

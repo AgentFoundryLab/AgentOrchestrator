@@ -81,7 +81,7 @@ Seven agents, each with clear responsibilities:
 | **Developer** | Implementation, code changes | Code, tests |
 | **Validator** | Testing, acceptance criteria checking | Validation report |
 | **Deployer** | Build, deploy, release | Deployment artifacts |
-| **Tech Writer** | Documentation, guides | Docs, README |
+| **Tech Writer** | Documentation, runbooks | Docs, README |
 
 **FR1.1**: Each agent defined in `.claude/agents/<name>.md`
 **FR1.2**: Agents invoked via Claude Code's Task tool with `subagent_type` parameter
@@ -131,7 +131,7 @@ Fourteen user-facing skills:
 | `/implement` | Code implementation, tests, build | Developer | Code, tests | File |
 | `/validate` | Quality assessment, acceptance criteria validation | Validator | Validation record | Serena |
 | `/deploy` | Build, deploy, release | Deployer | Deployment artifacts | File |
-| `/document` | Documentation, guides | Tech Writer | Docs, README | File |
+| `/document` | Documentation, runbooks | Tech Writer | Docs, README | File |
 
 **Orchestration skill**:
 

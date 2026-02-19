@@ -139,7 +139,7 @@
   - Implement (code, tests, build)
   - Validate (quality, acceptance criteria)
   - Deploy (build, release)
-  - Document (docs, guides)
+  - Document (docs, runbooks)
   - Reflexion (error patterns/known issues/solutions)
   - Reflect (session meta-learning)
   - Optimize (fine-tune orchestrator/agent/policy instructions)

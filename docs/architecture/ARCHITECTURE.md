@@ -154,7 +154,7 @@ Agents are specialized workers invoked via Claude Code's Task tool with `subagen
 | **Developer** | Implementation, code changes | Read, Write, Edit, Bash, Task | - | default | Code, tests |
 | **Validator** | Testing, acceptance criteria checking | Read, Grep, Glob, Bash | Write, Edit | default | Validation report |
 | **Deployer** | Build, deploy, release | Read, Write, Bash | Edit | **plan** | Deployment artifacts |
-| **Tech Writer** | Documentation, guides | Read, Write, Grep, Glob, AskUserQuestion | Edit | default | Docs, README |
+| **Tech Writer** | Documentation, runbooks | Read, Write, Grep, Glob, AskUserQuestion | Edit | default | Docs, README |
 
 **Notes on Support Agents:**
 
