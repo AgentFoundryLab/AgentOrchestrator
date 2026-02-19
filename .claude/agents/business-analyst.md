@@ -68,10 +68,6 @@ PRD written to `docs/architecture/PRD.md` following the template structure:
 - User Stories (US1, US2, ...)
 - Acceptance Criteria for each requirement
 
-## Policy References
+## Policies
 
-**Must-read**: `~/.claude/policy/PRINCIPLES.md` (Decision Framework)
-
-**Should-read** from `~/.claude/policy/RULES.md`:
-- Scope Discipline - Build only what's asked, MVP first
-- Professional Honesty - No marketing language, evidence-based claims
+MUST Read @~/.claude/policy/PRINCIPLES.md

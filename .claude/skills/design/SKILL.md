@@ -1,7 +1,7 @@
 ---
 name: design
 description: Create architecture documentation and ADRs from PRD requirements
-argument-hint: [PRD path or architecture focus area]
+argument-hint: PRD path or architecture focus area
 user-invocable: true
 allowed-tools:
   - Read
@@ -36,8 +36,18 @@ Transform PRD requirements into:
 
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - ADRs: `docs/architecture/adr/NNN-decision-name.md`
+- Data Model: `docs/architecture/technical/data-model.md` (entities, attributes, relationships)
+- Contracts: `docs/architecture/technical/contracts.md` (API signatures, events, interfaces)
 
 ## Workflow
+
+### 0. Check Project Standards
+If `docs/policy/STANDARDS.md` exists, read it to understand:
+- Architecture patterns the project follows
+- Naming conventions and code organization rules
+- Technology constraints and preferences
+
+These standards inform design decisions throughout the workflow.
 
 ### 1. Read Requirements
 Load and understand the PRD:
@@ -109,6 +119,26 @@ For each significant decision, create an ADR:
 - [Link to relevant requirements]
 ```
 
+### 9. Define Data Model
+Document the core data entities at `docs/architecture/technical/data-model.md`:
+- Entity names and descriptions
+- Attributes with types and constraints
+- Relationships (1:1, 1:N, M:N)
+- Lifecycle states if applicable
+
+### 10. Define Contracts
+Document API and integration contracts at `docs/architecture/technical/contracts.md`:
+- API endpoint signatures (method, path, request/response shapes)
+- Event schemas (name, payload, publisher, subscribers)
+- Interface definitions (function signatures, type contracts)
+- Error response formats
+
+## Template Reference
+
+Full templates available at `~/.claude/templates/` (or `.claude/templates/`):
+- `architecture.md` — Complete ARCHITECTURE structure
+- `adr.md` — ADR template
+
 ## Architecture Template
 
 ```markdown
@@ -150,9 +180,12 @@ For each significant decision, create an ADR:
 ```
 
 ## Validation Checklist
+- [ ] Project standards checked (if `docs/policy/STANDARDS.md` exists)
 - [ ] All FRs have corresponding components
 - [ ] All components have clear responsibilities
 - [ ] Interfaces are defined between components
 - [ ] NFRs are addressed in design
 - [ ] Risks are identified with mitigations
 - [ ] Significant decisions have ADRs
+- [ ] Data model documented (entities, relationships)
+- [ ] Contracts defined (APIs, events, interfaces)

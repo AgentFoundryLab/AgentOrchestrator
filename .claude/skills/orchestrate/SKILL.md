@@ -1,7 +1,7 @@
 ---
 name: orchestrate
 description: Guide a project from idea to implementation using the appropriate workflow depth
-argument-hint: <project idea or goal>
+argument-hint: project idea or goal
 user-invocable: true
 allowed-tools:
   - Read
@@ -79,23 +79,24 @@ Artifacts produced by each phase:
 **Use when**: New product, complex system, multiple components, unclear requirements
 
 ```
-/spec → /design → /plan → /implement → /validate → /deploy → /document
+/onboard → /spec → /design → /plan → /implement → /validate → /deploy → /document
 ```
 
 Phases:
-1. **Specification**: Elicit requirements, define acceptance criteria
-2. **Design**: Architecture, components, ADRs
-3. **Planning**: Milestones, epics, tasks
-4. **Implementation**: Code and tests
-5. **Validation**: Testing, verification
-6. **Deployment**: Build, deploy, release
-7. **Documentation**: User docs, guides
+1. **Onboarding**: Analyze project, generate STANDARDS + GUIDELINES (skip if already exist)
+2. **Specification**: Elicit requirements, define acceptance criteria
+3. **Design**: Architecture, components, ADRs
+4. **Planning**: Milestones, epics, tasks
+5. **Implementation**: Code and tests
+6. **Validation**: Testing, verification
+7. **Deployment**: Build, deploy, release
+8. **Documentation**: User docs, guides
 
 ### Medium Workflow
 **Use when**: New feature, moderate complexity, clear scope
 
 ```
-/spec → /plan → /implement → /validate
+/onboard → /spec → /plan → /implement → /validate
 ```
 
 Phases:
@@ -108,7 +109,7 @@ Phases:
 **Use when**: Simple change, bug fix, clear task
 
 ```
-/plan → /implement
+(check STANDARDS) → /plan → /implement
 ```
 
 Phases:

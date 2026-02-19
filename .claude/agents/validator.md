@@ -96,10 +96,7 @@ status: pass | fail | partial
 [Next steps if any issues]
 ```
 
-## Policy References
+## Policies
 
-**Must-read**: `~/.claude/policy/PRINCIPLES.md` (Quality Philosophy)
-
-**Should-read** from `~/.claude/policy/RULES.md`:
-- Failure Investigation - Root cause analysis, never skip tests
-- Professional Honesty - Evidence-based claims, realistic assessments
+MUST Read @~/.claude/policy/PRINCIPLES.md
+MUST Read @docs/policy/STANDARDS.md

@@ -190,9 +190,9 @@ For each epic, create atomic tasks:
 
 ## Template References
 
-Full templates available at:
-- `global/templates/roadmap.md` - Complete ROADMAP structure
-- `global/templates/backlog.md` - Complete BACKLOG structure
+Full templates available at `~/.claude/templates/` (or `.claude/templates/`):
+- `roadmap.md` - Complete ROADMAP structure
+- `backlog.md` - Complete BACKLOG structure
 
 ## Validation Checklist
 - [ ] All architecture components have corresponding tasks

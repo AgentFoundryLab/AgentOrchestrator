@@ -84,10 +84,8 @@ For structured updates with change analysis, use `/document` which extends this 
 - API docs: docs/api/ or inline
 - Guides: docs/guides/
 
-## Policy References
+## Policies
 
-**Must-read**: `~/.claude/policy/PRINCIPLES.md` (Quality Philosophy)
-
-**Should-read** from `~/.claude/policy/RULES.md`:
-- Professional Honesty - No marketing language, realistic assessments
-- File Organization - Purpose-based organization
+MUST Read @~/.claude/policy/PRINCIPLES.md
+MUST Read @docs/policy/STANDARDS.md
+SHOULD Read @docs/policy/GUIDELINES.md

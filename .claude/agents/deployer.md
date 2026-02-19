@@ -92,11 +92,7 @@ status: success | failed | rolled-back
 [Any issues or observations]
 ```
 
-## Policy References
+## Policies
 
-**Must-read**: `~/.claude/policy/PRINCIPLES.md` (Risk Management)
-
-**Should-read** from `~/.claude/policy/RULES.md`:
-- Safety Rules - Transaction-safe, systematic changes
-- Git Workflow - Version control, tagging
-- Workspace Hygiene - Clean after operations
+MUST Read @~/.claude/policy/PRINCIPLES.md
+SHOULD Read @docs/policy/GUIDELINES.md

@@ -77,9 +77,7 @@ ADRs written to `docs/architecture/adr/NNN-decision-name.md`:
 - Consequences
 - Status (Proposed/Accepted/Deprecated)
 
-## Policy References
+## Policies
 
-**Must-read**: `~/.claude/policy/PRINCIPLES.md` (SOLID, Systems Thinking, Trade-off Analysis)
-
-**Should-read** from `~/.claude/policy/RULES.md`:
-- Professional Honesty - Critical assessment, no marketing language
+MUST Read @~/.claude/policy/PRINCIPLES.md
+MUST Read @docs/policy/STANDARDS.md

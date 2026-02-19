@@ -333,7 +333,8 @@ Milestone (v0, v1)     -> Git Tag
 - [Serena Integration](.serena/README.md) - Memory system guide
 - [Hook System](.claude/hooks/README.md) - Hook documentation
 - [Principles](global/policy/PRINCIPLES.md) - Software engineering principles
-- [Rules](docs/policy/RULES.md) - Behavioral rules
+- [Rules](global/policy/RULES.md) - Agent behavioral rules
+- [Standards](docs/policy/STANDARDS.md) - Project technical standards
 - [Guidelines](docs/policy/GUIDELINES.md) - User guidance
 
 ---

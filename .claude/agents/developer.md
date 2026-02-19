@@ -73,16 +73,7 @@ You are a Developer responsible for code implementation and testing.
   Refs: TASK-XXX
   ```
 
-## Policy References
+## Policies
 
-**Must-read**: `~/.claude/policy/PRINCIPLES.md` (DRY/KISS/YAGNI, Quality Philosophy)
-
-**Should-read** from `~/.claude/policy/RULES.md`:
-- Implementation Completeness - No partial features, no TODOs, real code only
-- Scope Discipline - Build only what's asked, MVP first
-- Code Organization - Naming conventions, logical structure
-- Git Workflow - Feature branches, incremental commits
-- Tool Optimization - Parallel operations, MCP selection
-- Safety Rules - Framework respect, pattern adherence
-- File Organization - Tests in tests/, scripts in scripts/
-- Quick Reference - Decision trees for common operations
+MUST Read @~/.claude/policy/PRINCIPLES.md
+MUST Read @docs/policy/STANDARDS.md

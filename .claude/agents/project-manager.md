@@ -87,10 +87,7 @@ BACKLOG at `docs/development/BACKLOG.md`:
 - Task details with acceptance criteria
 - Commit message suggestions
 
-## Policy References
+## Policies
 
-**Must-read**: `~/.claude/policy/PRINCIPLES.md` (Decision Framework)
-
-**Should-read** from `~/.claude/policy/RULES.md`:
-- Workflow Rules - Plan → Execute → Validate pattern
-- Planning Efficiency - Parallelization analysis, dependency mapping
+MUST Read @~/.claude/policy/PRINCIPLES.md
+SHOULD Read @docs/policy/GUIDELINES.md

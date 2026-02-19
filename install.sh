@@ -49,16 +49,17 @@ What gets installed:
     - skills/           Skill definitions (14 directories)
     - hooks/scripts/    Hook scripts (5 files)
     - settings.json     Hook and MCP configuration
-    - policy/           RULES.md, PRINCIPLES.md, GUIDELINES.md
+    - policy/           PRINCIPLES.md, RULES.md
     - workflows/        SWE.md, meta-learning.md
     - templates/        PRD, architecture, ADR, roadmap, backlog, issues
 
 --project installs to <path>/:
-    - .claude/          settings.json with prompt-based hook examples
-    - .serena/          project.yml (auto-detected languages, requires uvx)
-    - docs/policy/      RULES.md, GUIDELINES.md templates
-    - docs/knowledge/   README.md
+    - docs/             Provisioned folder tree with .gitkeep
+    - docs/policy/      STANDARDS.md, GUIDELINES.md templates (from global/templates/)
+    - docs/knowledge/   README.md (from global/templates/)
     - reports/          analysis/, research/ directories
+    - .serena/          project.yml (auto-detected languages, requires uvx)
+    - Injects @policy refs into existing CLAUDE.md/AGENTS.md/GEMINI.md
 
 EOF
 }
@@ -229,6 +230,31 @@ copy_directory() {
     done
 }
 
+# Inject @-references into existing CLAUDE.md/AGENTS.md/GEMINI.md (idempotent)
+inject_policy_refs() {
+    local target_dir="$1"
+    local sentinel="$2"
+    local refs_block="$3"
+    local backup_dir="$4"
+
+    for md_file in CLAUDE.md AGENTS.md GEMINI.md; do
+        local f="${target_dir}/${md_file}"
+        [ -f "$f" ] || continue
+        if grep -q "$sentinel" "$f" 2>/dev/null; then
+            log_info "Refs present: $f"
+            ((++UNCHANGED))
+        else
+            local backup_file="${backup_dir}/${md_file}"
+            mkdir -p "$(dirname "$backup_file")"
+            cp "$f" "$backup_file"
+            ((++BACKUPS))
+            printf '\n%s\n%s\n' "<!-- ${sentinel} -->" "$refs_block" >> "$f"
+            log_success "Appended refs: $f"
+            ((++PATCHED))
+        fi
+    done
+}
+
 # Install global components to ~/.claude/
 install_global() {
     local target="${HOME}/.claude"
@@ -261,10 +287,14 @@ install_global() {
         merge_json "${SCRIPT_DIR}/global/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
     fi
 
+    # Inject @-references for global policies into CLAUDE/AGENTS/GEMINI.md
+    inject_policy_refs "${HOME}/.claude" "orchestrator:global-refs" \
+        "$(printf 'Read @policy/PRINCIPLES.md\nRead @policy/RULES.md')" "$backup_dir"
+
     log_success "Global installation complete"
 }
 
-# Install project templates to specified path
+# Install project scaffolding to specified path
 install_project() {
     local target="$1"
 
@@ -274,28 +304,40 @@ install_project() {
         exit 1
     fi
 
-    log_info "Installing project templates to $target"
+    log_info "Installing project scaffolding to $target"
 
     local backup_dir
     backup_dir=$(create_backup_dir "$target")
 
-    # Create project structure
-    mkdir -p "${target}/docs/objectives"
-    mkdir -p "${target}/docs/architecture"
-    mkdir -p "${target}/docs/development"
-    mkdir -p "${target}/docs/knowledge"
-    mkdir -p "${target}/reports/analysis"
-    mkdir -p "${target}/reports/research"
+    # 1. Provision docs folder tree with .gitkeep
+    local dirs=(docs/policy docs/objectives docs/architecture docs/architecture/adr
+                docs/development docs/knowledge reports/analysis reports/research)
+    for d in "${dirs[@]}"; do
+        mkdir -p "${target}/${d}"
+        if [ -z "$(ls -A "${target}/${d}" 2>/dev/null)" ]; then
+            touch "${target}/${d}/.gitkeep"
+        fi
+    done
 
-    # Install project/ contents if they exist
-    if [ -d "${SCRIPT_DIR}/project" ]; then
-        copy_directory "${SCRIPT_DIR}/project" "$target" "$backup_dir"
-    fi
+    # 2. Deploy knowledge README from template
+    copy_markdown "${SCRIPT_DIR}/global/templates/knowledge-readme.md" \
+                  "${target}/docs/knowledge/README.md" "$backup_dir" "docs/knowledge/README.md"
 
-    # Initialize Serena project if uvx is available
+    # 3. Deploy policy templates (scaffolds for /onboard to hydrate)
+    copy_markdown "${SCRIPT_DIR}/global/templates/standards.md" \
+                  "${target}/docs/policy/STANDARDS.md" "$backup_dir" "docs/policy/STANDARDS.md"
+    copy_markdown "${SCRIPT_DIR}/global/templates/guidelines.md" \
+                  "${target}/docs/policy/GUIDELINES.md" "$backup_dir" "docs/policy/GUIDELINES.md"
+
+    # 4. Inject @-references for project policies into CLAUDE/AGENTS/GEMINI.md
+    inject_policy_refs "$target" "orchestrator:project-refs" \
+        "$(printf 'Read @docs/policy/STANDARDS.md\nRead @docs/policy/GUIDELINES.md')" "$backup_dir"
+
+    # 5. Initialize Serena project if uvx is available
     init_serena_project "$target"
 
     log_success "Project installation complete"
+    log_info "Run /onboard to generate project-tailored STANDARDS.md + GUIDELINES.md"
 }
 
 # Initialize Serena MCP project configuration
@@ -451,7 +493,8 @@ cleanup_project() {
     backup_dir=$(find_latest_backup "$target")
 
     # Remove installed directories
-    local dirs_to_remove=(".claude" ".serena" "docs/knowledge" "reports/analysis" "reports/research")
+    local dirs_to_remove=(".serena" "docs/policy" "docs/objectives" "docs/architecture"
+                          "docs/development" "docs/knowledge" "reports/analysis" "reports/research")
     for dir in "${dirs_to_remove[@]}"; do
         if [ -d "${target:?}/${dir}" ]; then
             rm -rf "${target:?}/${dir}"
@@ -464,8 +507,16 @@ cleanup_project() {
     rmdir "${target}/docs" 2>/dev/null || true
     rmdir "${target}/reports" 2>/dev/null || true
 
-    # Restore settings if backup exists
-    restore_settings "$target" "$backup_dir"
+    # Strip policy ref sentinel blocks from CLAUDE/AGENTS/GEMINI.md
+    local sentinel="orchestrator:project-refs"
+    for md_file in CLAUDE.md AGENTS.md GEMINI.md; do
+        local f="${target}/${md_file}"
+        if [ -f "$f" ] && grep -q "$sentinel" "$f" 2>/dev/null; then
+            sed -i "/<!-- ${sentinel} -->/,\$d" "$f"
+            log_success "Stripped refs from: $f"
+            ((++PATCHED))
+        fi
+    done
 
     log_success "Project cleanup complete"
 }
