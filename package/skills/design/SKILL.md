@@ -65,7 +65,7 @@ Before designing, identify:
 - Unresolved technology constraints
 - Competing design forces with no clear winner
 
-If any blocking gaps found: return QUESTIONS block to Orch (see AGENTS.md HITL Escalation).
+If any blocking gaps found: return QUESTIONS block to Orch (see `/hitl` shared protocol).
 Do NOT proceed to design with open blocking questions.
 
 ### 2. Research Patterns

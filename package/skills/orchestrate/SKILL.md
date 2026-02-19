@@ -177,14 +177,7 @@ Task(subagent_type="developer", prompt="Implement task T-001: ...")
 **IMPORTANT**: Always use Option A. The orchestrator coordinates; subagents execute.
 
 ### 3b. HITL Relay Loop
-After each agent returns, check for QUESTIONS block:
-1. If QUESTIONS block present:
-   a. Parse questions and options
-   b. Use `AskUserQuestion` to present each to user
-   c. Collect answers
-   d. Re-invoke same agent with answers prepended to prompt
-   e. Repeat until no QUESTIONS block
-2. If no QUESTIONS block: proceed to next phase
+Use the shared `/hitl` protocol for QUESTIONS block format and escalation rules.
 
 ### 4. Checkpoint Between Phases
 After each major phase, verify:

@@ -3,6 +3,7 @@
 # Usage:
 #   ./install.sh --global              Install to ~/.claude/
 #   ./install.sh --project <path>      Install project templates to <path>
+#   ./install.sh [--claude|--gemini|--codex]  Limit policy-ref targets (default: all)
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
 #   ./install.sh --restore             Remove installed artifacts, restore settings
 
@@ -29,6 +30,10 @@ BACKUPS=0
 
 # Options
 OVERWRITE=false
+REF_CLAUDE=true
+REF_GEMINI=true
+REF_CODEX=true
+REF_TARGETS_EXPLICIT=false
 
 # Print usage
 usage() {
@@ -38,15 +43,21 @@ AgentOrchestrator Installer v${VERSION}
 Usage:
     ./install.sh --global              Install to ~/.claude/
     ./install.sh --project <path>      Install project templates to <path>
+    ./install.sh --claude              Target CLAUDE.md refs only
+    ./install.sh --gemini              Target GEMINI.md refs only
+    ./install.sh --codex               Target AGENTS.md refs only
     ./install.sh --overwrite           Overwrite existing markdown files (backup to .backup/)
     ./install.sh --restore             Remove installed artifacts, restore settings from backup
     ./install.sh --help                Show this help
+
+Policy-ref target flags are optional.
+If none are provided, installer targets all three: --claude + --gemini + --codex.
 
 What gets installed:
 
 --global installs to ~/.claude/:
     - agents/jarvis/    Agent definitions (7 files)
-    - skills/jarvis/    Skill definitions (14 directories)
+    - skills/jarvis/    Skill definitions (15 directories)
     - hooks/scripts/    Hook scripts (5 files)
     - settings.json     Hook and MCP configuration
     - policy/           PRINCIPLES.md, RULES.md
@@ -235,25 +246,83 @@ copy_directory() {
     done
 }
 
+# Restore or remove installed file:
+# - restore from backup if available
+# - else remove only if target still matches installer source
+# - else keep target (user modified)
+restore_or_remove_installed_file() {
+    local source_file="$1"
+    local target_file="$2"
+    local backup_file="$3"
+
+    if restore_file_from_backup "$backup_file" "$target_file"; then
+        return
+    fi
+
+    if [ -f "$target_file" ]; then
+        if [ -f "$source_file" ] && diff -q "$source_file" "$target_file" > /dev/null 2>&1; then
+            rm -f "$target_file"
+            log_success "Removed installed file: $target_file"
+            ((++CREATED))
+        else
+            log_warning "Keeping modified file (no backup): $target_file"
+        fi
+    fi
+
+    return 0
+}
+
+# Restore/remove an installed tree based on source and backup.
+restore_or_remove_installed_tree() {
+    local source_dir="$1"
+    local target_dir="$2"
+    local backup_dir="$3"
+    local backup_prefix="$4"
+
+    [ -d "$source_dir" ] || return 0
+    [ -d "$target_dir" ] || return 0
+
+    find "$source_dir" -type f | while read -r source_file; do
+        local rel_path="${source_file#"$source_dir"/}"
+        local target_file="${target_dir}/${rel_path}"
+        local backup_file=""
+        if [ -n "$backup_dir" ]; then
+            backup_file="${backup_dir}/${backup_prefix}/${rel_path}"
+        fi
+        restore_or_remove_installed_file "$source_file" "$target_file" "$backup_file"
+    done
+
+    # Prune empty directories under the managed tree.
+    find "$target_dir" -depth -type d -empty -delete 2>/dev/null || true
+
+    return 0
+}
+
 # Inject @-references into existing CLAUDE.md/AGENTS.md/GEMINI.md (idempotent)
 inject_policy_refs() {
     local target_dir="$1"
     local sentinel="$2"
     local refs_block="$3"
     local backup_dir="$4"
+    local backup_prefix="$5"
+    local doc_files="$6"
+    local start_tag="<!-- ${sentinel}:start -->"
+    local end_tag="<!-- ${sentinel}:end -->"
+    local legacy_tag="<!-- ${sentinel} -->"
+    local header="## Orchestrator Policy References"
 
-    for md_file in CLAUDE.md AGENTS.md GEMINI.md; do
+    for md_file in $doc_files; do
         local f="${target_dir}/${md_file}"
         [ -f "$f" ] || continue
-        if grep -q "$sentinel" "$f" 2>/dev/null; then
+        if grep -qF "$start_tag" "$f" 2>/dev/null || grep -qF "$legacy_tag" "$f" 2>/dev/null; then
             log_info "Refs present: $f"
             ((++UNCHANGED))
         else
-            local backup_file="${backup_dir}/${md_file}"
+            local backup_file="${backup_dir}/${backup_prefix}/${md_file}"
             mkdir -p "$(dirname "$backup_file")"
             cp "$f" "$backup_file"
             ((++BACKUPS))
-            printf '\n%s\n%s\n' "<!-- ${sentinel} -->" "$refs_block" >> "$f"
+            printf '\n%s\n%s\n%s\n%s\n' "$start_tag" "$header" "$refs_block" "$end_tag" >> "$f"
             log_success "Appended refs: $f"
             ((++PATCHED))
         fi
@@ -288,9 +357,19 @@ install_global() {
         merge_json "${PACKAGE_DIR}/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
     fi
 
-    # Inject @-references for global policies into CLAUDE/AGENTS/GEMINI.md
-    inject_policy_refs "${HOME}/.claude" "orchestrator:global-refs" \
-        "$(printf 'Read @policy/PRINCIPLES.md\nRead @policy/RULES.md')" "$backup_dir"
+    # Inject @-references for global policies into selected runtime docs.
+    if [ "$REF_CLAUDE" = true ]; then
+        inject_policy_refs "${HOME}/.claude" "orchestrator:global-refs" \
+            "$(printf 'Read @policy/PRINCIPLES.md\nRead @policy/RULES.md')" "$backup_dir" "claude" "CLAUDE.md"
+    fi
+    if [ "$REF_GEMINI" = true ]; then
+        inject_policy_refs "${HOME}/.gemini" "orchestrator:global-refs" \
+            "$(printf 'Read @policy/PRINCIPLES.md\nRead @policy/RULES.md')" "$backup_dir" "gemini" "GEMINI.md"
+    fi
+    if [ "$REF_CODEX" = true ]; then
+        inject_policy_refs "${HOME}/.codex" "orchestrator:global-refs" \
+            "$(printf 'Read @policy/PRINCIPLES.md\nRead @policy/RULES.md')" "$backup_dir" "codex" "AGENTS.md"
+    fi
 
     log_success "Global installation complete"
 }
@@ -330,9 +409,13 @@ install_project() {
     copy_markdown "${PACKAGE_DIR}/templates/guidelines.md" \
                   "${target}/docs/policy/GUIDELINES.md" "$backup_dir" "docs/policy/GUIDELINES.md"
 
-    # 4. Inject @-references for project policies into CLAUDE/AGENTS/GEMINI.md
+    # 4. Inject @-references for project policies into selected local runtime docs
+    local project_doc_files=""
+    [ "$REF_CLAUDE" = true ] && project_doc_files="${project_doc_files} CLAUDE.md"
+    [ "$REF_CODEX" = true ] && project_doc_files="${project_doc_files} AGENTS.md"
+    [ "$REF_GEMINI" = true ] && project_doc_files="${project_doc_files} GEMINI.md"
     inject_policy_refs "$target" "orchestrator:project-refs" \
-        "$(printf 'Read @docs/policy/STANDARDS.md\nRead @docs/policy/GUIDELINES.md')" "$backup_dir"
+        "$(printf 'Read @docs/policy/STANDARDS.md\nRead @docs/policy/GUIDELINES.md')" "$backup_dir" "project-root" "$project_doc_files"
 
     # 5. Deploy templates to project-local .claude/templates/
     copy_directory "${PACKAGE_DIR}/templates" "${target}/.claude/templates" "$backup_dir"
@@ -389,6 +472,7 @@ init_serena_project() {
     # Run serena project create (auto-detects languages) - properly quote project name to prevent command injection
     if (cd "$target" && uvx --from git+https://github.com/oraios/serena serena project create --name "${project_name@Q}" 2>/dev/null); then
         log_success "Created: ${target}/.serena/project.yml"
+        touch "${target}/.serena/.orchestrator-created-project-yml"
         ((++CREATED))
     else
         log_warning "Serena project creation failed. You can manually run:"
@@ -481,12 +565,46 @@ restore_file_from_backup() {
 strip_ref_block_if_present() {
     local target_file="$1"
     local sentinel="$2"
+    local start_tag="<!-- ${sentinel}:start -->"
+    local end_tag="<!-- ${sentinel}:end -->"
+    local legacy_tag="<!-- ${sentinel} -->"
+    local tmp_file="${target_file}.tmp"
 
-    if [ -f "$target_file" ] && grep -q "$sentinel" "$target_file" 2>/dev/null; then
-        sed -i "/<!-- ${sentinel} -->/,\$d" "$target_file"
+    [ -f "$target_file" ] || return 0
+
+    # Preferred bounded block removal (no tail loss).
+    if grep -qF "$start_tag" "$target_file" 2>/dev/null && grep -qF "$end_tag" "$target_file" 2>/dev/null; then
+        awk -v start="$start_tag" -v end="$end_tag" '
+            $0 == start {skip=1; next}
+            $0 == end {skip=0; next}
+            !skip {print}
+        ' "$target_file" > "$tmp_file"
+        mv "$tmp_file" "$target_file"
         log_success "Stripped refs from: $target_file"
         ((++PATCHED))
+        return 0
     fi
+
+    # Legacy unbounded marker fallback: remove only known injected lines.
+    if grep -qF "$legacy_tag" "$target_file" 2>/dev/null; then
+        awk -v legacy="$legacy_tag" '
+            {
+                if (!skip && index($0, legacy) > 0) { skip=1; next }
+                if (skip) {
+                    if ($0 ~ /^## Orchestrator Policy References/) next
+                    if ($0 ~ /^Read @/) next
+                    if ($0 ~ /^[[:space:]]*$/) next
+                    skip=0
+                }
+                print
+            }
+        ' "$target_file" > "$tmp_file"
+        mv "$tmp_file" "$target_file"
+        log_success "Stripped legacy refs from: $target_file"
+        ((++PATCHED))
+    fi
+
+    return 0
 }
 
 # Restore CLAUDE/AGENTS/GEMINI refs from backup, fallback to sentinel stripping
@@ -494,12 +612,14 @@ restore_policy_refs() {
     local target_dir="$1"
     local backup_dir="$2"
     local sentinel="$3"
+    local backup_prefix="$4"
+    local doc_files="$5"
 
-    for md_file in CLAUDE.md AGENTS.md GEMINI.md; do
+    for md_file in $doc_files; do
         local target_file="${target_dir}/${md_file}"
         local backup_file=""
         if [ -n "$backup_dir" ]; then
-            backup_file="${backup_dir}/${md_file}"
+            backup_file="${backup_dir}/${backup_prefix}/${md_file}"
         fi
 
         if ! restore_file_from_backup "$backup_file" "$target_file"; then
@@ -554,8 +674,16 @@ restore_global() {
         fi
     fi
 
-    # Restore global injected refs in CLAUDE/AGENTS/GEMINI.md
-    restore_policy_refs "$target" "$backup_dir" "orchestrator:global-refs"
+    # Restore global injected refs in selected runtime docs.
+    if [ "$REF_CLAUDE" = true ]; then
+        restore_policy_refs "${HOME}/.claude" "$backup_dir" "orchestrator:global-refs" "claude" "CLAUDE.md"
+    fi
+    if [ "$REF_GEMINI" = true ]; then
+        restore_policy_refs "${HOME}/.gemini" "$backup_dir" "orchestrator:global-refs" "gemini" "GEMINI.md"
+    fi
+    if [ "$REF_CODEX" = true ]; then
+        restore_policy_refs "${HOME}/.codex" "$backup_dir" "orchestrator:global-refs" "codex" "AGENTS.md"
+    fi
 
     log_success "Global restore complete"
 }
@@ -575,11 +703,47 @@ restore_project() {
     local backup_dir
     backup_dir=$(find_latest_backup "$target")
 
-    # Remove installed directories
-    local dirs_to_remove=(".serena" "docs/policy" "docs/objectives" "docs/architecture"
-                          "docs/development" "docs/knowledge" "reports/analysis" "reports/research"
-                          ".claude/agents/${NAMESPACE}" ".claude/skills/${NAMESPACE}"
-                          ".claude/templates" ".claude/policy" ".claude/workflows")
+    # Restore/remove project docs files installed from templates (surgical only).
+    local docs_backup_knowledge=""
+    local docs_backup_standards=""
+    local docs_backup_guidelines=""
+    if [ -n "$backup_dir" ]; then
+        docs_backup_knowledge="${backup_dir}/docs/knowledge/README.md"
+        docs_backup_standards="${backup_dir}/docs/policy/STANDARDS.md"
+        docs_backup_guidelines="${backup_dir}/docs/policy/GUIDELINES.md"
+    fi
+    restore_or_remove_installed_file \
+        "${PACKAGE_DIR}/templates/knowledge.md" \
+        "${target}/docs/knowledge/README.md" \
+        "$docs_backup_knowledge"
+    restore_or_remove_installed_file \
+        "${PACKAGE_DIR}/templates/standards.md" \
+        "${target}/docs/policy/STANDARDS.md" \
+        "$docs_backup_standards"
+    restore_or_remove_installed_file \
+        "${PACKAGE_DIR}/templates/guidelines.md" \
+        "${target}/docs/policy/GUIDELINES.md" \
+        "$docs_backup_guidelines"
+
+    # Restore/remove managed .claude trees (surgical file-level).
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/templates" \
+        "${target}/.claude/templates" \
+        "$backup_dir" \
+        "templates"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/policy" \
+        "${target}/.claude/policy" \
+        "$backup_dir" \
+        "policy"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/workflows" \
+        "${target}/.claude/workflows" \
+        "$backup_dir" \
+        "workflows"
+
+    # Remove namespaced agents/skills only (isolated namespace).
+    local dirs_to_remove=(".claude/agents/${NAMESPACE}" ".claude/skills/${NAMESPACE}")
     for dir in "${dirs_to_remove[@]}"; do
         if [ -d "${target:?}/${dir}" ]; then
             rm -rf "${target:?}/${dir}"
@@ -588,12 +752,25 @@ restore_project() {
         fi
     done
 
-    # Clean up empty parent directories
-    rmdir "${target}/docs" 2>/dev/null || true
-    rmdir "${target}/reports" 2>/dev/null || true
+    # Remove Serena project file only if this installer created it.
+    local serena_marker="${target}/.serena/.orchestrator-created-project-yml"
+    local serena_project="${target}/.serena/project.yml"
+    if [ -f "$serena_marker" ]; then
+        if [ -f "$serena_project" ]; then
+            rm -f "$serena_project"
+            log_success "Removed installer-created file: ${serena_project}"
+            ((++CREATED))
+        fi
+        rm -f "$serena_marker"
+        rmdir "${target}/.serena" 2>/dev/null || true
+    fi
 
-    # Restore project injected refs in CLAUDE/AGENTS/GEMINI.md
-    restore_policy_refs "$target" "$backup_dir" "orchestrator:project-refs"
+    # Restore project injected refs in selected local runtime docs
+    local project_doc_files=""
+    [ "$REF_CLAUDE" = true ] && project_doc_files="${project_doc_files} CLAUDE.md"
+    [ "$REF_CODEX" = true ] && project_doc_files="${project_doc_files} AGENTS.md"
+    [ "$REF_GEMINI" = true ] && project_doc_files="${project_doc_files} GEMINI.md"
+    restore_policy_refs "$target" "$backup_dir" "orchestrator:project-refs" "project-root" "$project_doc_files"
 
     log_success "Project restore complete"
 }
@@ -612,6 +789,20 @@ main() {
 
     while [ $# -gt 0 ]; do
         case "$1" in
+            --claude|--gemini|--codex)
+                if [ "$REF_TARGETS_EXPLICIT" = false ]; then
+                    REF_CLAUDE=false
+                    REF_GEMINI=false
+                    REF_CODEX=false
+                    REF_TARGETS_EXPLICIT=true
+                fi
+                case "$1" in
+                    --claude) REF_CLAUDE=true ;;
+                    --gemini) REF_GEMINI=true ;;
+                    --codex) REF_CODEX=true ;;
+                esac
+                shift
+                ;;
             --global)
                 do_global=true
                 shift

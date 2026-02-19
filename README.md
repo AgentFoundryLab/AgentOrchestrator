@@ -12,7 +12,7 @@ Inspired by SuperClaude.
 AgentOrchestrator transforms Claude Code from a single-turn assistant into an orchestrated multi-agent system with:
 
 - **7 Specialized Agents**: Business Analyst, Architect, Project Manager, Developer, Validator, Deployer, Tech Writer
-- **14 Skills**: Workflow commands from `/spec` to `/deploy`
+- **15 Skills**: Workflow commands from `/spec` to `/deploy` plus shared HITL protocol
 - **3 Workflow Depths**: Full, Medium, Light based on complexity
 - **Hook System**: Lifecycle events for validation and learning
 - **Memory Integration**: Serena MCP for persistent knowledge
@@ -42,6 +42,11 @@ cd orchestrator
 # Install both in one run
 ./install.sh --global --project /path/to/your/project
 
+# Optional: limit policy-ref targets (default is all 3)
+./install.sh --global --claude          # ~/.claude/CLAUDE.md only
+./install.sh --global --gemini          # ~/.gemini/GEMINI.md only
+./install.sh --global --codex           # ~/.codex/AGENTS.md only
+
 # Overwrite existing markdown files during reinstall
 ./install.sh --global --overwrite
 ```
@@ -50,7 +55,7 @@ cd orchestrator
 
 **`--global` installs to `~/.claude/`:**
 - `agents/jarvis/` - Agent definitions (7 files, namespaced)
-- `skills/jarvis/` - Skill definitions (14 directories, namespaced)
+- `skills/jarvis/` - Skill definitions (15 directories, namespaced)
 - `hooks/scripts/` - Hook scripts (5 files) + shared library
 - `settings.json` - Hook and MCP configuration
 - `policy/` - PRINCIPLES.md, RULES.md, GUIDELINES.md

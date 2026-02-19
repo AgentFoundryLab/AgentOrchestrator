@@ -116,6 +116,7 @@ temp/
 .claude/templates/
 .claude/policy/
 .claude/workflows/
+.backup/
 
 # Serena MCP - commit project.yml, ignore runtime data
 .serena/memories/

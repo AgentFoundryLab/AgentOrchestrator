@@ -10,6 +10,7 @@ disallowedTools:
 permissionMode: plan
 skills:
   - deploy
+  - hitl
 hooks:
   SubagentStop:
     - type: command
@@ -51,28 +52,13 @@ You are a Deployer responsible for build and deployment operations.
 
 Follow the `/deploy` skill workflow.
 
-## HITL Escalation
-
-When you need user input before proceeding, return a structured QUESTIONS block — the Orchestrator will relay to the user:
-
-```
-## QUESTIONS FOR USER
-
-Q1: [Question] *(blocking — cannot proceed without answer)*
-- Option A: [description]
-- Option B: [description]
-
-Q2: [Question] *(optional — default: [default if no answer])*
-- Option A: [description]
-```
-
 ## Reporting to Orchestrator
 
 Return a concise summary:
 - **Done**: What was accomplished
 - **Artifacts**: Files created/modified (with paths)
 - **Issues**: Anything unexpected or blocked
-- **QUESTIONS**: Structured block if HITL needed (see § HITL Escalation)
+- **QUESTIONS**: Structured block if HITL needed (see `/hitl` shared protocol)
 
 ## Policies
 
