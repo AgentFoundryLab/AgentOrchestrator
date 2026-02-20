@@ -1,7 +1,7 @@
 # AgentOrchestrator Roadmap
 
-**Version**: 0.3.3
-**Updated**: 2026-02-05
+**Version**: 0.3.4
+**Updated**: 2026-02-20
 
 ---
 
@@ -10,6 +10,7 @@
 | Milestone | Goal | Phases |
 |-----------|------|--------|
 | **v0** | Minimal viable multi-agent orchestration | Initial → Validation |
+| **v0.1.1** | Installer multi-agent extension | Installer Extension |
 | **v1** | Full Orchestrator vision | POC → MVP → Foundation → Factory |
 
 ---
@@ -126,11 +127,66 @@ Integration testing and documentation.
 
 ---
 
+# v0.1.1 Multi-Agent Milestone
+
+**Goal**: Extend installer for multi-agent runtimes with namespaced (dot-notation) install paths.
+
+**Prerequisite**: v0.1.0 complete
+
+---
+
+## Installer Extension Phase
+
+Runtime expansion and namespace standardization for install/restore/cleanup workflows.
+
+### Epic: Runtime Matrix & Canonical Paths
+**Depends on**: v0.1.0 complete
+
+- [ ] Define canonical runtime registry for `claude`, `gemini`, `codex`, `opencode`, `qwen`
+- [ ] Add installer targets for `--opencode` and `--qwen` (alongside existing runtime flags)
+- [ ] Codify per-runtime command/context/skills path map in installer constants
+- [ ] Add runtime path drift checks (installer map vs package layout)
+
+### Epic: Namespace & Dot-Notation Semantics
+**Depends on**: Runtime Matrix & Canonical Paths
+
+- [ ] Define namespace grammar and validation (`<segment>[.<segment>...]`)
+- [ ] Map dot-notation namespace to agent paths (directory tree) and skill names (`<ns>.<skill>`)
+- [ ] Preserve flat mode as backward-compatible default when `--namespace` is omitted
+- [ ] Ensure namespace-safe restore/cleanup semantics for global and project modes
+
+### Epic: Capability-Scoped Installer Profiles
+**Depends on**: Runtime Matrix & Canonical Paths
+
+- [ ] Split install profiles by capability (`commands`, `skills`, `hooks`, `scripts`)
+- [ ] Restrict non-Claude runtimes to supported capabilities; emit explicit warnings for unsupported ones
+- [ ] Make policy-ref injection runtime-aware and idempotent across selected targets
+- [ ] Prevent cross-runtime collisions in context docs/files (e.g., shared root docs)
+
+### Epic: UX & Documentation
+**Depends on**: Namespace & Dot-Notation Semantics, Capability-Scoped Installer Profiles
+
+- [ ] Update `install.sh --help` with multi-agent + namespaced examples
+- [ ] Update `README.md` install matrix for Claude/Codex/Gemini/OpenCode/Qwen
+- [ ] Document migration notes for legacy namespace and runtime path behavior
+
+### Epic: Validation & CI
+**Depends on**: All Installer Extension epics
+
+- [ ] Add install smoke tests for runtime matrix (`global`, `project`)
+- [ ] Add restore/cleanup regression tests for namespaced installs (dot-notation)
+- [ ] Add idempotency tests for repeated installs with mixed runtime subsets
+- [ ] Add CI guardrail to fail on runtime/path drift
+
+**→ TAG: v0.1.1 (planned)**
+
+---
+
 # v1 Milestone (Orchestrator)
 
 **Goal**: Full Orchestrator vision with observability, execution engine, and advanced workflows.
 
-**Prerequisite**: v0.1.0 complete
+**Prerequisite**: v0.1.1 complete
 
 ---
 
@@ -138,7 +194,7 @@ Integration testing and documentation.
 
 Strands Framework integration with A2A protocol foundation.
 
-**Prerequisite**: v0.1.0 complete
+**Prerequisite**: v0.1.1 complete
 
 ### Epic: Setup
 **Depends on**: v0 complete
@@ -317,8 +373,17 @@ v0 Milestone
     └── Integration Validation
         → TAG: v0.1.0
 
+v0.1.1 Patch Milestone
+└── Installer Extension Phase ◄── v0.1.0
+    ├── Runtime Matrix & Canonical Paths
+    ├── Namespace & Dot-Notation Semantics
+    ├── Capability-Scoped Installer Profiles
+    ├── UX & Documentation
+    └── Validation & CI
+        → TAG: v0.1.1
+
 v1 Milestone
-├── POC Phase ◄── v0.1.0
+├── POC Phase ◄── v0.1.1
 │   ├── Strands Framework Integration
 │   ├── MCP Enhancement
 │   └── Structured Memory
@@ -349,6 +414,7 @@ v1 Milestone
 |-----------|-------|-------|-------|--------|
 | v0 | Initial | 10 | 40 | ✅ Complete |
 | v0 | Validation | 1 | 3 | ✅ Complete |
+| v0.1.1 | Installer Extension | 5 | 19 | 🔲 Not started |
 | v1 | POC | 3 | 8 | 🔲 Not started |
 | v1 | MVP | 3 | 9 | 🔲 Not started |
 | v1 | Foundation | 4 | 16 | 🔲 Not started |
