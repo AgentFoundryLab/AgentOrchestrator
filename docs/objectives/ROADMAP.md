@@ -139,13 +139,21 @@ Integration testing and documentation.
 
 Runtime expansion and namespace standardization for install/restore/cleanup workflows.
 
+Policy details are maintained in:
+- `reports/research/2026-02-19-multi-agent-install-plan.md` (Final Capability Policy + Installer Default Policy + canonical mappings)
+
 ### Epic: Runtime Matrix & Canonical Paths
 **Depends on**: v0.1.0 complete
 
 - [ ] Define canonical runtime registry for `claude`, `gemini`, `codex`, `opencode`, `qwen`
 - [ ] Add installer targets for `--opencode` and `--qwen` (alongside existing runtime flags)
-- [ ] Codify per-runtime command/context/skills path map in installer constants
+- [ ] Codify Claude paths (`.claude/skills` canonical, `.claude/commands` compatibility)
+- [ ] Codify Codex paths (`.agents/skills` canonical, `.codex/prompts` compatibility commands)
+- [ ] Codify Gemini paths (`.gemini/commands` only, no skills/hooks)
+- [ ] Codify OpenCode paths (`.opencode/commands`, `.opencode/skills`, plugin hooks)
+- [ ] Codify Qwen paths (`.qwen/commands`, `.qwen/skills`, no hooks)
 - [ ] Add runtime path drift checks (installer map vs package layout)
+- [ ] Define canonical frontmatter/schema transforms for `skills -> commands` conversion per runtime
 
 ### Epic: Namespace & Dot-Notation Semantics
 **Depends on**: Runtime Matrix & Canonical Paths
@@ -159,7 +167,14 @@ Runtime expansion and namespace standardization for install/restore/cleanup work
 **Depends on**: Runtime Matrix & Canonical Paths
 
 - [ ] Split install profiles by capability (`commands`, `skills`, `hooks`, `scripts`)
-- [ ] Restrict non-Claude runtimes to supported capabilities; emit explicit warnings for unsupported ones
+- [ ] Make `skills` the default profile when runtime supports skills
+- [ ] Add `commands` compatibility profile selectable by flag
+- [ ] Implement Claude profile (`commands+skills+hooks+scripts`)
+- [ ] Implement Codex profile (`commands+skills+scripts`, no hooks)
+- [ ] Implement Gemini profile (`commands+scripts` only)
+- [ ] Implement OpenCode profile (`commands+skills+hooks+scripts`)
+- [ ] Implement Qwen profile (`commands+skills+scripts`, no hooks)
+- [ ] Emit explicit warnings when user requests unsupported capabilities for selected runtime
 - [ ] Make policy-ref injection runtime-aware and idempotent across selected targets
 - [ ] Prevent cross-runtime collisions in context docs/files (e.g., shared root docs)
 
@@ -167,6 +182,8 @@ Runtime expansion and namespace standardization for install/restore/cleanup work
 **Depends on**: Namespace & Dot-Notation Semantics, Capability-Scoped Installer Profiles
 
 - [ ] Update `install.sh --help` with multi-agent + namespaced examples
+- [ ] Document `skills` default and `commands` compatibility mode behavior
+- [ ] Document per-agent schema/frontmatter differences in commands mode
 - [ ] Update `README.md` install matrix for Claude/Codex/Gemini/OpenCode/Qwen
 - [ ] Document migration notes for legacy namespace and runtime path behavior
 
@@ -174,6 +191,7 @@ Runtime expansion and namespace standardization for install/restore/cleanup work
 **Depends on**: All Installer Extension epics
 
 - [ ] Add install smoke tests for runtime matrix (`global`, `project`)
+- [ ] Add capability conformance tests per runtime (commands/skills/hooks/scripts assertions)
 - [ ] Add restore/cleanup regression tests for namespaced installs (dot-notation)
 - [ ] Add idempotency tests for repeated installs with mixed runtime subsets
 - [ ] Add CI guardrail to fail on runtime/path drift
@@ -414,7 +432,7 @@ v1 Milestone
 |-----------|-------|-------|-------|--------|
 | v0 | Initial | 10 | 40 | ✅ Complete |
 | v0 | Validation | 1 | 3 | ✅ Complete |
-| v0.1.1 | Installer Extension | 5 | 19 | 🔲 Not started |
+| v0.1.1 | Installer Extension | 5 | 34 | 🔲 Not started |
 | v1 | POC | 3 | 8 | 🔲 Not started |
 | v1 | MVP | 3 | 9 | 🔲 Not started |
 | v1 | Foundation | 4 | 16 | 🔲 Not started |
