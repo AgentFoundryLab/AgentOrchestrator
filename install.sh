@@ -59,9 +59,9 @@ What gets installed:
 
 --global installs to ~/.claude/:
     - agents/           Agent definitions (7 files, default flat)
-    - skills/           Skill definitions (15 directories, default flat)
+    - skills/           Skill definitions (17 directories, default flat)
     - agents/<ns>/      Optional namespaced agents (if --namespace set)
-    - skills/<ns>/      Optional namespaced skills (if --namespace set)
+    - skills/<ns>.<skill>/ Dot-prefixed namespaced skills (if --namespace set, e.g. /ns.spec)
     - hooks/scripts/    Hook scripts (5 files)
     - settings.json     Hook and MCP configuration
     - policy/           PRINCIPLES.md, RULES.md
@@ -76,7 +76,7 @@ What gets installed:
     - .claude/agents/   Agent definitions (project-local, default flat)
     - .claude/skills/   Skill definitions (project-local, default flat)
     - .claude/agents/<ns>/ Optional namespaced agents (if --namespace set)
-    - .claude/skills/<ns>/ Optional namespaced skills (if --namespace set)
+    - .claude/skills/<ns>.<skill>/ Dot-prefixed namespaced skills (if --namespace set)
     - .claude/templates/ Templates (project-local copy, agents prefer over global)
     - .claude/policy/   PRINCIPLES.md, RULES.md (project-local copies)
     - .claude/workflows/ SWE.md, meta-learning.md (project-local copies)
@@ -252,6 +252,56 @@ copy_directory() {
     done
 }
 
+# Install skills with dot-prefix namespace: skills/<ns>.<skill>/ + patch name: field
+copy_namespaced_skills() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+    local backup_dir="$4"
+
+    if [ ! -d "$source_dir" ]; then
+        log_warning "Source directory not found: $source_dir"
+        return
+    fi
+
+    for skill_dir in "$source_dir"/*/; do
+        [ -d "$skill_dir" ] || continue
+        local skill_name
+        skill_name="$(basename "$skill_dir")"
+        local ns_skill="${namespace}.${skill_name}"
+        local target_skill_dir="${target_parent}/${ns_skill}"
+
+        copy_directory "$skill_dir" "$target_skill_dir" "$backup_dir"
+
+        # Patch name: field in SKILL.md to match namespaced directory name
+        local skill_md="${target_skill_dir}/SKILL.md"
+        if [ -f "$skill_md" ]; then
+            sed -i "s/^name: ${skill_name}$/name: ${ns_skill}/" "$skill_md"
+        fi
+    done
+}
+
+# Remove dot-prefixed namespaced skill directories installed by copy_namespaced_skills
+restore_namespaced_skills() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+
+    [ -d "$source_dir" ] || return 0
+
+    for skill_dir in "$source_dir"/*/; do
+        [ -d "$skill_dir" ] || continue
+        local skill_name
+        skill_name="$(basename "$skill_dir")"
+        local target_skill_dir="${target_parent}/${namespace}.${skill_name}"
+        if [ -d "$target_skill_dir" ]; then
+            rm -rf "$target_skill_dir"
+            log_success "Removed: $target_skill_dir"
+            ((++CREATED))
+        fi
+    done
+}
+
 # Restore or remove installed file:
 # - restore from backup if available
 # - else remove only if target still matches installer source
@@ -342,7 +392,7 @@ install_global() {
     local ns_path=""
     if [ -n "$NAMESPACE" ]; then
         ns_path="/${NAMESPACE}"
-        log_info "Using namespace for agents/skills: ${NAMESPACE}"
+        log_info "Using namespace: agents → agents/${NAMESPACE}/, skills → skills/${NAMESPACE}.<skill>/"
     else
         log_info "Using flat agents/skills paths (no namespace)"
     fi
@@ -353,7 +403,11 @@ install_global() {
     # Install package/ contents (source-of-truth in repository)
     if [ -d "${PACKAGE_DIR}" ]; then
         copy_directory "${PACKAGE_DIR}/agents" "${target}/agents${ns_path}" "$backup_dir"
-        copy_directory "${PACKAGE_DIR}/skills" "${target}/skills${ns_path}" "$backup_dir"
+        if [ -n "$NAMESPACE" ]; then
+            copy_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/skills" "$NAMESPACE" "$backup_dir"
+        else
+            copy_directory "${PACKAGE_DIR}/skills" "${target}/skills" "$backup_dir"
+        fi
         copy_directory "${PACKAGE_DIR}/hooks" "${target}/hooks" "$backup_dir"
         copy_directory "${PACKAGE_DIR}/policy" "${target}/policy" "$backup_dir"
         copy_directory "${PACKAGE_DIR}/workflows" "${target}/workflows" "$backup_dir"
@@ -404,7 +458,7 @@ install_project() {
     log_info "Installing project scaffolding to $target"
     if [ -n "$NAMESPACE" ]; then
         ns_path="/${NAMESPACE}"
-        log_info "Using namespace for agents/skills: ${NAMESPACE}"
+        log_info "Using namespace: agents → agents/${NAMESPACE}/, skills → skills/${NAMESPACE}.<skill>/"
     else
         log_info "Using flat agents/skills paths (no namespace)"
     fi
@@ -456,7 +510,11 @@ install_project() {
         copy_directory "${PACKAGE_DIR}/agents" "${target}/.claude/agents${ns_path}" "$backup_dir"
     fi
     if [ -d "${PACKAGE_DIR}/skills" ]; then
-        copy_directory "${PACKAGE_DIR}/skills" "${target}/.claude/skills${ns_path}" "$backup_dir"
+        if [ -n "$NAMESPACE" ]; then
+            copy_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "$NAMESPACE" "$backup_dir"
+        else
+            copy_directory "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "$backup_dir"
+        fi
     fi
 
     # 9. Initialize Serena project if uvx is available
@@ -658,7 +716,7 @@ restore_global() {
     local ns_path=""
     if [ -n "$NAMESPACE" ]; then
         ns_path="/${NAMESPACE}"
-        log_info "Restoring namespace for agents/skills: ${NAMESPACE}"
+        log_info "Restoring namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
     else
         log_info "Restoring flat agents/skills paths (no namespace)"
     fi
@@ -672,11 +730,15 @@ restore_global() {
         "${target}/agents${ns_path}" \
         "$backup_dir" \
         "agents"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/skills" \
-        "${target}/skills${ns_path}" \
-        "$backup_dir" \
-        "skills"
+    if [ -n "$NAMESPACE" ]; then
+        restore_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/skills" "$NAMESPACE"
+    else
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/skills" \
+            "${target}/skills" \
+            "$backup_dir" \
+            "skills"
+    fi
 
     # Remove managed shared directories.
     local dirs_to_remove=("hooks" "policy" "workflows" "templates")
@@ -744,7 +806,7 @@ restore_project() {
     log_info "Restoring project installation from $target"
     if [ -n "$NAMESPACE" ]; then
         ns_path="/${NAMESPACE}"
-        log_info "Restoring namespace for agents/skills: ${NAMESPACE}"
+        log_info "Restoring namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
     else
         log_info "Restoring flat agents/skills paths (no namespace)"
     fi
@@ -797,11 +859,15 @@ restore_project() {
         "${target}/.claude/agents${ns_path}" \
         "$backup_dir" \
         "agents"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/skills" \
-        "${target}/.claude/skills${ns_path}" \
-        "$backup_dir" \
-        "skills"
+    if [ -n "$NAMESPACE" ]; then
+        restore_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "$NAMESPACE"
+    else
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/skills" \
+            "${target}/.claude/skills" \
+            "$backup_dir" \
+            "skills"
+    fi
 
     # Remove Serena project file only if this installer created it.
     local serena_marker="${target}/.serena/.orchestrator-created-project-yml"
