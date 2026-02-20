@@ -1,8 +1,8 @@
 # AgentOrchestrator Architecture Specification
 
-**Version**: 0.1.0
+**Version**: 0.2.0
 **Status**: Draft
-**Date**: 2026-01-25
+**Date**: 2026-02-19
 **Source**: [PRD.md](PRD.md)
 
 ---
@@ -13,10 +13,12 @@ This document defines the technical architecture for AgentOrchestrator, a minima
 
 **Key Architectural Decisions**:
 - Pure markdown/JSON configuration (zero Python dependencies)
-- Flat package source (`package/agents/`, `package/skills/`) deployed into Claude Code structures (`.claude/agents/jarvis/`, `.claude/skills/jarvis/`)
-- 2-3 MCP servers (Serena required, Context7 required, Playwright optional)
+- Flat package source (`package/agents/`, `package/skills/`) deployed into Claude Code structures (`.claude/agents/`, `.claude/skills/`) — optional `--namespace <name>` for namespaced installs
+- 2-3 required MCP servers plus optional Playwright
 - Hook-based lifecycle management (reminder pattern, not enforcement)
 - Four-tier memory system (Session, Semantic, Reflexion, Transient)
+- Two-tier policy structure (global framework + project-specific)
+- HITL escalation via structured QUESTIONS block (not direct `AskUserQuestion`)
 
 ---
 
@@ -35,7 +37,8 @@ This document defines the technical architecture for AgentOrchestrator, a minima
 | Agent definitions (.md files) | **Orchestrator** | Thin wrappers with skills injected |
 | Hook scripts (.sh files) | **Orchestrator** | Reminder scripts for validation/learning |
 | Workflows (templates) | **Orchestrator** | Agent orchestration patterns |
-| Policy (rules, principles) | **Orchestrator** | Behavioral guidelines |
+| Policy (principles, rules) | **Orchestrator** | Behavioral guidelines |
+| HITL shared protocol | **Orchestrator** | Standardized escalation pattern |
 
 ---
 
@@ -43,17 +46,20 @@ This document defines the technical architecture for AgentOrchestrator, a minima
 
 ### 1. Skill System
 
-Skills are the primary user interface. Source files live in `package/skills/` and install under `.claude/skills/jarvis/` (or `~/.claude/skills/jarvis/`) with YAML frontmatter. Claude Code natively routes `/skill` invocations to the corresponding SKILL.md file.
+Skills are the primary user interface. Source files live in `package/skills/` and install under `.claude/skills/` (or `~/.claude/skills/`) with YAML frontmatter. Claude Code natively routes `/skill` invocations to the corresponding SKILL.md file.
 
 #### 1.1 Skill Categories
 
 | Category | Skills | Invocation Pattern | Context |
 |----------|--------|-------------------|---------|
-| **Agent-backed** | spec, design, plan, implement, validate, deploy, document | `context: fork` + `agent:` injects skill into specified agent | fork |
+| **Agent-backed** | spec, design, plan, implement, validate, deploy, document, onboard, review | `context: fork` + `agent:` injects skill into specified agent | fork |
 | **Orchestration** | orchestrate | Calls agents via Task tool; agents have skills loaded via `skills:` | inline |
 | **Utility** | reflexion, reflect, optimize, analyse, research, distill | Runs inline, no agent delegation | inline |
+| **Shared Protocol** | hitl | Non-invocable protocol definition; injected into agent context via `skills:` | — |
 
 > **Key Design**: Agent-backed skills use `context: fork` to inject content into the specified agent. Both direct invocation (`/spec`) and orchestrated invocation (agent's `skills:` list) result in skill content being injected into agent context. Single source of truth, no duplication.
+
+> **HITL Skill**: `/hitl` has `user-invocable: false` and `disable-model-invocation: true`. It defines the escalation protocol and is referenced (not invoked) by agents.
 
 #### 1.2 Skill Interface Contract
 
@@ -79,7 +85,6 @@ agent: business-analyst             # Agent-backed skills: target agent for inje
 - `$ARGUMENTS`: User-provided arguments
 - `${PROJECT_NAME}`: Derived from working directory
 - `${CLAUDE_SESSION_ID}`: Current session identifier
-- `${AGENT_ID}`: Current agent identifier (parsed from agent JSONL logs at SessionStart; visible as `agentId` where `isSidechain: true`)
 
 ## Outputs
 [Artifact type and storage location]
@@ -88,7 +93,31 @@ agent: business-analyst             # Agent-backed skills: target agent for inje
 [Step-by-step execution]
 ```
 
-#### 1.3 Skill-Agent Relationship
+#### 1.3 Full Skill Inventory
+
+| Skill | Agent | Category | Output | User-Invocable |
+|-------|-------|----------|--------|----------------|
+| `/spec` | Business Analyst | Agent-backed | PRD | Yes |
+| `/design` | Architect | Agent-backed | Architecture doc, ADR | Yes |
+| `/plan` | Project Manager | Agent-backed | ROADMAP, BACKLOG | Yes |
+| `/implement` | Developer | Agent-backed | Code, tests | Yes |
+| `/validate` | Validator | Agent-backed | Validation report | Yes |
+| `/deploy` | Deployer | Agent-backed | Deployment artifacts | Yes |
+| `/document` | Tech Writer | Agent-backed | Docs, README | Yes |
+| `/onboard` | Architect | Agent-backed | STANDARDS.md, GUIDELINES.md | Yes |
+| `/review` | Tech Writer | Agent-backed | Review report, ISSUES.md | Yes |
+| `/orchestrate` | — | Orchestration | Workflow execution | Yes |
+| `/reflexion` | — | Utility | Serena reflexion record | Yes |
+| `/reflect` | — | Utility | Serena reflection record | Yes |
+| `/optimize` | — | Utility | Meta-Opt Plan | Yes |
+| `/analyse` | — | Utility | Analysis report | Yes |
+| `/research` | — | Utility | Research summary | Yes |
+| `/distill` | — | Utility | Distilled content | Yes |
+| `/hitl` | — | Shared Protocol | — | No |
+
+**Total: 17 skills** (16 user-invocable + 1 protocol)
+
+#### 1.4 Skill-Agent Relationship
 
 There are **two invocation paths** for agent-backed skills. Both use **content injection**.
 
@@ -103,17 +132,19 @@ There are **two invocation paths** for agent-backed skills. Both use **content i
 - **Two injection mechanisms**: `context: fork` (direct) and `skills:` (orchestrated)
 - **Consistent behavior**: Same agent, same hooks, same outcome
 
-| Skill | Agent | Primary Artifact | Storage |
-|-------|-------|-----------------|---------|
-| `/spec` | Business Analyst | PRD | `docs/architecture/PRD.md` |
-| `/design` | Architect | Architecture doc, ADR | `docs/architecture/` |
-| `/plan` | Project Manager | ROADMAP, BACKLOG | `docs/objectives/ROADMAP.md`, `docs/development/` |
-| `/implement` | Developer | Code, tests | Source files |
-| `/validate` | Validator | Validation report | Serena memory |
-| `/deploy` | Deployer | Deployment artifacts | CI/CD files |
-| `/document` | Tech Writer | Documentation | `docs/`, `README.md` |
+#### 1.5 HITL Shared Protocol
 
-#### 1.4 Conflict Detection in /document Skill
+The `/hitl` skill is a non-invocable protocol definition. It enforces a single source of truth for human-in-the-loop escalation:
+
+- Sub-agents spawned via Task tool CANNOT call `AskUserQuestion` directly
+- When blocked, agents emit a structured `## QUESTIONS FOR USER` block
+- Orchestrator detects the block, relays via `AskUserQuestion`, re-invokes agent with answers
+- Protocol details: `package/skills/hitl/SKILL.md`
+- Decision record: `docs/knowledge/decisions/hitl-escalation.md`
+
+> **See**: [ADR-012](adr/012-governance-rationalization.md) and [HITL Decision](../../docs/knowledge/decisions/hitl-escalation.md)
+
+#### 1.6 Conflict Detection in /document Skill
 
 The `/document` skill includes conflict detection to prevent silent overwrites:
 
@@ -132,8 +163,6 @@ The `/document` skill includes conflict detection to prevent silent overwrites:
 3. User chooses: update old, keep old, document tentatively, or pause
 4. If tentative/rejected: log to ISSUES.md with suggested agent for resolution
 
-This ensures documentation changes are intentional and aligned with architectural decisions.
-
 ---
 
 ### 2. Agent System
@@ -149,37 +178,26 @@ Agents are specialized workers invoked via Claude Code's Task tool with `subagen
 | Agent | Responsibility | Tools | Disallowed | Permission Mode | Artifacts |
 |-------|---------------|-------|------------|-----------------|-----------|
 | **Business Analyst** | Requirements elicitation, acceptance criteria | Read, Grep, Glob, WebSearch | - | default | PRD, User Stories |
-| **Architect** | System design, constraints, trade-offs | Read, Grep, Glob, WebSearch | - | default | Architecture doc, ADR |
+| **Architect** | System design, constraints, trade-offs, onboarding | Read, Grep, Glob, WebSearch | - | default | Architecture doc, ADR, STANDARDS.md, GUIDELINES.md |
 | **Project Manager** | Planning, sequencing, decomposition | Read, Write, TaskCreate | - | default | ROADMAP, BACKLOG |
 | **Developer** | Implementation, code changes | Read, Write, Edit, Bash, Task | - | default | Code, tests |
 | **Validator** | Testing, acceptance criteria checking | Read, Grep, Glob, Bash | Write, Edit | default | Validation report |
 | **Deployer** | Build, deploy, release | Read, Write, Bash | Edit | **plan** | Deployment artifacts |
-| **Tech Writer** | Documentation, runbooks | Read, Write, Grep, Glob, AskUserQuestion | Edit | default | Docs, README |
-
-**Notes on Support Agents:**
-
-- **Validator**: Cannot modify code - reports findings only. Uses Bash for running tests.
-- **Deployer**: Requires user approval for destructive operations via `permissionMode: plan`.
-- **Tech Writer**: Uses `AskUserQuestion` for conflict detection - never silently overwrites docs when inconsistencies are detected.
+| **Tech Writer** | Documentation, runbooks, cross-artifact review | Read, Write, Grep, Glob, AskUserQuestion | Edit | default | Docs, README, Review report |
 
 #### 2.3 Agent with Skill Injection
 
-Agents load skill content via `skills:` frontmatter. The skill instructions are **injected** into the agent's context. The agent definition provides:
-- Specialized persona/role context
-- Skill loading (`skills:` list for orchestrated path)
-- Tool restrictions (`tools`, `disallowedTools`)
-- Lifecycle hooks (`Stop` - agent frontmatter only supports PreToolUse, PostToolUse, Stop)
-- Permission mode
+Agents load skill content via `skills:` frontmatter. The skill instructions are **injected** into the agent's context.
 
 ```markdown
-# Example: .claude/agents/jarvis/business-analyst.md
+# Example: package/agents/business-analyst.md
 ---
 name: business-analyst
 description: Requirements elicitation and PRD generation
 skills:
   - spec                              # Skill content injected for orchestrated path
 hooks:
-  Stop:                               # Fires when this agent finishes responding
+  Stop:
     - hooks:
         - type: command
           command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-validate.sh"
@@ -203,63 +221,15 @@ Agents can receive skills through two mechanisms - both triggered by the **USER*
 
 > **See**: [Agent-Skill Mapping Diagram](diagrams/agent-skill-mapping.md) and [ADR-004](adr/004-skill-agent-invocation-paths.md)
 
-**Example: Architect with /design (primary) + /analyse (secondary)**
-
-```yaml
-# .claude/agents/jarvis/architect.md
----
-name: architect
-description: System design and architecture
-skills:
-  - design                    # Primary: always injected when agent spawns
-hooks:
-  Stop:
-    - hooks:
-        - type: command
-          command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-validate.sh"
----
-
-You are an Architect responsible for system design.
-```
-
-```yaml
-# .claude/skills/jarvis/analyse/SKILL.md
----
-name: analyse
-description: Investigation and troubleshooting
-context: fork
-agent: architect              # Targets Architect - injected as SECONDARY
----
-
-Investigate the codebase for: $ARGUMENTS
-
-## Process
-1. Search for relevant patterns
-2. Analyze dependencies
-3. Document findings
-```
-
 **Invocation Scenarios:**
 
 | User Action | Agent Spawned | Skills Injected |
 |-------------|---------------|-----------------|
 | `/design "auth system"` | Architect | /design (via `context: fork`) |
+| `/onboard` | Architect | /design (primary) + /onboard (secondary) |
+| `/review` | Tech Writer | /document (primary) + /review (secondary) |
 | Orchestrator calls Task(architect) | Architect | /design (via `skills:` list) |
 | `/analyse "auth patterns"` | Architect | /design (primary) + /analyse (secondary) |
-| `/research "OAuth specs"` | Architect | /design (primary) + /research (secondary) |
-
-**Skill Configuration for Secondary Invocation:**
-
-For a skill to be invokable as secondary on an agent:
-
-```yaml
----
-name: analyse
-context: fork                 # Required: triggers agent spawn
-agent: architect              # Required: specifies target agent
-disable-model-invocation: false  # Optional: allows model to suggest (default)
----
-```
 
 #### 2.5 Agent Communication Pattern
 
@@ -275,9 +245,17 @@ The workflow engine coordinates agents through defined templates.
 
 > **See**: [Workflow Engine Diagram](diagrams/workflow-engine.md)
 
-**Workflow 1: Idea to Implementation** - Three depth levels (Full, Medium, Light) based on complexity assessment.
+**Workflow 1: Idea to Implementation** — Three depth levels (Full, Medium, Light) based on complexity assessment. Full workflow now includes `/review` gate:
 
-**Workflow 2: Session to Meta-Learning** - Session → /reflect → /optimize → Approval → Rollout cycle.
+```
+Full:   /spec → /design → /plan → /review → /implement → /validate → /deploy → /document
+Medium: /spec → /plan → /implement → /validate
+Light:  /plan → /implement
+```
+
+**Workflow 2: Session to Meta-Learning** — Session → /reflect → /optimize → Approval → Rollout cycle.
+
+**Workflow 3: Project Onboarding** — `/onboard` → STANDARDS.md + GUIDELINES.md (brownfield bootstrap).
 
 #### 3.2 Workflow Depth Selection
 
@@ -287,11 +265,11 @@ def select_workflow_depth(request):
     complexity = assess_complexity(request)
 
     if complexity == "high" or is_new_product(request):
-        return "full"  # Spec -> Design -> Plan -> Implement -> Validate -> Deploy -> Document
+        return "full"  # spec -> design -> plan -> review -> implement -> validate -> deploy -> document
     elif complexity == "medium" or is_feature(request):
-        return "medium"  # Spec -> Plan -> Implement -> Validate
+        return "medium"  # spec -> plan -> implement -> validate
     else:  # simple change
-        return "light"  # Plan -> Implement
+        return "light"  # plan -> implement
 
 def assess_complexity(request):
     factors = {
@@ -341,7 +319,7 @@ Hooks provide lifecycle event handling through reminder scripts.
 
 #### 4.2.1 Hook Script Paths
 
-Hook scripts are located in `.claude/hooks/scripts/` and referenced from settings/agent frontmatter:
+Hook scripts are located in `package/hooks/scripts/` (source) and deployed to `.claude/hooks/scripts/` (project) or `~/.claude/hooks/scripts/` (global):
 
 ```json
 // In settings.json (global hooks) - uses $HOME for global path
@@ -413,16 +391,6 @@ EOF
 
 **Execution**: Always run directly (`./script.py`), never with Python interpreter (`python script.py`).
 
-**Benefits**:
-- Isolated environments per script
-- Works without project venv activation
-
-**Common shebangs**:
-```bash
-# Claude Agent SDK
-#!/usr/bin/env -S uvx --from claude-agent-sdk,pyyaml python
-```
-
 #### 4.5 Hook Log Structure
 
 Hook scripts log session and agent lifecycle events for observability and debugging.
@@ -438,26 +406,6 @@ logs/sessions/<session_id>/
     └── agent-stop.jsonl     # Agent stop events (JSONL for two-phase flow)
 ```
 
-**Hook Events:**
-
-| Event | Trigger | Blocking | Log Output |
-|-------|---------|----------|------------|
-| `SessionStart` | Session begins | No | `session-start.jsonl` |
-| `SubagentStart` | Agent spawned | No | `<agent_id>/agent-start.json`, `events.log` |
-| `SubagentStop` | Agent completes | Yes | `<agent_id>/agent-stop.jsonl`, `events.log` |
-| `Stop` | Claude finishes responding | Yes | - |
-| `SessionEnd` | Session closes | No | `session-end.jsonl`, `events.log` |
-
-**Key Files:**
-
-| File | Format | Purpose |
-|------|--------|---------|
-| `session-start.jsonl` | JSONL | Session metadata, supports multiple resumes |
-| `session-end.jsonl` | JSONL | Session end events, supports multiple resumes |
-| `agent-start.json` | JSON | Agent spawn context (type, timestamp, cwd) |
-| `agent-stop.jsonl` | JSONL | Agent completion events (captures two-phase flow) |
-| `events.log` | Text | Chronological event timeline for debugging |
-
 **Two-Phase SubagentStop Flow:**
 
 The SubagentStop hook fires twice per agent completion, controlled by `stop_hook_active`:
@@ -466,14 +414,6 @@ The SubagentStop hook fires twice per agent completion, controlled by `stop_hook
 |-------|-------------------|--------|--------|
 | 1 (Validation) | `false` | `remind-validate.sh` | Self-validation checklist |
 | 2 (Reflexion) | `true` | `remind-reflexion.sh` | Reflexion prompt if errors |
-
-This flow enables:
-1. Agent receives validation prompt first (`stop_hook_active=false`)
-2. Agent responds to validation (may continue or complete)
-3. Agent receives reflexion prompt second (`stop_hook_active=true`)
-4. Agent decides whether to invoke `/reflexion`
-
-Both phases are logged to `agent-stop.jsonl` as separate entries.
 
 ---
 
@@ -520,16 +460,90 @@ Token refresh endpoint returns 401 but error handler swallows exception
 ## Prevention
 - Always handle 401 responses explicitly in auth flows
 - Add logging for token lifecycle events
-- Consider adding health check for token validity
 ```
 
 ---
 
-### 6. MCP Integration
+### 6. Policy System
+
+Two-tier policy structure separates framework-level rules from project-specific standards.
+
+#### 6.1 Policy Tiers
+
+> **See**: [ADR-006](adr/006-policy-modularization.md) and [ADR-012](adr/012-governance-rationalization.md)
+
+**Tier 1: Global Framework Policy** (auto-loaded via `~/.claude/CLAUDE.md` `@`-references)
+
+| File | Tokens | Purpose | Scope |
+|------|--------|---------|-------|
+| `~/.claude/policy/PRINCIPLES.md` | ~640 | Universal SW engineering philosophy | All agents, always |
+| `~/.claude/policy/RULES.md` | ~4,200 | Agent behavioral rules | Orchestrator-level |
+
+**Tier 2: Project-Specific Policy** (auto-loaded via project `CLAUDE.md` `@`-references)
+
+| File | Purpose | Generated By |
+|------|---------|--------------|
+| `docs/policy/STANDARDS.md` | MUST-level: stack, naming, patterns, test requirements | `/onboard` or manual |
+| `docs/policy/GUIDELINES.md` | SHOULD-level: workflow, review process, deployment | `/onboard` or manual |
+
+**Policy Sources (package)**:
+
+| Source | Installed To |
+|--------|-------------|
+| `package/policy/PRINCIPLES.md` | `~/.claude/policy/PRINCIPLES.md` |
+| `package/policy/RULES.md` | `~/.claude/policy/RULES.md` |
+| `package/templates/standards.md` | Template used by `/onboard` to create `docs/policy/STANDARDS.md` |
+| `package/templates/guidelines.md` | Template used by `/onboard` to create `docs/policy/GUIDELINES.md` |
+
+**Key distinction from v0**:
+- v0 had `docs/policy/RULES.md` (duplicate of global, never loaded) — deleted in ADR-012
+- v1 has `docs/policy/STANDARDS.md` (project-specific, distinct naming from global)
+
+#### 6.2 Policy Loading Flow
+
+```
+~/.claude/CLAUDE.md
+  @~/.claude/policy/PRINCIPLES.md     ← always in context
+  @~/.claude/policy/RULES.md          ← always in context (orchestrator)
+
+<project>/CLAUDE.md
+  @docs/policy/STANDARDS.md           ← project MUST conventions (if exists)
+  @docs/policy/GUIDELINES.md          ← project SHOULD practices (if exists)
+```
+
+Sub-agents receive PRINCIPLES + STANDARDS/GUIDELINES via `@`-refs. RULES is orchestrator-level only.
+
+---
+
+### 7. Knowledge Base
+
+Project-specific knowledge lives in `docs/knowledge/` and is loaded into agent context via Serena memory at spawn.
+
+#### 7.1 Knowledge Structure
+
+```
+docs/knowledge/
+├── README.md                    # Knowledge base index and instructions
+└── decisions/                   # Architectural and policy decision records
+    └── hitl-escalation.md       # HITL escalation decision (example)
+```
+
+**`decisions/`** captures decisions that don't warrant full ADRs — lightweight decision records for operational policies and design choices.
+
+#### 7.2 Knowledge vs ADR
+
+| Type | Location | Format | Use When |
+|------|----------|--------|----------|
+| **ADR** | `docs/architecture/adr/` | Full ADR template | Significant architectural decisions with alternatives |
+| **Decision** | `docs/knowledge/decisions/` | Lightweight record | Operational policies, protocol decisions |
+
+---
+
+### 8. MCP Integration
 
 Minimal MCP footprint with two required servers.
 
-#### 6.1 MCP Architecture
+#### 8.1 MCP Architecture
 
 > **See**: [ADR-003 - Minimal MCP Footprint](adr/003-minimal-mcp-footprint.md)
 
@@ -537,30 +551,34 @@ Minimal MCP footprint with two required servers.
 |--------|--------|---------|
 | **Serena** | Required | Session persistence, semantic memory, symbolic code operations |
 | **Context7** | Required | Documentation lookup, hallucination prevention |
+| **DeepWiki** | Required | GitHub repository documentation |
 | **Playwright** | Optional | Browser automation for validation |
 
-#### 6.2 MCP Usage Patterns
+#### 8.2 MCP Usage Patterns
 
 | Use Case | MCP Server | Tool | Skill |
 |----------|------------|------|-------|
 | Store reflexion | Serena | write_memory | /reflexion |
 | Query past errors | Serena | read_memory | Agent init |
 | Look up docs | Context7 | query-docs | /research, /design |
+| Look up repo | DeepWiki | query | /research, /design |
 | Visual validation | Playwright | screenshot | /validate |
 | Code navigation | Serena | find_symbol | /analyse |
 
 ---
 
-### 7. File Structure
+### 9. File Structure
 
 Detailed file organization for Orchestrator installation.
 
-#### 7.1 Repository Structure
+#### 9.1 Repository Structure
 
 ```
 orchestrator/
 ├── README.md                           # Project overview
 ├── install.sh                          # Installer script
+├── AGENTS.md                           # Agent coordination document (loaded by Claude)
+├── CLAUDE.md                           # Claude project instructions (loads AGENTS.md)
 │
 ├── docs/                               # Orchestrator's own docs (dogfooding)
 │   ├── objectives/
@@ -570,20 +588,38 @@ orchestrator/
 │   ├── architecture/
 │   │   ├── PRD.md
 │   │   ├── ARCHITECTURE.md             # This document
-│   │   └── adr/
-│   │       ├── 001-hook-reminder-pattern.md
-│   │       ├── 002-four-tier-memory.md
-│   │       ├── 003-minimal-mcp-footprint.md
-│   │       └── 004-skill-agent-invocation-paths.md
+│   │   ├── DESIGN-PRINCIPLES.md        # Orchestrator-specific design principles
+│   │   ├── adr/
+│   │   │   ├── 001-hook-reminder-pattern.md
+│   │   │   ├── 002-four-tier-memory.md
+│   │   │   ├── 003-minimal-mcp-footprint.md
+│   │   │   ├── 004-skill-agent-invocation-paths.md
+│   │   │   ├── 005-task-decomposition-hierarchy.md
+│   │   │   ├── 006-policy-modularization.md
+│   │   │   ├── 007-multi-agent-protocol-selection.md
+│   │   │   ├── 008-multi-provider-integration-strategy.md
+│   │   │   ├── 009-orchestration-framework-selection.md
+│   │   │   ├── 010-observability-architecture.md
+│   │   │   ├── 011-coordination-level-strategy.md
+│   │   │   └── 012-governance-rationalization.md
+│   │   └── diagrams/
 │   ├── development/
-│   │   └── BACKLOG.md
+│   │   ├── BACKLOG.md
+│   │   └── ISSUES.md
+│   ├── policy/
+│   │   ├── README.md                   # Policy index (no RULES.md — deleted by ADR-012)
+│   │   ├── STANDARDS.md                # Orchestrator-specific technical standards
+│   │   └── GUIDELINES.md              # Orchestrator process guidelines
 │   └── knowledge/
-│       └── README.md
+│       ├── README.md                   # Knowledge base index
+│       └── decisions/                  # Lightweight decision records
+│           └── hitl-escalation.md
 │
-├── .claude/                            # Claude-native structures
-│   ├── settings.json                   # Project settings
+├── package/                            # Source layout (deployed into Claude Code structures)
+│   ├── settings.json                   # Global settings template
+│   ├── mcp.json                        # Global MCP servers template
 │   │
-│   ├── agents/                         # Agent definitions
+│   ├── agents/                         # → ~/.claude/agents/ (global) or <target>/.claude/agents/
 │   │   ├── business-analyst.md
 │   │   ├── architect.md
 │   │   ├── project-manager.md
@@ -592,56 +628,45 @@ orchestrator/
 │   │   ├── deployer.md
 │   │   └── tech-writer.md
 │   │
-│   ├── skills/                         # Skill definitions
-│   │   ├── orchestrate/
-│   │   │   └── SKILL.md
-│   │   ├── spec/
-│   │   │   └── SKILL.md
-│   │   ├── design/
-│   │   │   └── SKILL.md
-│   │   ├── plan/
-│   │   │   └── SKILL.md
-│   │   ├── implement/
-│   │   │   └── SKILL.md
-│   │   ├── validate/
-│   │   │   └── SKILL.md
-│   │   ├── deploy/
-│   │   │   └── SKILL.md
-│   │   ├── document/
-│   │   │   └── SKILL.md
-│   │   ├── reflexion/
-│   │   │   └── SKILL.md
-│   │   ├── reflect/
-│   │   │   └── SKILL.md
-│   │   ├── optimize/
-│   │   │   └── SKILL.md
-│   │   ├── analyse/
-│   │   │   └── SKILL.md
-│   │   ├── research/
-│   │   │   └── SKILL.md
-│   │   └── distill/
-│   │       └── SKILL.md
+│   ├── skills/                         # → ~/.claude/skills/ (global) or <target>/.claude/skills/
+│   │   ├── orchestrate/SKILL.md
+│   │   ├── spec/SKILL.md
+│   │   ├── design/SKILL.md
+│   │   ├── plan/SKILL.md
+│   │   ├── implement/SKILL.md
+│   │   ├── validate/SKILL.md
+│   │   ├── deploy/SKILL.md
+│   │   ├── document/SKILL.md
+│   │   ├── onboard/SKILL.md
+│   │   ├── review/SKILL.md
+│   │   ├── hitl/SKILL.md
+│   │   ├── reflexion/SKILL.md
+│   │   ├── reflect/SKILL.md
+│   │   ├── optimize/SKILL.md
+│   │   ├── analyse/SKILL.md
+│   │   ├── research/SKILL.md
+│   │   └── distill/SKILL.md
 │   │
-│   └── hooks/                          # Hook scripts
-│       ├── README.md
-│       └── scripts/
-│           ├── lib/
-│           │   └── hook-utils.sh       # Shared library for parsing/logging
-│           ├── inject-context.sh       # SessionStart: inject vars
-│           ├── remind-validate.sh      # SubagentStop: agent validation
-│           ├── remind-reflexion.sh     # SubagentStop: agent reflexion
-│           ├── remind-reflect.sh       # Stop: orchestrator /reflect
-│           └── checkpoint-session.sh   # SessionEnd: cleanup, checkpoint
-│
-├── package/                            # Flat package source (install input)
-│   ├── settings.json                   # Global settings template
-│   ├── policy/
+│   ├── hooks/                          # → .claude/hooks/ (project) or ~/.claude/hooks/ (global)
+│   │   ├── README.md
+│   │   └── scripts/
+│   │       ├── lib/hook-utils.sh
+│   │       ├── inject-context.sh
+│   │       ├── remind-validate.sh
+│   │       ├── remind-reflexion.sh
+│   │       ├── remind-reflect.sh
+│   │       ├── checkpoint-session.sh
+│   │       └── setup-project.sh
+│   │
+│   ├── policy/                         # → ~/.claude/policy/
 │   │   ├── RULES.md
 │   │   └── PRINCIPLES.md
-│   ├── workflows/
+│   │
+│   ├── workflows/                      # → ~/.claude/workflows/
 │   │   ├── SWE.md
 │   │   └── meta-learning.md
-│   └── templates/
+│   │
+│   └── templates/                      # → ~/.claude/templates/ (and project-local)
 │       ├── vision.md
 │       ├── blueprint.md
 │       ├── prd.md
@@ -649,24 +674,27 @@ orchestrator/
 │       ├── adr.md
 │       ├── roadmap.md
 │       ├── backlog.md
-│       └── issues.md
-│
-├── docs/ + reports/                    # Project scaffolding produced by --project
+│       ├── issues.md
+│       ├── standards.md
+│       ├── guidelines.md
+│       └── knowledge.md
 │
 └── .serena/                            # Serena MCP local storage
     └── README.md
 ```
 
-#### 7.2 Installation Targets
+#### 9.2 Installation Targets
 
 | Source | Flag | Target | Purpose |
 |--------|------|--------|---------|
-| `package/agents`, `package/skills` | `--global` | `~/.claude/agents/jarvis/`, `~/.claude/skills/jarvis/` | Claude-native agent/skill installation |
+| `package/agents`, `package/skills` | `--global` | `~/.claude/agents/`, `~/.claude/skills/` | Claude-native agent/skill installation |
 | `package/{hooks,settings,mcp,policy,workflows,templates}` | `--global` | `~/.claude/`, `~/.claude.json` | Shared runtime/global config |
 | `package/*` + scaffold dirs | `--project <path>` | `<path>/.claude/*`, `<path>/docs/*`, `<path>/reports/*` | Project-local install / dogfooding |
-| `docs/` | - | Not deployed | Orchestrator's own documentation |
+| `docs/` | — | Not deployed | Orchestrator's own documentation |
 
-#### 7.3 Installation Behavior
+**Namespace support**: `--namespace <name>` installs agents/skills under `~/.claude/agents/<name>/` and `~/.claude/skills/<name>/`. Default is flat (no namespace subdirectory). See [decision record](../../docs/knowledge/decisions/flat-skill-paths.md).
+
+#### 9.3 Installation Behavior
 
 The `install.sh` script handles existing files intelligently:
 
@@ -677,78 +705,13 @@ The `install.sh` script handles existing files intelligently:
 | `*.sh` (hooks) | **Backup + overwrite** | Scripts should match Orchestrator version |
 | New files | **Create** | No conflict |
 
-##### JSON Patching (settings.json, mcp.json)
-
-```bash
-# Pseudocode for JSON merge
-if [ -f "$TARGET" ]; then
-    # Backup existing
-    cp "$TARGET" "$TARGET.backup.$(date +%Y%m%d%H%M%S)"
-
-    # Deep merge: Orchestrator defaults + user customizations
-    # User values take precedence for existing keys
-    jq -s '.[0] * .[1]' "$Orchestrator_SOURCE" "$TARGET" > "$TARGET.tmp"
-    mv "$TARGET.tmp" "$TARGET"
-
-    echo "Patched: $TARGET (backup created)"
-else
-    cp "$Orchestrator_SOURCE" "$TARGET"
-    echo "Created: $TARGET"
-fi
-```
-
-##### Markdown Handling (agents, skills, policies)
-
-```bash
-# Don't overwrite modified markdown files
-if [ -f "$TARGET" ]; then
-    if ! diff -q "$Orchestrator_SOURCE" "$TARGET" > /dev/null 2>&1; then
-        echo "WARNING: $TARGET exists and differs from Orchestrator version"
-        echo "  Orchestrator version: $Orchestrator_SOURCE"
-        echo "  Your version preserved. Review manually if needed."
-        # Optionally copy Orchestrator version with .backup suffix for comparison
-        cp "$Orchestrator_SOURCE" "$TARGET.backup"
-    else
-        echo "Unchanged: $TARGET"
-    fi
-else
-    cp "$Orchestrator_SOURCE" "$TARGET"
-    echo "Created: $TARGET"
-fi
-```
-
-##### Shell Script Handling (hooks)
-
-```bash
-# Always update hook scripts (backup first)
-if [ -f "$TARGET" ]; then
-    cp "$TARGET" "$TARGET.backup.$(date +%Y%m%d%H%M%S)"
-    echo "Backed up: $TARGET"
-fi
-cp "$Orchestrator_SOURCE" "$TARGET"
-chmod +x "$TARGET"
-echo "Installed: $TARGET"
-```
-
-##### Installation Summary Output
-
-```
-Orchestrator Installation Summary
-========================
-Created:  12 files
-Patched:   2 files (settings.json, mcp.json)
-Unchanged: 3 files
-Warnings:  1 file (see above)
-Backups:   ~/.claude/backups/2026-01-24/
-```
-
 ---
 
-### 8. Artifact Storage
+### 10. Artifact Storage
 
 Where skills write their outputs.
 
-#### 8.1 Artifact Locations
+#### 10.1 Artifact Locations
 
 ```
 target-project/
@@ -764,13 +727,22 @@ target-project/
 │   │   └── adr/                     # /design ADR output
 │   │       └── 001-decision.md
 │   │
-│   └── development/                 # Execution layer
-│       ├── BACKLOG.md               # Prioritized tasks
-│       └── ISSUES.md                # Discovered bugs/blockers
+│   ├── development/                 # Execution layer
+│   │   ├── BACKLOG.md               # Prioritized tasks
+│   │   └── ISSUES.md                # Discovered bugs/blockers + /review blocking items
+│   │
+│   ├── policy/                      # Project governance
+│   │   ├── STANDARDS.md             # /onboard output (MUST conventions)
+│   │   └── GUIDELINES.md            # /onboard output (SHOULD practices)
+│   │
+│   └── knowledge/                   # Project knowledge base
+│       ├── README.md                # Knowledge index
+│       └── decisions/               # Lightweight decision records
 │
 ├── reports/                         # Git-versioned skill outputs
-│   ├── analysis/                    # /analyse output
-│   │   └── 2026-01-23-auth-issue.md
+│   ├── analysis/                    # /analyse and /review output
+│   │   ├── 2026-01-23-auth-issue.md
+│   │   └── review-2026-02-19.md     # /review cross-artifact report
 │   └── research/                    # /research output
 │       └── 2026-01-23-oauth-providers.md
 │
@@ -781,85 +753,6 @@ target-project/
     # /validate → validation records
     # /reflect → reflection records
     # /reflexion → reflexion records
-```
-
-#### 8.2 Artifact Schema
-
-**PRD (docs/architecture/PRD.md)**
-```markdown
-# [Project Name] Product Requirements Document
-
-## Executive Summary
-[Brief overview]
-
-## Goals
-### Primary Goal
-[Main objective]
-
-### Non-Goals
-[Explicit exclusions]
-
-## Functional Requirements
-### FR1: [Feature Name]
-[Description]
-**Acceptance Criteria:**
-- [ ] [Criterion 1]
-- [ ] [Criterion 2]
-
-## Non-Functional Requirements
-| ID | Requirement | Target |
-|----|-------------|--------|
-| NFR1 | [Requirement] | [Target] |
-
-## User Stories
-### US1: [Story Title]
-**As a** [role]
-**I want to** [action]
-**So that** [benefit]
-```
-
-**Architecture (docs/architecture/ARCHITECTURE.md)**
-```markdown
-# [Project Name] Architecture
-
-## Overview
-[System diagram]
-
-## Components
-### [Component Name]
-- **Responsibility**: [What it does]
-- **Interface**: [API/contract]
-- **Dependencies**: [What it needs]
-
-## Data Flow
-[Sequence diagrams]
-
-## Constraints
-[Technical limitations]
-
-## Risks
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-
-## Trade-offs
-[Design decisions and alternatives considered]
-```
-
-**Backlog (docs/development/BACKLOG.md)**
-
-> **See**: [ADR-005 Task Decomposition Hierarchy](adr/005-task-decomposition-hierarchy.md)
-
-```markdown
-# [Project Name] Backlog
-
-## [Milestone] (e.g., v0, v1)
-
-### [Phase]: Research | Design | Implement | Validate
-
-#### Epic: [Name] (feature group)
-- [ ] Task: [description] → `[commit message]`
-- [ ] Task: [description] → `[commit message]`
-- [ ] Task: [tests/validation] → `[commit message]`
 ```
 
 ---
@@ -875,6 +768,14 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 | [ADR-003](adr/003-minimal-mcp-footprint.md) | Minimal MCP Footprint | 2 required (Serena, Context7), 1 optional (Playwright) |
 | [ADR-004](adr/004-skill-agent-invocation-paths.md) | Skill-Agent Invocation | Skill-driven injection via `context: fork` + agent's `skills:` list |
 | [ADR-005](adr/005-task-decomposition-hierarchy.md) | Task Decomposition | Milestone → Phase → Epic → Task hierarchy for agent workflows |
+| [ADR-006](adr/006-policy-modularization.md) | Policy Modularization | Reference-based policy loading with two-tier structure |
+| [ADR-007](adr/007-multi-agent-protocol-selection.md) | Multi-Agent Protocol | A2A + MCP protocol selection for v1 |
+| [ADR-008](adr/008-multi-provider-integration-strategy.md) | Multi-Provider Integration | Strategy for Gemini/Codex alongside Claude |
+| [ADR-009](adr/009-orchestration-framework-selection.md) | Orchestration Framework | Strands Framework selection for v1 |
+| [ADR-010](adr/010-observability-architecture.md) | Observability Architecture | OTEL + Prometheus + Loki + Grafana for v1 |
+| [ADR-011](adr/011-coordination-level-strategy.md) | Coordination Levels | L1/L2/L3 coordination strategy |
+| [ADR-012](adr/012-governance-rationalization.md) | Governance Rationalization | Two-tier policy, /onboard skill, eliminated duplicate RULES.md |
+| [ADR-013](adr/013-spec-kit-skills.md) | Spec-Kit Skill Additions | /onboard, /review, /hitl skills — rationale and agent assignments |
 
 **Key Design Principles**:
 
@@ -882,6 +783,8 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 2. **Load at Spawn**: Skills are loaded/injected into agent context at spawn (not invoked at runtime)
 3. **Two Invocation Paths**: User invokes skill directly (`/spec` with `context: fork`) OR orchestrator spawns agent (loads via `skills:` list)
 4. **Blocking Reminders**: SubagentStop/Stop hooks can block and prompt for action; agent decides response
+5. **HITL via Structured Block**: Sub-agents return `## QUESTIONS FOR USER` block; orchestrator relays via `AskUserQuestion`
+6. **Evidence-Based Standards**: `/onboard` derives standards from codebase observation, not aspirational templates
 
 ---
 
@@ -913,6 +816,7 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 - Skills are loaded on demand
 - Agent context forking isolates state
 - Distill skill for context reduction
+- Policy loading via `@`-references (not full injection)
 
 ### Parallel Execution
 
@@ -924,20 +828,19 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 
 ## Appendix: Component Inventory
 
-### Files (Target: ~40)
+### Files (Source: package/)
 
-| Category | Count | Files |
-|----------|-------|-------|
+| Category | Count | Components |
+|----------|-------|------------|
 | Agents | 7 | business-analyst, architect, project-manager, developer, validator, deployer, tech-writer |
-| Skills | 14 | orchestrate, spec, design, plan, implement, validate, deploy, document, reflexion, reflect, optimize, analyse, research, distill |
-| Hooks | 5 | inject-context.sh, remind-validate.sh, remind-reflexion.sh, remind-reflect.sh, checkpoint-session.sh |
+| Skills (user-invocable) | 16 | orchestrate, spec, design, plan, implement, validate, deploy, document, onboard, review, reflexion, reflect, optimize, analyse, research, distill |
+| Skills (protocol) | 1 | hitl |
+| Hooks | 7 | inject-context.sh, remind-validate.sh, remind-reflexion.sh, remind-reflect.sh, checkpoint-session.sh, setup-project.sh, hook-utils.sh |
 | Policy | 2 | RULES.md, PRINCIPLES.md |
 | Workflows | 2 | SWE.md, meta-learning.md |
-| Templates | 8 | vision.md, blueprint.md, prd.md, architecture.md, adr.md, roadmap.md, backlog.md, issues.md |
-| Settings | 3 | global, project, .claude |
-| Project templates | 5 | GOALS.md, ROADMAP.md, BACKLOG.md, knowledge/README.md, reports/ |
-| Documentation | 6 | PRD.md, ARCHITECTURE.md, VISION.md, BLUEPRINT.md, ROADMAP.md, ADRs |
-| **Total** | **~48** | |
+| Templates | 11 | vision.md, blueprint.md, prd.md, architecture.md, adr.md, roadmap.md, backlog.md, issues.md, standards.md, guidelines.md, knowledge.md |
+| Settings | 2 | settings.json, mcp.json |
+| **Total** | **~52** | |
 
 ### Dependencies
 
@@ -946,6 +849,7 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 | Claude Code | Runtime | Yes |
 | Serena MCP | MCP Server | Yes |
 | Context7 MCP | MCP Server | Yes |
+| DeepWiki MCP | MCP Server | Yes |
 | Playwright MCP | MCP Server | No |
 | Bash | Shell | Yes (hooks) |
 
@@ -953,7 +857,5 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 
 ## Next Steps
 
-1. **PRD Approval**: Confirm this architecture matches PRD intent
-2. **Planning**: `/plan` to generate implementation tasks
-3. **Implementation**: Build incrementally (agents → skills → hooks → workflows)
-4. **Validation**: Test with dogfooding (Orchestrator building Orchestrator)
+1. **Update SWE.md**: Add `/review` gate to workflow definition
+2. **Planning**: `/plan` to generate implementation tasks for spec-kit integration
