@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
-**Version**: 0.1.0
-**Updated**: 2026-01-29 (50/50 tasks done)
+**Version**: 0.1.1
+**Updated**: 2026-02-20 (50/57 v0 tasks done)
 **Scope**: v0 Milestone
 
 ---
@@ -60,6 +60,13 @@
 | T-044 | v0 | Initial | Project Templates | package-driven project scaffolding | PRD | P1 | ✅ |
 | T-045 | v0 | Initial | Memory | .serena/README.md | PRD | P2 | ✅ |
 | T-046 | v0 | Initial | Settings | Fix $schema in settings.json | PRD | P0 | ✅ |
+| T-051 | v0 | Governance & Quality | Governance and Quality Controls | onboard/SKILL.md | ADR-013 | P0 | ⏳ |
+| T-052 | v0 | Governance & Quality | Governance and Quality Controls | review/SKILL.md | ADR-013 | P0 | ⏳ |
+| T-053 | v0 | Governance & Quality | Governance and Quality Controls | hitl/SKILL.md | ADR-013 | P0 | ⏳ |
+| T-054 | v0 | Governance & Quality | Governance and Quality Controls | Update architect.md (add onboard skill) | ADR-013 | P0 | ⏳ |
+| T-055 | v0 | Governance & Quality | Governance and Quality Controls | Update tech-writer.md (add review skill) | ADR-013 | P0 | ⏳ |
+| T-056 | v0 | Governance & Quality | Governance and Quality Controls | Update SWE.md (/review gate in full workflow) | ADR-013, T-029 | P0 | ⏳ |
+| T-057 | v0 | Governance & Quality | Governance and Quality Controls | Update PRD.md FR2 (17 skills) | R-001 | P0 | ✅ |
 
 ---
 
@@ -331,9 +338,10 @@
 
 ### T-029: SWE.md
 **AC**:
-- Full workflow: /spec → /design → /plan → /implement → /validate → /deploy → /document
+- Full workflow: /spec → /design → /plan → /review → /implement → /validate → /deploy → /document
 - Medium workflow: /spec → /plan → /implement → /validate
 - Light workflow: /plan → /implement
+- /review is a blocking gate in full workflow only (between /plan and /implement)
 - Complexity assessment criteria
 - Decision points for user consultation
 
@@ -517,6 +525,71 @@
 - Documents Serena MCP usage for Orchestrator
 - Explains memory tiers (semantic, reflexion, transient)
 - Location: `.serena/README.md`
+
+---
+
+### T-051: onboard/SKILL.md
+**AC**:
+- Valid skill frontmatter with `context: fork`, `agent: architect`
+- Inputs: target project path or current directory
+- Outputs: `docs/policy/STANDARDS.md` (MUST-level conventions), `docs/policy/GUIDELINES.md` (SHOULD-level guidance)
+- Standards derived from observed codebase patterns only — no invented conventions
+- If insufficient signals, reports what was found and omits speculative standards
+- Outputs include version headers (semver) for governance tracking
+
+---
+
+### T-052: review/SKILL.md
+**AC**:
+- Valid skill frontmatter with `context: fork`, `agent: tech-writer`
+- Inputs: artifact set (PRD, ARCHITECTURE, ADRs, ROADMAP, BACKLOG) from current repo
+- Outputs: `reports/analysis/review-YYYY-MM-DD.md` (full report), `docs/development/ISSUES.md` (blocking issues)
+- Issues classified as blocking (halt workflow) or non-blocking (noted only)
+- Checks: FR coverage, component mapping, BACKLOG traceability, ADR consistency
+- Positioned between /plan and /implement in full SWE workflow
+
+---
+
+### T-053: hitl/SKILL.md
+**AC**:
+- `user-invocable: false`, `disable-model-invocation: true` in frontmatter
+- Defines HITL escalation protocol: sub-agents emit `## QUESTIONS FOR USER` block instead of calling AskUserQuestion directly
+- Orchestrator detects block, relays via AskUserQuestion, re-invokes agent with answers prepended
+- Single source of truth — referenced from agent definitions via `skills:` list
+- Not a workflow step; a shared protocol definition only
+
+---
+
+### T-054: Update architect.md (add onboard skill)
+**AC**:
+- `skills:` list in architect.md frontmatter includes `onboard`
+- No other changes to agent boundaries or behavior
+
+---
+
+### T-055: Update tech-writer.md (add review skill)
+**AC**:
+- `skills:` list in tech-writer.md frontmatter includes `review`
+- No other changes to agent boundaries or behavior
+
+---
+
+### T-056: Update SWE.md (/review gate in full workflow)
+**AC**:
+- Full workflow: /spec → /design → /plan → /review → /implement → /validate → /deploy → /document
+- /review described as blocking gate (between /plan and /implement, full workflow only)
+- Medium and light workflows unchanged
+- Complexity assessment criteria updated to indicate /review skip conditions
+
+---
+
+### T-057: Update PRD.md FR2 (17 skills)
+**AC**:
+- PRD version bumped to 0.1.1
+- Executive Summary lists 17 skills (9 agent-backed + 1 orchestration + 6 utility + 1 shared protocol)
+- FR2 table includes /onboard, /review as agent-backed skills
+- FR2 includes /hitl as shared protocol (non-invocable)
+- File structure listing includes onboard/, review/, hitl/ skill directories
 
 ---
 

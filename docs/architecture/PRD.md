@@ -1,9 +1,9 @@
 # AgentOrchestrator Product Requirements Document
 
-**Version**: 0.1.0
+**Version**: 0.1.1
 **Status**: Accepted
 **Scope**: v0 Milestone
-**Date**: 2026-01-22
+**Date**: 2026-02-20
 
 ---
 
@@ -14,7 +14,7 @@ AgentOrchestrator is a lean, self-contained multi-agent orchestration framework 
 **Core Architecture:**
 - **Main Orchestrator** (Claude itself) with `/orchestrate` skill as control loop
 - **7 Agents** (specialized workers invoked via Task tool)
-- **14 Skills** (7 agent-backed + 1 orchestration + 6 utility)
+- **17 Skills** (9 agent-backed + 1 orchestration + 6 utility + 1 shared protocol)
 - **5 Hook Events** (lifecycle events with 5 scripts)
 - **2 Workflow Templates** (agent chains producing artifacts)
 - **2-3 MCP servers** (minimal external dependencies)
@@ -47,9 +47,10 @@ Create a minimalist orchestration layer where the **main Claude agent** coordina
 │                    MAIN ORCHESTRATOR (Claude)                    │
 │                    /orchestrate skill loop                       │
 ├─────────────────────────────────────────────────────────────────┤
-│  SKILLS (7 agent-backed + 1 orchestration + 6 utility)           │
-│  Agent: /spec /design /plan /implement /validate /deploy /document│
-│  Orch: /orchestrate  Util: /reflexion /reflect /optimize /analyse /research /distill
+│  SKILLS (9 agent-backed + 1 orchestration + 6 utility + 1 protocol) │
+│  Agent: /spec /design /plan /implement /validate /deploy /document /onboard /review │
+│  Orch: /orchestrate  Util: /reflexion /reflect /optimize /analyse /research /distill │
+│  Protocol: /hitl (non-invocable, injected via agent skills:)
 ├─────────────────────────────────────────────────────────────────┤
 │  SUB-AGENTS (via Task tool, slim wrappers invoking skills)       │
 │  BA │ Architect │ PM │ Developer │ Validator │ Deployer │ Writer│
@@ -117,21 +118,29 @@ You are [agent role]. Your task is to invoke the [skill-name] skill and...
 
 > **Note**: AgentOrchestrator skill source lives in `package/skills/` and installs to `~/.claude/skills/jarvis/` (global) or `<project>/.claude/skills/jarvis/` (project-local). Skills support additional features over legacy commands: context forking, agent delegation, and lifecycle hooks.
 
-Fourteen user-facing skills:
+Seventeen skills (16 user-facing + 1 shared protocol):
 
 > **Note**: Agent-backed skills have 1:1 mapping with Agents. Agents can invoke other skills internally.
 
-**Agent-backed skills** (1:1 with agents):
+**Agent-backed skills** (9, mapped to 7 agents):
 
 | Skill | Purpose | Agent | Output | Storage |
 | ----- | ------- | ----- | ------ | ------- |
 | `/spec` | Idea → requirements, acceptance criteria | BA | PRD | File |
 | `/design` | PRD → architecture, constraints, risks, ADR | Architect | Architecture doc | File |
+| `/onboard` | Analyze codebase → generate project-specific STANDARDS.md, GUIDELINES.md | Architect | docs/policy/ | File |
 | `/plan` | Architecture → sequencing, decomposition | PM | ROADMAP, BACKLOG | File |
+| `/review` | Cross-artifact consistency/coverage gate (pre-implement) | Tech Writer | reports/analysis/, ISSUES.md | File |
 | `/implement` | Code implementation, tests, build | Developer | Code, tests | File |
 | `/validate` | Quality assessment, acceptance criteria validation | Validator | Validation record | Serena |
 | `/deploy` | Build, deploy, release | Deployer | Deployment artifacts | File |
 | `/document` | Documentation, runbooks | Tech Writer | Docs, README | File |
+
+**Shared Protocol skill** (non-invocable):
+
+| Skill | Purpose | Invocation |
+| ----- | ------- | ---------- |
+| `/hitl` | HITL escalation protocol; injected via agent `skills:` list | `user-invocable: false`, `disable-model-invocation: true` |
 
 **Orchestration skill**:
 
@@ -442,7 +451,11 @@ orchestrator/
 │   │   │   └── SKILL.md
 │   │   ├── design/              # Agent-backed (Architect)
 │   │   │   └── SKILL.md
+│   │   ├── onboard/             # Agent-backed (Architect) - codebase → STANDARDS.md
+│   │   │   └── SKILL.md
 │   │   ├── plan/                # Agent-backed (PM)
+│   │   │   └── SKILL.md
+│   │   ├── review/              # Agent-backed (Tech Writer) - cross-artifact gate
 │   │   │   └── SKILL.md
 │   │   ├── implement/           # Agent-backed (Developer)
 │   │   │   └── SKILL.md
@@ -451,6 +464,8 @@ orchestrator/
 │   │   ├── deploy/              # Agent-backed (Deployer)
 │   │   │   └── SKILL.md
 │   │   ├── document/            # Agent-backed (Tech Writer)
+│   │   │   └── SKILL.md
+│   │   ├── hitl/                # Shared protocol (non-invocable, injected via agent skills:)
 │   │   │   └── SKILL.md
 │   │   ├── reflexion/           # Utility (reminded at SubagentStop)
 │   │   │   └── SKILL.md

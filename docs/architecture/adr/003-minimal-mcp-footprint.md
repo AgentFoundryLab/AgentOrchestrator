@@ -31,13 +31,15 @@ AgentOrchestrator aims for minimalism: "What's the smallest MCP set that enables
 
 ## Decision
 
-**Two required MCP servers, one optional**:
+**Three required MCP servers, two optional**:
 
 | Server | Status | Purpose |
 |--------|--------|---------|
 | **Serena** | Required | Session persistence, semantic memory, symbolic code operations |
 | **Context7** | Required | Documentation lookup, hallucination prevention |
+| **DeepWiki** | Required | AI-powered GitHub repository documentation and Q&A |
 | **Playwright** | Optional | Browser automation for validation |
+| **Parallel Search/Task** | Optional | Parallel web search and deep research tasks |
 
 ### Explicitly Dropped
 
@@ -85,6 +87,19 @@ Context7 provides hallucination prevention:
    - "Never guess - always verify"
    - Context7 enables verification
 
+### DeepWiki: Why Required
+
+DeepWiki provides AI-powered documentation for GitHub repositories:
+
+1. **Repository Documentation**
+   - `read_wiki_structure`, `read_wiki_contents`, `ask_question`
+   - Answers architectural questions about any public GitHub repo
+   - Essential for `/research` skill and library evaluation tasks
+
+2. **Research Quality**
+   - Complements Context7 (library API docs) with repository-level understanding
+   - Covers architecture, patterns, and design decisions that Context7 misses
+
 ### Playwright: Why Optional
 
 Browser automation is valuable but not core:
@@ -110,8 +125,8 @@ Browser automation is valuable but not core:
 
 ### Positive
 
-1. **Simple Installation**: 2 servers instead of 10+
-2. **No Docker Required**: Serena and Context7 run natively
+1. **Simple Installation**: 3 required servers instead of 10+
+2. **No Docker Required**: Serena, Context7, and DeepWiki run natively
 3. **Reduced Token Overhead**: Fewer tool descriptions in context
 4. **Lower Maintenance**: Fewer dependencies to update
 
@@ -165,14 +180,16 @@ Browser automation is valuable but not core:
 
 ## Capability Matrix
 
-| Capability | Without MCPs | Serena | Context7 | Playwright |
-|------------|-------------|--------|----------|------------|
-| Memory persistence | No | Yes | - | - |
-| Semantic code ops | Limited | Yes | - | - |
-| Documentation lookup | WebSearch | - | Yes | - |
-| Browser automation | No | - | - | Yes |
-| Web search | WebSearch | - | - | - |
-| Reasoning | Native | - | - | - |
+| Capability | Without MCPs | Serena | Context7 | DeepWiki | Playwright |
+|------------|-------------|--------|----------|----------|------------|
+| Memory persistence | No | Yes | - | - | - |
+| Semantic code ops | Limited | Yes | - | - | - |
+| Documentation lookup | WebSearch | - | Yes | - | - |
+| Repo architecture Q&A | WebSearch | - | - | Yes | - |
+| Deep research (analyst-grade) | No | - | - | Yes | - |
+| Browser automation | No | - | - | - | Yes |
+| Web search | WebSearch | - | - | - | - |
+| Reasoning | Native | - | - | - | - |
 
 ## Migration Path
 

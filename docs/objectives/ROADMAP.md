@@ -9,8 +9,7 @@
 
 | Milestone | Goal | Phases |
 |-----------|------|--------|
-| **v0** | Minimal viable multi-agent orchestration | Initial → Validation |
-| **v0.1.1** | Installer multi-agent extension | Installer Extension |
+| **v0** | Minimal viable multi-agent orchestration | Initial → Validation → Multi-Agent Installer → Governance & Quality |
 | **v1** | Full Orchestrator vision | POC → MVP → Foundation → Factory |
 
 ---
@@ -127,22 +126,20 @@ Integration testing and documentation.
 
 ---
 
-# v0.1.1 Multi-Agent Milestone
+## v0.1.1: Multi-Agent Installer Extension
 
 **Goal**: Extend installer for multi-agent runtimes with namespaced (dot-notation) install paths.
 
-**Prerequisite**: v0.1.0 complete
-
 ---
 
-## Installer Extension Phase
+### Installer Extension Phase
 
 Runtime expansion and namespace standardization for install/restore/cleanup workflows.
 
 Policy details are maintained in:
 - `reports/research/2026-02-19-multi-agent-install-plan.md` (Final Capability Policy + Installer Default Policy + canonical mappings)
 
-### Epic: Runtime Matrix & Canonical Paths
+#### Epic: Runtime Matrix & Canonical Paths
 **Depends on**: v0.1.0 complete
 
 - [ ] Define canonical runtime registry for `claude`, `gemini`, `codex`, `opencode`, `qwen`
@@ -155,7 +152,7 @@ Policy details are maintained in:
 - [ ] Add runtime path drift checks (installer map vs package layout)
 - [ ] Define canonical frontmatter/schema transforms for `skills -> commands` conversion per runtime
 
-### Epic: Namespace & Dot-Notation Semantics
+#### Epic: Namespace & Dot-Notation Semantics
 **Depends on**: Runtime Matrix & Canonical Paths
 
 - [ ] Define namespace grammar and validation (`<segment>[.<segment>...]`)
@@ -163,7 +160,7 @@ Policy details are maintained in:
 - [ ] Preserve flat mode as backward-compatible default when `--namespace` is omitted
 - [ ] Ensure namespace-safe restore/cleanup semantics for global and project modes
 
-### Epic: Capability-Scoped Installer Profiles
+#### Epic: Capability-Scoped Installer Profiles
 **Depends on**: Runtime Matrix & Canonical Paths
 
 - [ ] Split install profiles by capability (`commands`, `skills`, `hooks`, `scripts`)
@@ -178,7 +175,7 @@ Policy details are maintained in:
 - [ ] Make policy-ref injection runtime-aware and idempotent across selected targets
 - [ ] Prevent cross-runtime collisions in context docs/files (e.g., shared root docs)
 
-### Epic: UX & Documentation
+#### Epic: UX & Documentation
 **Depends on**: Namespace & Dot-Notation Semantics, Capability-Scoped Installer Profiles
 
 - [ ] Update `install.sh --help` with multi-agent + namespaced examples
@@ -187,7 +184,7 @@ Policy details are maintained in:
 - [ ] Update `README.md` install matrix for Claude/Codex/Gemini/OpenCode/Qwen
 - [ ] Document migration notes for legacy namespace and runtime path behavior
 
-### Epic: Validation & CI
+#### Epic: Validation & CI
 **Depends on**: All Installer Extension epics
 
 - [ ] Add install smoke tests for runtime matrix (`global`, `project`)
@@ -197,6 +194,34 @@ Policy details are maintained in:
 - [ ] Add CI guardrail to fail on runtime/path drift
 
 **→ TAG: v0.1.1 (planned)**
+
+---
+
+## v0.1.2: Governance and Quality Controls
+
+**Goal**: Governance bootstrapping (`/onboard`), cross-artifact review gate (`/review`), and unified HITL escalation protocol (`/hitl`).
+
+**Branch**: `v1/spec-kit-integration`
+**ADR**: [ADR-013](../architecture/adr/013-spec-kit-skills.md)
+
+---
+
+### Governance & Quality Phase
+
+Three skill additions addressing governance bootstrapping, pre-implementation review, and HITL consistency.
+
+#### Epic: Governance and Quality Controls
+**Depends on**: v0.1.0 complete
+
+- [ ] `onboard/SKILL.md` — codebase → STANDARDS.md + GUIDELINES.md (Architect)
+- [ ] `review/SKILL.md` — cross-artifact consistency gate (Tech Writer)
+- [ ] `hitl/SKILL.md` — shared HITL escalation protocol (non-invocable)
+- [ ] Update `architect.md` — add `onboard` to skills list
+- [ ] Update `tech-writer.md` — add `review` to skills list
+- [ ] Update `SWE.md` — insert /review gate between /plan and /implement (full workflow)
+- [ ] Update `PRD.md` — FR2 amended to 17 skills
+
+**→ TAG: v0.1.2 (planned)**
 
 ---
 
@@ -387,18 +412,21 @@ v0 Milestone
 │   │
 │   └── Orchestration ◄── Agent-Backed Skills
 │
-└── Validation Phase ◄── All Initial Phase epics
-    └── Integration Validation
-        → TAG: v0.1.0
-
-v0.1.1 Patch Milestone
-└── Installer Extension Phase ◄── v0.1.0
-    ├── Runtime Matrix & Canonical Paths
-    ├── Namespace & Dot-Notation Semantics
-    ├── Capability-Scoped Installer Profiles
-    ├── UX & Documentation
-    └── Validation & CI
-        → TAG: v0.1.1
+├── Validation Phase ◄── All Initial Phase epics
+│   └── Integration Validation
+│       → TAG: v0.1.0
+│
+├── v0.1.1: Installer Extension ◄── v0.1.0
+│   ├── Runtime Matrix & Canonical Paths
+│   ├── Namespace & Dot-Notation Semantics
+│   ├── Capability-Scoped Installer Profiles
+│   ├── UX & Documentation
+│   └── Validation & CI
+│       → TAG: v0.1.1
+│
+└── v0.1.2: Governance & Quality ◄── v0.1.0
+    └── Governance and Quality Controls (onboard, review, hitl + agent/workflow updates)
+        → TAG: v0.1.2
 
 v1 Milestone
 ├── POC Phase ◄── v0.1.1
@@ -432,7 +460,8 @@ v1 Milestone
 |-----------|-------|-------|-------|--------|
 | v0 | Initial | 10 | 40 | ✅ Complete |
 | v0 | Validation | 1 | 3 | ✅ Complete |
-| v0.1.1 | Installer Extension | 5 | 34 | 🔲 Not started |
+| v0 | Installer Extension (v0.1.1) | 5 | 34 | 🔲 Not started |
+| v0 | Governance & Quality (v0.1.2) | 1 | 7 | 🔄 In progress |
 | v1 | POC | 3 | 8 | 🔲 Not started |
 | v1 | MVP | 3 | 9 | 🔲 Not started |
 | v1 | Foundation | 4 | 16 | 🔲 Not started |
