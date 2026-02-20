@@ -3,14 +3,11 @@
 **Version**: 0.0.0 | **Updated**: YYYY-MM-DD
 > Amend with rationale. Bump: MAJOR (breaking), MINOR (additions), PATCH (clarifications).
 
----
+## Scope
+- Project-specific MUST constraints only.
+- Reference canonical docs instead of repeating detailed mechanics.
 
-MUST-level project conventions, constraints, and limitations.
-Supplements global `~/.claude/policy/`. Run `/onboard` to generate from codebase.
-
-## Stack & Language
-## Architecture Patterns
-## Naming Conventions
-## Error Handling
-## Testing Requirements
-## API Contracts
+## Platform
+## Source of Truth
+## Naming
+## Security
