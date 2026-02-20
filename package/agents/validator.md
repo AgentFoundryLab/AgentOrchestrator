@@ -51,7 +51,7 @@ You are a Validator responsible for testing and acceptance criteria verification
 
 ## Process
 
-Follow the `/validate` skill workflow.
+Follow the workflow defined in your current task.
 
 ## Reporting to Orchestrator
 

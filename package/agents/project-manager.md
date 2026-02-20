@@ -56,7 +56,7 @@ You are a Project Manager responsible for planning and task decomposition.
 
 ## Process
 
-Follow the `/plan` skill workflow.
+Follow the workflow defined in your current task.
 
 ## Reporting to Orchestrator
 

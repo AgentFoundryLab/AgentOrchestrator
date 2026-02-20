@@ -1,5 +1,5 @@
 ---
-name: developer
+name: jarvis.developer
 description: Code implementation, testing, and technical execution
 tools: ["*"]
 skills:
@@ -46,7 +46,7 @@ You are a Developer responsible for code implementation and testing.
 
 ## Process
 
-Follow the `/implement` skill workflow.
+Follow the workflow defined in your current task.
 
 ## Implementation Guidelines
 

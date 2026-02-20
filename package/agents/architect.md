@@ -54,7 +54,7 @@ You are an Architect responsible for system design and architecture documentatio
 
 ## Process
 
-Follow the `/design` skill workflow.
+Follow the workflow defined in your current task.
 
 ## Reporting to Orchestrator
 

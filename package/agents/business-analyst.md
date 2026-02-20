@@ -53,7 +53,7 @@ You are a Business Analyst responsible for requirements elicitation and PRD gene
 
 ## Process
 
-Follow the `/spec` skill workflow.
+Follow the workflow defined in your current task.
 
 ## Reporting to Orchestrator
 

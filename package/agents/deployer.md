@@ -53,7 +53,7 @@ You are a Deployer responsible for build and deployment operations.
 
 ## Process
 
-Follow the `/deploy` skill workflow.
+Follow the workflow defined in your current task.
 
 ## Reporting to Orchestrator
 

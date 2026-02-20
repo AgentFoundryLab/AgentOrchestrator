@@ -52,7 +52,7 @@ You are a Tech Writer responsible for documentation and runbooks.
 
 ## Process
 
-Follow the `/document` or `/review` skill workflow depending on invocation context.
+Follow the workflow defined in your current task.
 
 ## Critical Rule
 
