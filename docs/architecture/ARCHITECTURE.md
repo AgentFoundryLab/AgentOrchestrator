@@ -775,7 +775,7 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 | [ADR-010](adr/010-observability-architecture.md) | Observability Architecture | OTEL + Prometheus + Loki + Grafana for v1 |
 | [ADR-011](adr/011-coordination-level-strategy.md) | Coordination Levels | L1/L2/L3 coordination strategy |
 | [ADR-012](adr/012-governance-rationalization.md) | Governance Rationalization | Two-tier policy, /onboard skill, eliminated duplicate RULES.md |
-| [ADR-013](adr/013-spec-kit-skills.md) | Spec-Kit Skill Additions | /onboard, /review, /hitl skills — rationale and agent assignments |
+| [ADR-013](adr/013-extended-skills.md) | Extended Skill Additions | /onboard, /review, /hitl skills — rationale and agent assignments |
 
 **Key Design Principles**:
 
@@ -856,6 +856,3 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 ---
 
 ## Next Steps
-
-1. **Update SWE.md**: Add `/review` gate to workflow definition
-2. **Planning**: `/plan` to generate implementation tasks for spec-kit integration

@@ -10,6 +10,7 @@ disallowedTools:
   - Edit
 skills:
   - document
+  - review
   - hitl
 hooks:
   SubagentStop:

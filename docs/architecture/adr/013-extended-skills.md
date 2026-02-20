@@ -1,8 +1,8 @@
-# ADR-013: Spec-Kit Skill Additions (onboard, review, hitl)
+# ADR-013: Extended Skill Additions (onboard, review, hitl)
 
 **Status**: Accepted
 **Date**: 2026-02-19
-**Context**: v1/spec-kit-integration branch — extending the skill system beyond the v0 MVP
+**Context**: v0.1.1/governance-quality-controls branch — extending the skill system beyond the v0 MVP
 
 ---
 

@@ -1,6 +1,6 @@
 # Software Engineering Workflow
 
-**Version**: 0.1.0
+**Version**: 0.1.1
 **Purpose**: Guide development from idea to deployment
 
 ---
@@ -11,7 +11,7 @@ Three workflow depths based on project complexity:
 
 | Depth | Phases | Use When |
 |-------|--------|----------|
-| **Full** | spec → design → plan → implement → validate → deploy → document | New product, complex system |
+| **Full** | spec → design → plan → **review** → implement → validate → deploy → document | New product, complex system |
 | **Medium** | spec → plan → implement → validate | New feature, moderate complexity |
 | **Light** | plan → implement | Simple change, bug fix |
 
@@ -22,22 +22,22 @@ Three workflow depths based on project complexity:
 ### Full Workflow
 
 ```
-┌─────────┐    ┌─────────┐    ┌─────────┐    ┌───────────┐
-│  /spec  │───▶│ /design │───▶│  /plan  │───▶│/implement │
-└─────────┘    └─────────┘    └─────────┘    └───────────┘
-     │              │              │               │
-     ▼              ▼              ▼               ▼
-   PRD.md      ARCH.md +      ROADMAP.md      Code +
-               ADRs           BACKLOG.md      Tests
-                                                   │
-                                                   ▼
-                              ┌──────────┐    ┌─────────┐    ┌──────────┐
-                              │/validate │───▶│ /deploy │───▶│/document │
-                              └──────────┘    └─────────┘    └──────────┘
-                                   │               │               │
-                                   ▼               ▼               ▼
-                              Validation      Deployed         README +
-                               Report         Artifacts         Runbooks
+┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌───────────┐
+│  /spec  │───▶│ /design │───▶│  /plan  │───▶│ /review │───▶│/implement │
+└─────────┘    └─────────┘    └─────────┘    └─────────┘    └───────────┘
+     │              │              │               │               │
+     ▼              ▼              ▼               ▼               ▼
+   PRD.md      ARCH.md +      ROADMAP.md      review-        Code +
+               ADRs           BACKLOG.md      YYYY-MM-DD     Tests
+                                                   │               │
+                                            [blocking gate]        ▼
+                                                        ┌──────────┐    ┌─────────┐    ┌──────────┐
+                                                        │/validate │───▶│ /deploy │───▶│/document │
+                                                        └──────────┘    └─────────┘    └──────────┘
+                                                             │               │               │
+                                                             ▼               ▼               ▼
+                                                        Validation      Deployed         README +
+                                                         Report         Artifacts         Runbooks
 ```
 
 **Phases**:
@@ -57,22 +57,28 @@ Three workflow depths based on project complexity:
    - Output: `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`
    - Activities: Task decomposition, prioritization, dependency mapping
 
-4. **Implementation** (`/implement` → Developer)
+4. **Review** (`/review` → Tech Writer)
+   - Input: ROADMAP, BACKLOG, PRD, ARCHITECTURE, ADRs
+   - Output: `reports/analysis/review-YYYY-MM-DD.md`, blocking issues in `docs/development/ISSUES.md`
+   - Activities: Cross-artifact consistency, FR coverage, BACKLOG traceability
+   - Note: **Blocking gate** — halt if blocking issues found. Skip for medium/light workflows.
+
+5. **Implementation** (`/implement` → Developer)
    - Input: Task from backlog
    - Output: Code, tests
    - Activities: Coding, testing, code review prep
 
-5. **Validation** (`/validate` → Validator)
+6. **Validation** (`/validate` → Validator)
    - Input: Implementation
    - Output: Validation report (Serena memory)
    - Activities: Testing, AC verification, quality checks
 
-6. **Deployment** (`/deploy` → Deployer)
+7. **Deployment** (`/deploy` → Deployer)
    - Input: Validated code
    - Output: Deployed artifacts
    - Activities: Build, deploy, release verification
 
-7. **Documentation** (`/document` → Tech Writer)
+8. **Documentation** (`/document` → Tech Writer)
    - Input: Deployed feature
    - Output: `docs/`, `README.md`
    - Activities: User docs, API docs, runbooks
@@ -181,12 +187,14 @@ Each phase produces artifacts consumed by subsequent phases:
               └─▶ ARCHITECTURE.md, ADRs
                     └─▶ /plan
                           └─▶ ROADMAP.md, BACKLOG.md
-                                └─▶ /implement
-                                      └─▶ Code, Tests
-                                            └─▶ /validate
-                                                  └─▶ Report
-                                                        └─▶ /deploy
-                                                              └─▶ /document
+                                └─▶ /review
+                                      └─▶ review-YYYY-MM-DD.md
+                                            └─▶ /implement
+                                                  └─▶ Code, Tests
+                                                        └─▶ /validate
+                                                              └─▶ Report
+                                                                    └─▶ /deploy
+                                                                          └─▶ /document
 ```
 
 **Traceability**: Each artifact should reference its source:

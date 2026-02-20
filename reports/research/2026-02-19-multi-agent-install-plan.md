@@ -4,7 +4,7 @@ Date: 2026-02-20
 
 ## Scope
 
-This report is based on **official documentation for each runtime**, not spec-kit internals.
+This report is based on **official documentation for each runtime**
 
 Agents covered:
 - Claude Code

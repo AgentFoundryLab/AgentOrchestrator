@@ -11,6 +11,7 @@ tools:
   - WebSearch
 skills:
   - design
+  - onboard
   - hitl
 hooks:
   SubagentStop:

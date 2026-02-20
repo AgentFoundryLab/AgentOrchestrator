@@ -8,7 +8,7 @@
 
 ## Overview
 
-AgentOrchestrator is a configuration-driven system. Its "data model" is the set of file formats and memory structures that agents read, write, and query. There is no relational database in v0/v1 spec-kit scope — all persistence is file-based or Serena MCP memory.
+AgentOrchestrator is a configuration-driven system. Its "data model" is the set of file formats and memory structures that agents read, write, and query. There is no relational database in v0/v1 extended scope — all persistence is file-based or Serena MCP memory.
 
 ---
 

@@ -126,7 +126,7 @@ Integration testing and documentation.
 
 ---
 
-## v0.1.1: Multi-Agent Installer Extension
+## v0.2.0: Multi-Agent Installer Extension
 
 **Goal**: Extend installer for multi-agent runtimes with namespaced (dot-notation) install paths.
 
@@ -193,16 +193,15 @@ Policy details are maintained in:
 - [ ] Add idempotency tests for repeated installs with mixed runtime subsets
 - [ ] Add CI guardrail to fail on runtime/path drift
 
-**→ TAG: v0.1.1 (planned)**
+**→ TAG: v0.2.0 (planned)**
 
 ---
 
-## v0.1.2: Governance and Quality Controls
+## v0.1.1: Governance and Quality Controls
 
 **Goal**: Governance bootstrapping (`/onboard`), cross-artifact review gate (`/review`), and unified HITL escalation protocol (`/hitl`).
 
-**Branch**: `v1/spec-kit-integration`
-**ADR**: [ADR-013](../architecture/adr/013-spec-kit-skills.md)
+**ADR**: [ADR-013](../architecture/adr/013-extended-skills.md)
 
 ---
 
@@ -213,15 +212,15 @@ Three skill additions addressing governance bootstrapping, pre-implementation re
 #### Epic: Governance and Quality Controls
 **Depends on**: v0.1.0 complete
 
-- [ ] `onboard/SKILL.md` — codebase → STANDARDS.md + GUIDELINES.md (Architect)
-- [ ] `review/SKILL.md` — cross-artifact consistency gate (Tech Writer)
-- [ ] `hitl/SKILL.md` — shared HITL escalation protocol (non-invocable)
-- [ ] Update `architect.md` — add `onboard` to skills list
-- [ ] Update `tech-writer.md` — add `review` to skills list
-- [ ] Update `SWE.md` — insert /review gate between /plan and /implement (full workflow)
-- [ ] Update `PRD.md` — FR2 amended to 17 skills
+- [x] `onboard/SKILL.md` — codebase → STANDARDS.md + GUIDELINES.md (Architect)
+- [x] `review/SKILL.md` — cross-artifact consistency gate (Tech Writer)
+- [x] `hitl/SKILL.md` — shared HITL escalation protocol (non-invocable)
+- [x] Update `architect.md` — add `onboard` to skills list
+- [x] Update `tech-writer.md` — add `review` to skills list
+- [x] Update `SWE.md` — insert /review gate between /plan and /implement (full workflow)
+- [x] Update `PRD.md` — FR2 amended to 17 skills
 
-**→ TAG: v0.1.2 (planned)**
+**→ TAG: v0.1.1**
 
 ---
 
@@ -229,7 +228,7 @@ Three skill additions addressing governance bootstrapping, pre-implementation re
 
 **Goal**: Full Orchestrator vision with observability, execution engine, and advanced workflows.
 
-**Prerequisite**: v0.1.1 complete
+**Prerequisite**: v0.2.0 complete
 
 ---
 
@@ -237,7 +236,7 @@ Three skill additions addressing governance bootstrapping, pre-implementation re
 
 Strands Framework integration with A2A protocol foundation.
 
-**Prerequisite**: v0.1.1 complete
+**Prerequisite**: v0.2.0 complete
 
 ### Epic: Setup
 **Depends on**: v0 complete
@@ -416,20 +415,20 @@ v0 Milestone
 │   └── Integration Validation
 │       → TAG: v0.1.0
 │
-├── v0.1.1: Installer Extension ◄── v0.1.0
+├── v0.2.0: Installer Extension ◄── v0.1.0
 │   ├── Runtime Matrix & Canonical Paths
 │   ├── Namespace & Dot-Notation Semantics
 │   ├── Capability-Scoped Installer Profiles
 │   ├── UX & Documentation
 │   └── Validation & CI
-│       → TAG: v0.1.1
+│       → TAG: v0.2.0
 │
-└── v0.1.2: Governance & Quality ◄── v0.1.0
+└── v0.1.1: Governance & Quality ◄── v0.1.0
     └── Governance and Quality Controls (onboard, review, hitl + agent/workflow updates)
-        → TAG: v0.1.2
+        → TAG: v0.1.1
 
 v1 Milestone
-├── POC Phase ◄── v0.1.1
+├── POC Phase ◄── v0.2.0
 │   ├── Strands Framework Integration
 │   ├── MCP Enhancement
 │   └── Structured Memory
@@ -460,8 +459,8 @@ v1 Milestone
 |-----------|-------|-------|-------|--------|
 | v0 | Initial | 10 | 40 | ✅ Complete |
 | v0 | Validation | 1 | 3 | ✅ Complete |
-| v0 | Installer Extension (v0.1.1) | 5 | 34 | 🔲 Not started |
-| v0 | Governance & Quality (v0.1.2) | 1 | 7 | 🔄 In progress |
+| v0 | Installer Extension (v0.2.0) | 5 | 34 | 🔲 Not started |
+| v0 | Governance & Quality (v0.1.1) | 1 | 7 | ✅ Complete |
 | v1 | POC | 3 | 8 | 🔲 Not started |
 | v1 | MVP | 3 | 9 | 🔲 Not started |
 | v1 | Foundation | 4 | 16 | 🔲 Not started |

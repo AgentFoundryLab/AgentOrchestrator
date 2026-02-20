@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
-**Version**: 0.1.1
-**Updated**: 2026-02-20 (50/57 v0 tasks done)
+**Version**: 0.1.2
+**Updated**: 2026-02-20 (56/57 v0 tasks done)
 **Scope**: v0 Milestone
 
 ---
@@ -60,12 +60,12 @@
 | T-044 | v0 | Initial | Project Templates | package-driven project scaffolding | PRD | P1 | ✅ |
 | T-045 | v0 | Initial | Memory | .serena/README.md | PRD | P2 | ✅ |
 | T-046 | v0 | Initial | Settings | Fix $schema in settings.json | PRD | P0 | ✅ |
-| T-051 | v0 | Governance & Quality | Governance and Quality Controls | onboard/SKILL.md | ADR-013 | P0 | ⏳ |
-| T-052 | v0 | Governance & Quality | Governance and Quality Controls | review/SKILL.md | ADR-013 | P0 | ⏳ |
-| T-053 | v0 | Governance & Quality | Governance and Quality Controls | hitl/SKILL.md | ADR-013 | P0 | ⏳ |
-| T-054 | v0 | Governance & Quality | Governance and Quality Controls | Update architect.md (add onboard skill) | ADR-013 | P0 | ⏳ |
-| T-055 | v0 | Governance & Quality | Governance and Quality Controls | Update tech-writer.md (add review skill) | ADR-013 | P0 | ⏳ |
-| T-056 | v0 | Governance & Quality | Governance and Quality Controls | Update SWE.md (/review gate in full workflow) | ADR-013, T-029 | P0 | ⏳ |
+| T-051 | v0 | Governance & Quality | Governance and Quality Controls | onboard/SKILL.md | ADR-013 | P0 | ✅ |
+| T-052 | v0 | Governance & Quality | Governance and Quality Controls | review/SKILL.md | ADR-013 | P0 | ✅ |
+| T-053 | v0 | Governance & Quality | Governance and Quality Controls | hitl/SKILL.md | ADR-013 | P0 | ✅ |
+| T-054 | v0 | Governance & Quality | Governance and Quality Controls | Update architect.md (add onboard skill) | ADR-013 | P0 | ✅ |
+| T-055 | v0 | Governance & Quality | Governance and Quality Controls | Update tech-writer.md (add review skill) | ADR-013 | P0 | ✅ |
+| T-056 | v0 | Governance & Quality | Governance and Quality Controls | Update SWE.md (/review gate in full workflow) | ADR-013, T-029 | P0 | ✅ |
 | T-057 | v0 | Governance & Quality | Governance and Quality Controls | Update PRD.md FR2 (17 skills) | R-001 | P0 | ✅ |
 
 ---
