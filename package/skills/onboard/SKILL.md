@@ -46,6 +46,25 @@ Both files include a version header:
 > Amend with rationale. Bump: MAJOR (breaking), MINOR (additions), PATCH (clarifications).
 ```
 
+## Output Scope Contract
+
+**STANDARDS.md** and **GUIDELINES.md** MUST be short reference documents — not architecture reproductions.
+
+### What belongs here
+- **STANDARDS.md**: MUST-level constraints — stack, naming, tooling, critical conventions. One bullet per rule. No schemas, no explanations, no architecture descriptions.
+- **GUIDELINES.md**: SHOULD-level process guidance — branching, commit style, review, deployment. One bullet per guideline.
+
+### What does NOT belong here
+- Architecture patterns, ADR content, or design decisions → belongs in `docs/architecture/`
+- YAML/JSON schema examples → belongs in source docs or ADRs
+- Artifact locations → belongs in `AGENTS.md`
+- How things work internally → belongs in architecture docs
+- Anything already in `~/.claude/policy/PRINCIPLES.md` or `RULES.md`
+
+If a detail is documented elsewhere, **reference it, don't reproduce it**.
+
+Target: each file is **under 40 lines of content** (excluding header). If you're going over, you're duplicating docs. Prefer fewer, sharper rules over exhaustive lists.
+
 ## Workflow
 
 ### 1. Read Framework Context
@@ -57,86 +76,64 @@ These define what the framework already covers. Project policies must not duplic
 
 ### 2. Analyze Project
 
-Scan the project to discover conventions:
+Scan to identify the key signals — do not exhaustively document everything:
 
-**Configuration files** (detect stack):
-- `package.json`, `tsconfig.json` → Node/TypeScript
-- `pyproject.toml`, `setup.py`, `requirements.txt` → Python
-- `Cargo.toml` → Rust
-- `go.mod` → Go
-- `Makefile`, `Dockerfile`, `docker-compose.yml` → Build/deploy
-- `.eslintrc`, `.prettierrc`, `biome.json` → Linting/formatting
-- CI config (`.github/workflows/`, `.gitlab-ci.yml`)
+- Config files to identify **stack and tooling** (language, runtime, linter, formatter, CI)
+- Directory structure to identify **naming conventions** (files, dirs, artifacts)
+- Git log to identify **commit style and branching strategy**
+- README / contributing docs to identify **explicit process rules**
 
-**Codebase patterns** (derive standards):
-- Directory structure and organization
-- Naming conventions (files, functions, variables)
-- Import patterns and module organization
-- Error handling patterns
-- Testing framework and patterns
-- API design patterns (REST, GraphQL, RPC)
+### 3. Derive Standards (STANDARDS.md)
 
-**Process signals** (derive guidelines):
-- Git history: commit message patterns, branching strategy
-- README: setup instructions, contribution guidelines
-- CI/CD: test requirements, deployment process
-- PR templates, issue templates
+Write one bullet per rule. Group into sections:
+- **Stack**: language, runtime, required tools
+- **Naming**: file/dir/artifact naming conventions
+- **Tooling**: linter, formatter, build commands
+- **Testing**: framework and minimum requirements (if any)
+- Any other hard constraints not covered by global policy
 
-### 3. Derive Standards
+Rules must be:
+- Actionable and verifiable ("Use X", "Never Y", "Run Z before commit")
+- Observed from the codebase — not invented
+- Not already in global PRINCIPLES.md or RULES.md
 
-From observed patterns, generate `STANDARDS.md` covering:
+### 4. Derive Guidelines (GUIDELINES.md)
 
-- **Language/Framework**: Version constraints, preferred patterns
-- **Architecture**: Component organization, data flow patterns
-- **Naming**: File naming, function naming, variable naming conventions
-- **Error Handling**: Error types, response formats, logging patterns
-- **Testing**: Framework, coverage expectations, test organization
-- **API Design**: Endpoint patterns, request/response formats
-- **Dependencies**: Preferred libraries, version policies
+Write one bullet per practice. Group into sections:
+- **Branching**: branch naming, base branch
+- **Commits**: message format, scope, frequency
+- **Review**: approval requirements, PR size
+- **Deployment**: environment order, release process
+- **Documentation**: what needs docs and where
 
-Only include standards that are **actually observed** or clearly needed. Do not invent standards for things the project doesn't do.
-
-### 4. Derive Guidelines
-
-From observed practices, generate `GUIDELINES.md` covering:
-
-- **Development Workflow**: Branch strategy, commit conventions
-- **Testing Practice**: What requires tests, integration vs unit
-- **Code Review**: Review requirements, approval process
-- **Deployment**: Environment strategy, release process
-- **Documentation**: What needs docs, where they live
-
-Only include guidelines that match the project's **actual practices** or fill clear gaps.
+Practices must match the project's **actual observed behavior**. Note gaps honestly rather than inventing aspirational rules.
 
 ### 5. Conflict Check
 
-Compare derived standards against global PRINCIPLES.md and RULES.md:
-- Flag any contradictions
-- Flag any unnecessary duplication
-- Present conflicts to user for resolution
+Compare against global PRINCIPLES.md and RULES.md:
+- Flag contradictions
+- Flag unnecessary duplication — if global policy already covers it, remove it
 
 ### 6. Generate Files
 
-Write both files with:
+Write both files. Keep them **short and scannable**:
 - Version header
-- Clear section organization
-- Concrete, actionable items (not vague aspirations)
-- References to project examples where helpful
+- Section headers with bullet lists
+- No prose paragraphs, no inline examples, no schemas
+- Cross-reference other docs for details
 
 ### 7. Summary
 
-Present to user:
-- What was detected (stack, patterns, practices)
-- What standards were derived
-- What guidelines were derived
-- Any conflicts with global policies
-- Suggestions for standards the project might want to add
+Present:
+- Stack/tooling detected
+- Key conventions captured
+- Any conflicts or gaps flagged
 
 ## Validation Checklist
 - [ ] Global policies were read first
-- [ ] Project codebase was analyzed (not just config)
-- [ ] Standards are derived from observation, not invented
-- [ ] Guidelines match actual project practices
-- [ ] No duplication with global PRINCIPLES.md or RULES.md
+- [ ] Standards and guidelines are derived from observation, not invented
+- [ ] No duplication with `PRINCIPLES.md`, `RULES.md`, `AGENTS.md`, or architecture docs
+- [ ] No schemas, templates, or architecture descriptions in output
+- [ ] Each file is under 60 lines of content
 - [ ] Version headers present on both files
 - [ ] Conflicts flagged if any
