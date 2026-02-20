@@ -4,16 +4,18 @@
 #   ./install.sh --global              Install to ~/.claude/
 #   ./install.sh --project <path>      Install project templates to <path>
 #   ./install.sh [--claude|--gemini|--codex]  Limit policy-ref targets (default: all)
-#   ./install.sh [--namespace <name>]  Optional agent/skill namespace (default: flat)
+#   ./install.sh [--namespace <name>]  Override agent/skill namespace (default: jarvis)
+#   ./install.sh [--no-namespace]      Use flat agents/skills paths (no namespace)
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
 #   ./install.sh --restore             Remove installed artifacts, restore settings
+#   ./install.sh --cleanup             Remove installed artifacts, unpatch files (no backup restore)
 
 set -e
 
 VERSION="0.1.0 "
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_DIR="${SCRIPT_DIR}/package"
-NAMESPACE=""
+NAMESPACE="jarvis"
 
 # Colors for output
 RED='\033[0;31m'
@@ -47,9 +49,11 @@ Usage:
     ./install.sh --claude              Target CLAUDE.md refs only
     ./install.sh --gemini              Target GEMINI.md refs only
     ./install.sh --codex               Target AGENTS.md refs only
-    ./install.sh --namespace <name>    Optional namespace for agents/skills paths
+    ./install.sh --namespace <name>    Override namespace for agents/skills paths (default: jarvis)
+    ./install.sh --no-namespace        Use flat agents/skills paths (no namespace)
     ./install.sh --overwrite           Overwrite existing markdown files (backup to .backup/)
     ./install.sh --restore             Remove installed artifacts, restore settings from backup
+    ./install.sh --cleanup             Remove installed artifacts, strip injected refs (no backup restore)
     ./install.sh --help                Show this help
 
 Policy-ref target flags are optional.
@@ -58,10 +62,10 @@ If none are provided, installer targets all three: --claude + --gemini + --codex
 What gets installed:
 
 --global installs to ~/.claude/:
-    - agents/           Agent definitions (7 files, default flat)
-    - skills/           Skill definitions (17 directories, default flat)
-    - agents/<ns>/      Optional namespaced agents (if --namespace set)
-    - skills/<ns>.<skill>/ Dot-prefixed namespaced skills (if --namespace set, e.g. /ns.spec)
+    - agents/jarvis/    Agent definitions (7 files, default namespace: jarvis)
+    - skills/jarvis.<skill>/ Dot-prefixed namespaced skills (default namespace: jarvis, e.g. /jarvis.spec)
+    - agents/<ns>/      Namespaced agents (override with --namespace)
+    - skills/<ns>.<skill>/ Namespaced skills (override with --namespace)
     - hooks/scripts/    Hook scripts (5 files)
     - settings.json     Hook and MCP configuration
     - policy/           PRINCIPLES.md, RULES.md
@@ -73,10 +77,10 @@ What gets installed:
     - docs/policy/      STANDARDS.md, GUIDELINES.md templates (from package/templates/)
     - docs/knowledge/   README.md (from package/templates/)
     - reports/          analysis/, research/ directories
-    - .claude/agents/   Agent definitions (project-local, default flat)
-    - .claude/skills/   Skill definitions (project-local, default flat)
-    - .claude/agents/<ns>/ Optional namespaced agents (if --namespace set)
-    - .claude/skills/<ns>.<skill>/ Dot-prefixed namespaced skills (if --namespace set)
+    - .claude/agents/jarvis/ Agent definitions (project-local, default namespace: jarvis)
+    - .claude/skills/jarvis.<skill>/ Dot-prefixed namespaced skills (default namespace: jarvis)
+    - .claude/agents/<ns>/ Namespaced agents (override with --namespace)
+    - .claude/skills/<ns>.<skill>/ Namespaced skills (override with --namespace)
     - .claude/templates/ Templates (project-local copy, agents prefer over global)
     - .claude/policy/   PRINCIPLES.md, RULES.md (project-local copies)
     - .claude/workflows/ SWE.md, meta-learning.md (project-local copies)
@@ -207,7 +211,7 @@ copy_script() {
 
 # Copy directory recursively with appropriate handling
 copy_directory() {
-    local source_dir="$1"
+    local source_dir="${1%/}"  # strip trailing slash (glob expansion adds one)
     local target_dir="$2"
     local backup_dir="$3"
     local component_name
@@ -305,7 +309,7 @@ restore_namespaced_skills() {
 # Restore or remove installed file:
 # - restore from backup if available
 # - else remove only if target still matches installer source
-# - else keep target (user modified)
+# - else keep target (differs from source, no backup to restore)
 restore_or_remove_installed_file() {
     local source_file="$1"
     local target_file="$2"
@@ -321,7 +325,7 @@ restore_or_remove_installed_file() {
             log_success "Removed installed file: $target_file"
             ((++CREATED))
         else
-            log_warning "Keeping modified file (no backup): $target_file"
+            log_info "Kept (differs from source, no backup): $target_file"
         fi
     fi
 
@@ -394,7 +398,7 @@ install_global() {
         ns_path="/${NAMESPACE}"
         log_info "Using namespace: agents → agents/${NAMESPACE}/, skills → skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Using flat agents/skills paths (no namespace)"
+        log_info "Using namespace: jarvis (default)"
     fi
 
     local backup_dir
@@ -460,7 +464,7 @@ install_project() {
         ns_path="/${NAMESPACE}"
         log_info "Using namespace: agents → agents/${NAMESPACE}/, skills → skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Using flat agents/skills paths (no namespace)"
+        log_info "Using namespace: jarvis (default)"
     fi
 
     local backup_dir
@@ -604,25 +608,55 @@ find_latest_backup() {
     fi
 }
 
-# Restore settings.json from backup
+# Remove top-level keys contributed by the installer's settings.json from target.
+# If the result is an empty object, deletes the file.
+unpatch_settings_json() {
+    local target_file="$1"
+
+    [ -f "$target_file" ] || return 0
+
+    if ! command -v jq &>/dev/null; then
+        log_warning "jq not found. Cannot unpatch $target_file"
+        return
+    fi
+
+    local source="${PACKAGE_DIR}/settings.json"
+    [ -f "$source" ] || return 0
+
+    local result
+    result=$(jq --argjson src "$(cat "$source")" \
+        'to_entries | map(select(.key as $k | ($src | has($k)) | not)) | from_entries' \
+        "$target_file")
+
+    if [ "$result" = "{}" ] || [ -z "$result" ]; then
+        rm -f "$target_file"
+        log_success "Removed: $target_file (was fully installer-managed)"
+        ((++CREATED))
+    else
+        printf '%s\n' "$result" > "$target_file"
+        log_success "Unpatched: $target_file (removed installer-contributed keys)"
+        ((++PATCHED))
+    fi
+}
+
+# Restore settings.json from backup; fall back to unpatching installer keys.
 restore_settings() {
     local target="$1"
     local backup_dir="$2"
     local settings_file="${target}/settings.json"
 
-    if [ -z "$backup_dir" ]; then
-        log_warning "No backup found to restore settings from"
-        return
-    fi
-
     # Look for settings.json in backup
-    local backup_settings="${backup_dir}/settings.json"
-    if [ -f "$backup_settings" ]; then
+    local backup_settings=""
+    if [ -n "$backup_dir" ]; then
+        backup_settings="${backup_dir}/settings.json"
+    fi
+    if [ -n "$backup_settings" ] && [ -f "$backup_settings" ]; then
         cp "$backup_settings" "$settings_file"
         log_success "Restored: $settings_file from backup"
         ((++CREATED))
     else
-        log_info "No settings.json backup found in $backup_dir"
+        log_info "No settings.json backup found; unpatching installer-contributed keys"
+        unpatch_settings_json "$settings_file"
     fi
 }
 
@@ -657,8 +691,12 @@ strip_ref_block_if_present() {
     if grep -qF "$start_tag" "$target_file" 2>/dev/null && grep -qF "$end_tag" "$target_file" 2>/dev/null; then
         awk -v start="$start_tag" -v end="$end_tag" '
             $0 == start {skip=1; next}
-            $0 == end {skip=0; next}
-            !skip {print}
+            $0 == end   {skip=0; next}
+            !skip       {lines[++n]=$0}
+            END {
+                while (n > 0 && lines[n] ~ /^[[:space:]]*$/) n--
+                for (i = 1; i <= n; i++) print lines[i]
+            }
         ' "$target_file" > "$tmp_file"
         mv "$tmp_file" "$target_file"
         log_success "Stripped refs from: $target_file"
@@ -677,7 +715,11 @@ strip_ref_block_if_present() {
                     if ($0 ~ /^[[:space:]]*$/) next
                     skip=0
                 }
-                print
+                lines[++n]=$0
+            }
+            END {
+                while (n > 0 && lines[n] ~ /^[[:space:]]*$/) n--
+                for (i = 1; i <= n; i++) print lines[i]
             }
         ' "$target_file" > "$tmp_file"
         mv "$tmp_file" "$target_file"
@@ -718,7 +760,7 @@ restore_global() {
         ns_path="/${NAMESPACE}"
         log_info "Restoring namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Restoring flat agents/skills paths (no namespace)"
+        log_info "Restoring namespace: jarvis (default)"
     fi
 
     local backup_dir
@@ -808,7 +850,7 @@ restore_project() {
         ns_path="/${NAMESPACE}"
         log_info "Restoring namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Restoring flat agents/skills paths (no namespace)"
+        log_info "Restoring namespace: jarvis (default)"
     fi
 
     local backup_dir
@@ -892,6 +934,142 @@ restore_project() {
     log_success "Project restore complete"
 }
 
+# Cleanup global installation (remove installed artifacts, strip injected refs - no backup restore)
+cleanup_global() {
+    local target="${HOME}/.claude"
+    log_info "Cleaning up global installation from $target"
+    local ns_path=""
+    if [ -n "$NAMESPACE" ]; then
+        ns_path="/${NAMESPACE}"
+        log_info "Cleaning namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
+    else
+        log_info "Cleaning namespace: jarvis (default)"
+    fi
+
+    # Remove/check installed agents/skills surgically (no backup restore).
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/agents" \
+        "${target}/agents${ns_path}" \
+        "" "agents"
+    if [ -n "$NAMESPACE" ]; then
+        restore_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/skills" "$NAMESPACE"
+    else
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/skills" \
+            "${target}/skills" \
+            "" "skills"
+    fi
+
+    # Remove managed shared directories.
+    local dirs_to_remove=("hooks" "policy" "workflows" "templates")
+    for dir in "${dirs_to_remove[@]}"; do
+        if [ -d "${target:?}/${dir}" ]; then
+            rm -rf "${target:?}/${dir}"
+            log_success "Removed: ${target}/${dir}"
+            ((++CREATED))
+        fi
+    done
+
+    # Unpatch settings.json by removing installer-contributed keys (no backup restore).
+    unpatch_settings_json "${target}/settings.json"
+
+    # Remove mcpServers from ~/.claude.json without creating a backup.
+    if command -v jq &> /dev/null && [ -f "${HOME}/.claude.json" ]; then
+        if jq 'has("mcpServers")' "${HOME}/.claude.json" | grep -q true; then
+            jq 'del(.mcpServers)' "${HOME}/.claude.json" > "${HOME}/.claude.json.tmp"
+            mv "${HOME}/.claude.json.tmp" "${HOME}/.claude.json"
+            log_success "Removed mcpServers from ~/.claude.json"
+            ((++PATCHED))
+        fi
+    fi
+
+    # Strip injected refs via sentinel (no backup restore).
+    if [ "$REF_CLAUDE" = true ]; then
+        strip_ref_block_if_present "${HOME}/.claude/CLAUDE.md" "orchestrator:global-refs"
+    fi
+    if [ "$REF_GEMINI" = true ]; then
+        strip_ref_block_if_present "${HOME}/.gemini/GEMINI.md" "orchestrator:global-refs"
+    fi
+    if [ "$REF_CODEX" = true ]; then
+        strip_ref_block_if_present "${HOME}/.codex/AGENTS.md" "orchestrator:global-refs"
+    fi
+
+    log_success "Global cleanup complete"
+}
+
+# Cleanup project installation (remove installed artifacts, strip injected refs - no backup restore)
+cleanup_project() {
+    local target="$1"
+    local ns_path=""
+
+    if [ -z "$target" ]; then
+        log_error "Project path required for --cleanup with --project"
+        usage
+        exit 1
+    fi
+
+    log_info "Cleaning up project installation from $target"
+    if [ -n "$NAMESPACE" ]; then
+        ns_path="/${NAMESPACE}"
+        log_info "Cleaning namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
+    else
+        log_info "Cleaning namespace: jarvis (default)"
+    fi
+
+    # Remove docs files installed from templates (no backup restore).
+    restore_or_remove_installed_file \
+        "${PACKAGE_DIR}/templates/knowledge.md" \
+        "${target}/docs/knowledge/README.md" ""
+    restore_or_remove_installed_file \
+        "${PACKAGE_DIR}/templates/standards.md" \
+        "${target}/docs/policy/STANDARDS.md" ""
+    restore_or_remove_installed_file \
+        "${PACKAGE_DIR}/templates/guidelines.md" \
+        "${target}/docs/policy/GUIDELINES.md" ""
+
+    # Remove managed .claude trees (no backup restore).
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/templates" "${target}/.claude/templates" "" "templates"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/policy" "${target}/.claude/policy" "" "policy"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/workflows" "${target}/.claude/workflows" "" "workflows"
+
+    # Remove managed agents/skills surgically (no backup restore).
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/agents" "${target}/.claude/agents${ns_path}" "" "agents"
+    if [ -n "$NAMESPACE" ]; then
+        restore_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "$NAMESPACE"
+    else
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "" "skills"
+    fi
+
+    # Remove Serena project file only if this installer created it.
+    local serena_marker="${target}/.serena/.orchestrator-created-project-yml"
+    local serena_project="${target}/.serena/project.yml"
+    if [ -f "$serena_marker" ]; then
+        if [ -f "$serena_project" ]; then
+            rm -f "$serena_project"
+            log_success "Removed installer-created file: ${serena_project}"
+            ((++CREATED))
+        fi
+        rm -f "$serena_marker"
+        rmdir "${target}/.serena" 2>/dev/null || true
+    fi
+
+    # Strip injected refs via sentinel (no backup restore).
+    local project_doc_files=""
+    [ "$REF_CLAUDE" = true ] && project_doc_files="${project_doc_files} CLAUDE.md"
+    [ "$REF_CODEX" = true ] && project_doc_files="${project_doc_files} AGENTS.md"
+    [ "$REF_GEMINI" = true ] && project_doc_files="${project_doc_files} GEMINI.md"
+    for md_file in $project_doc_files; do
+        strip_ref_block_if_present "${target}/${md_file}" "orchestrator:project-refs"
+    done
+
+    log_success "Project cleanup complete"
+}
+
 # Main
 main() {
     if [ $# -eq 0 ]; then
@@ -902,6 +1080,7 @@ main() {
     local do_global=false
     local do_project=false
     local do_restore=false
+    local do_cleanup=false
     local project_path=""
 
     while [ $# -gt 0 ]; do
@@ -923,7 +1102,7 @@ main() {
             --namespace)
                 shift
                 if [ $# -eq 0 ] || [[ "$1" =~ ^-- ]]; then
-                    log_error "--namespace requires a value (use empty by omitting the flag)"
+                    log_error "--namespace requires a value (use --no-namespace for flat paths)"
                     usage
                     exit 1
                 fi
@@ -932,6 +1111,10 @@ main() {
                     log_error "Invalid namespace '$NAMESPACE' (must not contain '/')"
                     exit 1
                 fi
+                shift
+                ;;
+            --no-namespace)
+                NAMESPACE=""
                 shift
                 ;;
             --global)
@@ -954,6 +1137,10 @@ main() {
                 do_restore=true
                 shift
                 ;;
+            --cleanup)
+                do_cleanup=true
+                shift
+                ;;
             --help|-h)
                 usage
                 exit 0
@@ -971,6 +1158,12 @@ main() {
     echo "=================================="
     echo ""
 
+    if [ "$do_restore" = true ] && [ "$do_cleanup" = true ]; then
+        log_error "--restore and --cleanup are mutually exclusive"
+        usage
+        exit 1
+    fi
+
     if [ "$do_restore" = true ]; then
         if [ "$do_global" = true ]; then
             restore_global
@@ -983,6 +1176,20 @@ main() {
         # If neither specified, default to global restore
         if [ "$do_global" = false ] && [ "$do_project" = false ]; then
             restore_global
+            echo ""
+        fi
+    elif [ "$do_cleanup" = true ]; then
+        if [ "$do_global" = true ]; then
+            cleanup_global
+            echo ""
+        fi
+        if [ "$do_project" = true ]; then
+            cleanup_project "$project_path"
+            echo ""
+        fi
+        # If neither specified, default to global cleanup
+        if [ "$do_global" = false ] && [ "$do_project" = false ]; then
+            cleanup_global
             echo ""
         fi
     else
