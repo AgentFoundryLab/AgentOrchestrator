@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
 **Version**: 0.2.0
-**Updated**: 2026-02-22 (90/91 v0 tasks done; 4 gap tasks pending)
+**Updated**: 2026-02-22 (90/91 v0 tasks done; 7 gap tasks pending)
 **Scope**: v0 Milestone
 
 ---
@@ -76,10 +76,10 @@
 | T-064 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Qwen paths | v0.2.0 | P0 | ✅ |
 | T-065 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add runtime path drift checks | v0.2.0 | P1 | ✅ |
 | T-066 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Define frontmatter/schema transforms (skills->commands) | v0.2.0 | P1 | ✅ |
-| T-067 | v0 | Installer Extension | Namespace & Dot-Notation Semantics | Define namespace grammar and validation | v0.2.0 | P0 | ✅ |
-| T-068 | v0 | Installer Extension | Namespace & Dot-Notation Semantics | Map dot-notation namespace to agent paths and skill names | v0.2.0 | P0 | ✅ |
-| T-069 | v0 | Installer Extension | Namespace & Dot-Notation Semantics | Preserve flat mode as backward-compatible default | v0.2.0 | P0 | ✅ |
-| T-070 | v0 | Installer Extension | Namespace & Dot-Notation Semantics | Namespace-safe restore/cleanup semantics | v0.2.0 | P0 | ✅ |
+| T-067 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Define namespace grammar and validation | v0.2.0 | P0 | ✅ |
+| T-068 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Map namespace input to runtime-native artifact paths | v0.2.0 | P0 | ✅ |
+| T-069 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Preserve flat mode as backward-compatible default | v0.2.0 | P0 | ✅ |
+| T-070 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Namespace-safe restore/cleanup semantics | v0.2.0 | P0 | ✅ |
 | T-071 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Split install profiles by capability | v0.2.0 | P0 | ✅ |
 | T-072 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Make skills the default profile when runtime supports skills | v0.2.0 | P0 | ✅ |
 | T-073 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Add commands compatibility profile selectable by flag | v0.2.0 | P1 | ✅ |
@@ -105,6 +105,9 @@
 | T-093 | v0 | Installer Extension | OpenCode Hooks | Implement OpenCode hook adapter (SH → JS/TS plugin wrapper) | G-001 | P2 | 🔲 |
 | T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | G-003 | P1 | 🔲 |
 | T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | G-003 | P2 | 🔲 |
+| T-096 | v0 | Installer Extension | Namespace Alignment | Align runtime namespace modes with ADR-014 D-2 | I-001 | P1 | 🔲 |
+| T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/hooks/subagents support model) | I-002 | P1 | 🔲 |
+| T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | I-003 | P2 | 🔲 |
 
 ---
 
@@ -734,24 +737,25 @@
 - Namespace grammar defined: one or more dot-separated segments, each segment matching `[a-z][a-z0-9-]*` (lowercase, alphanumeric, hyphen; no leading digit or hyphen)
 - Maximum namespace depth documented (e.g., 3 segments)
 - A validation function in `install.sh` (or sourced helper) accepts a namespace string and returns 0 for valid, non-zero with error message for invalid
-- Empty namespace (omitting `--namespace`) is valid and activates flat/default mode
+- Empty namespace (omitting `--namespace`) is valid and activates flat/default mode for all runtimes
+- Grammar is treated as installer input only (not forced as runtime invocation identifier grammar)
 - Validation is invoked at the start of any install/restore/cleanup run that receives `--namespace`
 
 ---
 
-### T-068: Map dot-notation namespace to agent paths and skill names
+### T-068: Map namespace input to runtime-native artifact paths
 **AC**:
-- Given namespace `foo.bar`, agents install under `<runtime-root>/foo/bar/agents/` and skills under `<runtime-root>/foo/bar/skills/`
-- Skill invocation name within the runtime becomes `foo.bar.<skill-name>` (dot-separated, not slash-separated)
-- Mapping logic is a pure function (namespace string → path prefix) tested independently of install I/O
-- Mapping is consistent across all 5 runtimes: same namespace always produces the same relative sub-path
-- Documentation (inline comments or companion doc) shows worked examples for at least 2 namespace depths
+- Namespace translation is runtime-aware and artifact-aware (no universal identifier rewrite across all runtimes)
+- For runtimes/artifacts with path-based namespace support, namespace maps to directory segments from installer input
+- For runtimes/artifacts with flat skill/subagent naming, installer keeps generated skill/subagent identifiers flat even when `--namespace` is passed
+- Runtime-owned forms (example: `plugin:skill`) are preserved as runtime behavior, not synthesized from installer namespace input
+- Mapping logic is isolated and testable independently of install I/O
 
 ---
 
 ### T-069: Preserve flat mode as backward-compatible default
 **AC**:
-- When `--namespace` is not passed, installer behavior is identical to pre-v0.2.0 behavior (flat install, no subdirectory nesting)
+- When `--namespace` is not passed, installer behavior is flat by default for all runtimes
 - Existing global and project installs from v0.1.x are unaffected by upgrading the installer (no path changes, no broken references)
 - Flat mode is explicitly documented as the default in `--help` output
 - A regression test confirms that `install.sh --claude` (no namespace) produces the same directory layout as before
@@ -761,8 +765,8 @@
 ### T-070: Namespace-safe restore/cleanup semantics
 **AC**:
 - `install.sh --restore` and `install.sh --cleanup` (or equivalent) accept an optional `--namespace` argument
-- Restore/cleanup with a namespace targets only the namespaced subtree; files outside the namespace are untouched
-- Restore/cleanup without a namespace targets only the flat (non-namespaced) install; namespaced subtrees are untouched
+- Restore/cleanup with a namespace targets only namespaced artifacts for runtime/profile combinations that support namespace mapping; unsupported combinations remain untouched
+- Restore/cleanup without a namespace targets only the flat (non-namespaced) install
 - A cross-namespace collision scenario (two namespaces sharing a runtime root) is tested and does not produce data loss
 - Behavior is documented in `--help` for restore/cleanup subcommands
 
@@ -945,7 +949,7 @@
 - Claude conformance: skills + hooks + scripts artifacts present; commands artifacts absent (default profile)
 - Codex conformance: skills + scripts present; hooks absent
 - Gemini conformance: commands (TOML) present; skills + hooks absent
-- OpenCode conformance: skills + commands + hooks (plugins) + scripts present
+- OpenCode conformance: skills + scripts present; hooks absent (until T-093 is implemented)
 - Qwen conformance: skills + commands (MD) + scripts present; hooks absent
 - Conformance tests fail if installer produces an artifact outside the declared capability set
 
@@ -953,7 +957,7 @@
 
 ### T-089: Add restore/cleanup regression tests for namespaced installs
 **AC**:
-- Test installs to a namespace (e.g., `--namespace test.ns`), then runs restore/cleanup with the same namespace
+- Test installs to a namespace-capable runtime/profile (e.g., commands runtime with namespace path mapping), then runs restore/cleanup with the same namespace
 - After cleanup, all and only the namespaced artifacts are removed; flat-mode artifacts (if any) are untouched
 - Test installs two namespaces, cleans up one, verifies the other is intact
 - Restore test: after cleanup, re-running install produces identical artifact set to the original install
@@ -1027,6 +1031,36 @@
 - Gemini TOML schema adjustments (beyond basic T-092 format): any Gemini-specific TOML fields or structural requirements not covered by the basic transform
 - `--check` non-Claude frontmatter rows change from `PARTIAL` to `OK` once full per-runtime schema is applied
 - Conformance tests verify correct schema per runtime × mode
+
+---
+
+### T-096: Align runtime namespace modes with ADR-014 D-2
+**AC**:
+- Runtime namespace registry in installer code matches ADR-014 D-2 per runtime and per artifact type
+- Flat mode remains default for all runtimes when `--namespace` is omitted
+- `--namespace` is applied only for runtime/profile combinations with documented namespace support
+- Runtime help/docs examples and implementation behavior are consistent (no stale dot-prefix claims for flat-only runtime artifacts)
+- Automated checks fail on namespace-mode drift between ADR/runtime matrix and installer constants
+
+---
+
+### T-097: Align Gemini capability flags + tests with validated docs baseline
+**AC**:
+- Runtime registry no longer hardcodes Gemini as commands-only when official docs indicate hooks/skills support
+- Installer behavior for Gemini capabilities (commands/skills/hooks/subagents) is explicitly modeled and validated against current docs
+- Conformance tests are updated to assert the intended Gemini capability contract
+- `--check` output and runtime matrix documentation remain consistent with implemented Gemini behavior
+- If partial implementation remains, unsupported parts are surfaced as explicit open gaps in ISSUES (not silent fallback behavior)
+
+---
+
+### T-098: Remove legacy compatibility/workaround bloat from installer UX/docs
+**AC**:
+- `install.sh --help` removes version-history/backward-compat narrative; retains only current behavior and constraints
+- `README.md` removes stale migration-first wording and outdated claims; runtime matrix reflects actual installer behavior
+- Compatibility mode text is reduced to functional semantics (what it does), without timeline/historical framing
+- Legacy fallback paths/markers that are no longer required are removed or isolated behind clearly documented migration-only code paths
+- Tests/docs remain consistent after cleanup
 
 ---
 

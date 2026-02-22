@@ -7,6 +7,9 @@
 | G-001 | OpenCode hooks incompatibility: Claude SH hooks ≠ OpenCode JS/TS plugin system | P2 | 🔲 Open | T-093 |
 | G-002 | Gemini TOML command transform invalid schema and syntax errors | P1 | 🔲 Open | T-092 |
 | G-003 | No per-runtime frontmatter schema validation or transform in skills/commands install | P1 | 🔲 Open | T-094 |
+| I-001 | Namespace mode drift: installer runtime namespace mapping not aligned with ADR-014 D-2 | P1 | 🔲 Open | T-096 |
+| I-002 | Gemini capability drift: installer still enforces commands-only despite validated skills/hooks support in docs research | P1 | 🔲 Open | T-097 |
+| I-003 | Legacy compatibility/workaround bloat in installer UX and docs (stale migration text, compat-first wording, fallback markers) | P2 | 🔲 Open | T-098 |
 
 ---
 
@@ -52,5 +55,48 @@ Implementation details and AC in T-092.
 No schema registry exists defining which keys are supported, dropped, or transformed per runtime × mode.
 
 Implementation details and AC in T-094.
+
+---
+
+## I-001: Namespace mode drift vs ADR-014 D-2
+
+**Type**: Defect
+**Discovered**: 2026-02-22
+**Affects**: Namespace handling in installer runtime registry and namespace-aware skill copy/restore behavior
+**Task**: T-096
+
+ADR-014 D-2 defines runtime-native namespace behavior with flat mode as default for all runtimes, and optional `--namespace` applied only where the selected runtime/profile supports namespace semantics.
+
+Current installer runtime registry still has legacy namespace modes that can synthesize namespaced skill identifiers for runtimes/artifacts that should remain flat under ADR-014 D-2.
+
+Implementation details and AC in T-096.
+
+---
+
+## I-002: Gemini capability drift vs validated docs baseline
+
+**Type**: Defect
+**Discovered**: 2026-02-22
+**Affects**: `RUNTIME_SUPPORTS_SKILLS[gemini]`, `RUNTIME_SUPPORTS_HOOKS[gemini]`, installer profile defaults, conformance tests
+**Task**: T-097
+
+Official docs revalidation and research reports identify Gemini hooks and skills support, but installer registry and tests still hardcode Gemini as commands-only (`no skills`, `no hooks`).
+
+This creates behavioral drift between architecture/research docs and shipped installer behavior.
+
+Implementation details and AC in T-097.
+
+---
+
+## I-003: Legacy compatibility/workaround bloat in installer UX/docs
+
+**Type**: Quality debt
+**Discovered**: 2026-02-22
+**Affects**: `install.sh --help`, `README.md` migration/compat text, policy-ref legacy marker fallback blocks
+**Task**: T-098
+
+Installer UX/docs still contain legacy-first compatibility wording and version-history narration that is not needed for current behavior specification. This increases ambiguity and hides current runtime constraints behind migration prose.
+
+Implementation details and AC in T-098.
 
 ---

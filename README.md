@@ -28,15 +28,15 @@ AgentOrchestrator transforms Claude Code from a single-turn assistant into an or
 
 ### Runtime Support Matrix
 
-| Runtime     | Install flag  | Skills | Hooks | Commands         |
-|-------------|---------------|--------|-------|------------------|
-| Claude Code | `--claude`    | Yes    | Yes   | Yes (compat)     |
-| Codex CLI   | `--codex`     | Yes    | No    | Yes (compat)     |
-| Gemini CLI  | `--gemini`    | No     | No    | Yes (default)    |
-| OpenCode    | `--opencode`  | Yes    | Yes   | Yes              |
-| Qwen Code   | `--qwen`      | Yes    | No    | Yes              |
+| Runtime     | Install flag  | Skills | Hooks | Commands       |
+|-------------|---------------|--------|-------|----------------|
+| Claude Code | `--claude`    | Yes    | Yes   | Yes            |
+| Codex CLI   | `--codex`     | Yes    | No    | Yes            |
+| Gemini CLI  | `--gemini`    | No     | No    | Yes (default)  |
+| OpenCode    | `--opencode`  | Yes    | No    | Yes            |
+| Qwen Code   | `--qwen`      | Yes    | No    | Yes            |
 
-"Skills" is the default profile for runtimes that support it. "Commands" is the default for Gemini and is available on all runtimes via `--profile commands`.
+"Skills" is the default profile for runtimes that support it. "Commands" is the default for Gemini and remains available on all runtimes via `--profile commands`.
 
 ### Installation
 
@@ -77,14 +77,14 @@ AgentOrchestrator transforms Claude Code from a single-turn assistant into an or
 |-------------------|-----------------------|-----------------------|-----------------------|----------------------------------|-------------------|
 | agents/           | Yes                   | Yes (flat-only)       | No                    | Yes                              | Yes               |
 | skills/           | Yes (default)         | Yes (default, flat-only) | No                 | Yes (default)                    | Yes (default)     |
-| commands/         | Yes (compat)          | Yes (compat)          | Yes (default)         | Yes (default)                    | Yes (default)     |
-| hooks/            | Yes                   | No                    | No                    | Yes (plugins/)                   | No                |
+| commands/         | Yes                   | Yes                   | Yes (default)         | Yes (default)                    | Yes (default)     |
+| hooks/            | Yes                   | No                    | No                    | No                               | No                |
 | settings.json     | Yes                   | No                    | No                    | No                               | No                |
 | policy/           | Yes                   | No                    | No                    | No                               | No                |
 | workflows/        | Yes                   | No                    | No                    | No                               | No                |
 | templates/        | Yes                   | No                    | No                    | No                               | No                |
 
-Pass `--namespace <name>` to install agents and skills under a namespace prefix (e.g., `agents/orchestrator/`, `skills/orchestrator.<skill>/`).
+Pass `--namespace <name>` to scope namespace-capable runtime artifacts. For Codex, namespace is currently ignored and installs stay flat.
 
 **`--project` installs to `<path>/`:**
 - `.claude/agents/` - Project-local agents (default flat)
@@ -378,19 +378,12 @@ Milestone (v0, v1)     -> Git Tag
 
 ---
 
-## Migration Notes
+## Current Constraints
 
-### v0.1.x to v0.2.0
-
-**Backward compatibility**: The `--claude` flag behavior is unchanged. Running `./install.sh --global` or `./install.sh --global --claude` produces the same artifact set as v0.1.x.
-
-**Default namespace**: The default namespace remains `jarvis` when `--namespace` is not specified. Existing installs with the flat default are unaffected.
-
-**New runtimes**: `--opencode` and `--qwen` are new in v0.2.0 and have no v0.1.x equivalent. They can be combined with `--claude` or other runtime flags in a single run.
-
-**Profile flag**: `--profile commands` is opt-in and installs skills as commands to legacy paths (e.g., `.claude/commands/`, `~/.codex/prompts/`). Existing skills installs are not affected unless `--profile commands` is explicitly passed. The `--profile` flag did not exist in v0.1.x.
-
-**Gemini note**: Gemini CLI does not support skills. The TOML transform for Gemini commands compatibility is not yet implemented; Gemini installs warn and skip during commands compat mode.
+- Codex namespace is currently disabled: `--namespace` is ignored for Codex targets and installs stay flat.
+- Gemini is currently installed in commands mode only by default (`.toml` transform path).
+- OpenCode hook artifacts are currently not installed; hook adapter work is tracked separately.
+- `--profile commands` is a functional conversion mode that installs command-format artifacts for selected runtimes.
 
 ---
 

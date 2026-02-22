@@ -2,15 +2,13 @@
 
 **Status**: Accepted
 **Date**: 2026-02-20
-**Context**: v0.2/multi-agent-install branch — extending the installer from 3 runtimes to 5 with capability-scoped profiles
+**Context**: Multi-runtime installer architecture and runtime capability mapping.
 
 ---
 
 ## Context
 
-v0.1.x `install.sh` targets a single runtime: Claude Code. It installs agents, skills, hooks, scripts, and policy references under `~/.claude/` (global) and `.claude/` (project). Three runtime flags (`--claude`, `--gemini`, `--codex`) existed but controlled only which context docs received policy-ref injections — not which runtime's artifact paths were written.
-
-v0.2.0 extends the installer to five runtimes:
+The installer targets five runtimes:
 
 | Runtime     | Flag         |
 | ----------- | ------------ |
@@ -20,14 +18,15 @@ v0.2.0 extends the installer to five runtimes:
 | OpenCode    | `--opencode` |
 | Qwen Code   | `--qwen`     |
 
-Each runtime has a distinct capability set (commands, skills, hooks, scripts), distinct filesystem paths, and distinct artifact formats. The installer must handle all five without cross-runtime collisions, while remaining backward compatible with v0.1.x installs.
+Each runtime has a distinct capability set (subagents, commands, skills, hooks, scripts), distinct filesystem paths, and distinct artifact formats. The installer must handle all five without cross-runtime collisions.
 
-Four design questions required explicit decisions before implementation:
+Five design questions required explicit decisions before implementation:
 
 1. What do the runtime flags (`--claude`, `--codex`, etc.) mean and control?
 2. How does namespace support work across runtimes that have different namespace mechanisms?
 3. How are scripts modeled — embedded in skill packages or as standalone artifacts?
 4. Where does the canonical runtime path registry live, and how is it sourced?
+5. What is the current (officially documented) capability baseline across runtimes, including the missing `subagents` dimension?
 
 ---
 
@@ -37,31 +36,48 @@ Four design questions required explicit decisions before implementation:
 
 **Decision**: The flags `--claude`, `--codex`, `--gemini`, `--opencode`, `--qwen` control which runtime's artifact paths are written during install. They are install target selectors, not runtime execution selectors. Multiple flags may be combined in a single invocation. When none are provided, the installer writes to all supported runtimes.
 
-**Clarification from v0.1.x**: In v0.1.x these flags narrowed only the policy-ref injection targets (CLAUDE.md, AGENTS.md, GEMINI.md). That behavior was ambiguous and incomplete. v0.2.0 formalizes them as install target selectors: each flag gates an entire runtime's artifact installation, including paths, capabilities, and policy refs.
+---
 
-**Backward compatibility**: `--claude` in v0.1.x wrote to `~/.claude/` unconditionally and used the flag only to gate ref injection. In v0.2.0, `--claude` with no other runtime flags produces the same artifact set as v0.1.x (skills, hooks, scripts, settings, refs). Existing installs are unaffected.
+### D-1A: Capability Baseline — Include Subagents and Runtime-Specific Hook Semantics
+
+**Decision**: The installer capability registry and architecture docs must track `subagents` as a first-class capability dimension alongside commands, skills, hooks, and scripts.
+
+Capability baseline:
+
+| Runtime | subagents | commands | skills | hooks | scripts |
+| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| Claude Code | Yes | Yes | Yes | Yes | Yes |
+| Codex CLI | Yes (experimental multi-agent roles) | Yes (custom prompts deprecated) | Yes | Limited (`notify` callback; not a full lifecycle hook map) | Yes |
+| Gemini CLI | Partial/experimental agents (`agents.overrides` official; file-based agents inferred from secondary docs) | Yes | Yes | Yes | Yes |
+| OpenCode | Yes | Yes | Yes | Yes (plugin event hooks) | Yes |
+| Qwen Code | Yes | Yes | Yes | No documented user-facing lifecycle hook schema | Yes |
+
+**Consequence**: Runtime checks, documentation tables, and registry metadata should never infer `hooks` parity from a boolean alone; Codex and Qwen differ materially from Claude/Gemini/OpenCode in current official docs.
 
 ---
 
 ### D-2: Per-Agent Namespace Strategy
 
-**Decision**: Namespace support is per-runtime, not universal. Flat mode (no namespace) is the default for all runtimes and is backward compatible.
+**Decision**: Namespace is modeled per runtime and per artifact type. Flat mode (no namespace) is the default for all runtimes. `--namespace` is optional and is only applied where a runtime documents a compatible namespace mechanism.
 
-Per-runtime namespace semantics:
+Per-runtime namespace semantics (official docs baseline, 2026-02-22):
 
-| Runtime     | Namespace Mechanism                                                    | Namespaced Invocation |
-| ----------- | ---------------------------------------------------------------------- | --------------------- |
-| Claude Code | Dot-prefix on skill dir: `skills/<ns>.<skill>/` + `name: <ns>.<skill>` | `/<ns>.<skill>`       |
-| Codex CLI   | Same dot-prefix convention: `skills/<ns>.<skill>/`                     | `/<ns>.<skill>`       |
-| Gemini CLI  | Subdirectory nesting: `commands/<ns>/<cmd>.toml`                       | `/<ns>:<cmd>`         |
-| OpenCode    | Subdirectory nesting (reads `.opencode/skills/<ns>/`)                  | `/<ns>:<skill>`       |
-| Qwen Code   | Dot-prefix on skill dir (mirrors Claude/Codex convention)              | `/<ns>.<skill>`       |
+| Runtime | Skills/Subagents naming | Commands naming | Invocation form |
+| ----------- | ----------- | ----------- | ----------- |
+| Claude Code | Flat skill and subagent names (`<name>`). Plugin skills use plugin-owned namespace `plugin-name:skill-name`. | Custom slash commands are unified with skills; flat `/name` for project/user commands. | Skills/commands: `/name`; plugins: `plugin-name:skill-name` |
+| Codex CLI | Flat skill names from `.agents/skills/<name>/SKILL.md`. | N/A for installer namespace strategy in this ADR (Codex skills are invoked via skill mention flow). | Skill mention (`$skill`) / `/skills` management UI |
+| Gemini CLI | Agent overrides are config-scoped (`agents.overrides`), not path-name namespace. | Native namespacing via directories: `commands/<ns>/<cmd>.toml` -> `/<ns>:<cmd>` | `/<ns>:<cmd>` |
+| OpenCode | Flat skill names with strict regex (`^[a-z0-9]+(-[a-z0-9]+)*$`), and flat subagent names (from agent id/file). | No separate command namespace mechanism used by installer in this ADR. | Skills via `skill({name})`; subagents via `@agent` |
+| Qwen Code | Flat skill/subagent names (directory/file identity). | Native namespacing via directories: `commands/<ns>/<cmd>.md` -> `/<ns>:<cmd>` | `/<ns>:<cmd>` for commands; `/skills <name>` for skills |
 
-**Namespace grammar** (applies to all runtimes): dot-separated segments, each matching `[a-z][a-z0-9-]*`. Maximum depth: 3 segments (e.g., `orchestrator.project`). Validation runs at install start when `--namespace` is provided; invalid values produce a non-zero exit with an error message.
+**Namespace grammar (`--namespace` input)**: dot-separated segments, each matching `[a-z][a-z0-9-]*`, max depth 3 (example: `orchestrator.project`). This is an installer input grammar, not a claim that every runtime supports dot identifiers at invocation time.
 
-**Flat default**: When `--namespace` is omitted, all runtimes install at flat paths. This is the default and is explicitly documented in `--help`.
+**Translation rule**:
+- Runtimes with command namespace-by-path (Gemini, Qwen custom commands): dot segments map to nested directories and runtime-native `:` invocation.
+- Runtimes with flat skill/subagent naming (Claude project/user skills, Codex, OpenCode, Qwen skills/subagents): installer must not synthesize namespaced skill/subagent identifiers.
+- Runtime-owned namespace forms (example: Claude plugin `plugin:skill`) are preserved as runtime/plugin behavior, not generated by installer `--namespace`.
 
-**Mapping rule for dot-notation to path**: Dot separators in the namespace are translated to path separators only for runtimes that use subdirectory nesting (Gemini, OpenCode). For dot-prefix runtimes (Claude, Codex, Qwen), the namespace is kept as a dot-separated prefix on the artifact directory name.
+**Flat default**: When `--namespace` is omitted, installer writes flat paths for all runtimes. Runtime-native namespacing is only created when `--namespace` is explicitly provided and the selected runtime/profile supports it.
 
 ---
 
@@ -95,46 +111,46 @@ For runtimes without a native scripts directory (Gemini), the installer records 
 
 - Project install root (e.g., `.claude/`, `.agents/`, `.gemini/`, `.opencode/`, `.qwen/`)
 - Global install root (e.g., `~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`)
+- Subagents path/model (relative path or config mode marker, or `""` if not supported)
+- Prompts path/model (for runtimes where reusable prompts are a distinct capability, e.g., Codex custom prompts)
 - Skills path (relative to install root, or `""` if not supported)
 - Commands path (relative to install root)
-- Hooks path (relative to install root, or `""` if not supported)
+- Hooks mode/path (`lifecycle-json`, `plugin-events`, `notify-callback`, or `""` if not supported)
 - Scripts model (`embedded`, `inline-only`)
 - Commands format (`md`, `toml`)
-- Capability bitmask or flags: `supports_skills`, `supports_hooks`
+- Capability bitmask or flags: `supports_subagents`, `supports_commands`, `supports_skills`, `supports_hooks`, `supports_scripts`
 - Policy context doc name (e.g., `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`)
 
 **Sourcing mechanism**: `install.sh` sources `package/install/runtimes.sh` at the top of `main()` via `. "${PACKAGE_DIR}/install/runtimes.sh"`. No subshell — variables must be visible in the caller.
 
-**No hardcoded paths outside registry**: Any function in `install.sh` that resolves a runtime path MUST read it from the registry arrays. Hardcoded path strings for runtime-specific locations are forbidden after T-058 is complete.
+**No hardcoded paths outside registry**: Any function in `install.sh` that resolves a runtime path MUST read it from the registry arrays. Hardcoded path strings for runtime-specific locations are forbidden.
 
-**Drift check**: A `--check` mode (T-065) will compare resolved paths against registry values at runtime and in CI (T-091).
+**Drift check**: `--check` compares resolved runtime paths against registry values.
 
 ---
 
 ### D-5: Frontmatter Transform Strategy
 
-#### Minimal universal MD schema (T-094)
+#### Minimal universal MD schema
 
 Strip Claude-specific keys from SKILL.md when installing to non-Claude runtimes. Universal portable set: `name`, `description`. Claude-specific keys (`argument-hint`, `user-invocable`, `context`, `agent`) dropped at install time for all non-Claude targets. Commands mode: `$ARGUMENTS` → `{{args}}` for Qwen and Gemini.
 
-`--check` shows `PARTIAL` for non-Claude skills/commands/agents rows until T-094 is done; `OK` once applied.
+#### Gemini TOML format conversion
 
-#### Gemini TOML format conversion (T-092, standalone)
+Format-only transform: SKILL.md Markdown → Gemini `.toml`. Extracts `name` and `description` from frontmatter, places body as `prompt` TOML multiline string. Unknown keys pass through after minimal-schema normalization.
 
-Format-only transform: SKILL.md Markdown → Gemini `.toml`. Extracts `name` and `description` from frontmatter, places body as `prompt` TOML multiline string. Unknown keys passed through (T-094 strips Claude-specific keys before T-092 runs). T-092 is **not** folded into T-095 — it addresses a distinct format conversion requirement.
+#### Per-runtime key map + TOML schema adjustments
 
-`--check` gemini commands row: `GAP` → `OK` once T-092 done.
-
-#### Per-runtime key map + TOML schema adjustments (T-095)
-
-Explicit `runtime × mode × key → action` rules beyond the minimal strip. Covers runtime-specific extensions (Codex invocation field, Gemini TOML structural requirements beyond basic format, OpenCode hooks binding). Depends on T-094 and T-092 being complete.
-
-`--check` non-Claude frontmatter rows: `PARTIAL` → `OK` once T-095 done.
+Explicit `runtime × mode × key → action` rules beyond the minimal strip. Covers runtime-specific extensions (Codex invocation field, Gemini TOML structural requirements beyond basic format, OpenCode hooks binding).
 
 **Official schema findings** (from docs research):
-- Qwen commands: only `description` documented; `name`+`description` required for skills
-- Gemini commands: `name`, `description`, `prompt` in TOML
-- Argument placeholder: `$ARGUMENTS` (Claude) vs `{{args}}` (Qwen, Gemini — confirmed official docs)
+- Codex multi-agents: role-driven TOML schema (`[agents.<name>]` + optional `config_file`), not Markdown subagent files
+- Codex hooks: documented as limited `notify` callback; no full lifecycle hook object model in official config docs
+- Gemini commands: TOML with required `prompt`; `description` optional
+- Gemini hooks: first-class `hooks` object in settings JSON with event-specific arrays and command handlers
+- Qwen commands: Markdown preferred with optional `description`; TOML command format is deprecated
+- Qwen skills/subagents: `SKILL.md` and agent Markdown frontmatter both require `name` + `description`
+- Argument placeholders: `$ARGUMENTS` (Claude/Codex prompts) vs `{{args}}` (Gemini/Qwen command templates)
 
 ---
 
@@ -142,7 +158,7 @@ Explicit `runtime × mode × key → action` rules beyond the minimal strip. Cov
 
 ### Why per-runtime namespace semantics rather than a universal grammar?
 
-A universal grammar would require a lowest-common-denominator approach that either loses expressive power (subdirectory nesting not supported everywhere) or produces inconsistent invocation syntax across runtimes (dot-prefix working one way for Claude but mapped differently for Gemini). Each runtime's native mechanism is preserved, and the installer maps the common `--namespace` input to each runtime's appropriate output. The user provides one namespace string; the installer translates it correctly per target.
+A universal grammar would force one identifier model onto runtimes that do not share it. Current runtimes split into different models: directory-to-colon command namespace (Gemini, Qwen custom commands), runtime-owned plugin namespace (Claude `plugin:skill`), and flat skill/subagent identifiers (Codex, OpenCode, Claude project/user skills, Qwen skills/subagents). The installer therefore accepts one normalized input (`--namespace`) and translates only where a runtime has an official compatible namespace mechanism.
 
 ### Why embedded scripts rather than a standalone scripts install step?
 
@@ -158,15 +174,15 @@ The installer is a bash script. A bash-sourced file requires no additional tool 
 
 ### Alternative for D-2: Universal dot-notation grammar for all runtimes
 
-Apply dot-notation uniformly: all runtimes use `<ns>.<skill>/` directory naming and `/<ns>.<skill>` invocation.
+Apply dot-notation uniformly (`<ns>.<name>`) to skills, subagents, and commands across all runtimes.
 
-**Rejected**: Gemini CLI uses subdirectory nesting for its namespace model (`commands/<ns>/<cmd>.toml` → `/<ns>:<cmd>`). Forcing dot-notation on Gemini would produce artifact paths that Gemini does not recognize as namespaced. Per-runtime translation is the only approach that respects each runtime's documented behavior.
+**Rejected**: No single runtime contract supports this across all artifact types. Gemini and Qwen command namespaces are directory-to-colon; OpenCode and Codex skill naming are flat; Claude plugin namespace uses `plugin:skill` and project/user skills are flat. Universal dot-notation would generate unsupported identifiers and break discovery/invocation.
 
-### Alternative for D-2: Suppress namespace for runtimes that use subdirectory nesting
+### Alternative for D-2: Suppress namespace for all non-dot runtimes
 
-Allow `--namespace` only for dot-prefix runtimes; emit a warning and skip namespace application for Gemini and OpenCode.
+Allow `--namespace` only for one naming style and skip translation for runtimes with other native models.
 
-**Rejected**: Gemini and OpenCode have valid namespace mechanisms. Silently skipping namespacing for those runtimes when the user explicitly provides `--namespace` is confusing. Correct translation is preferable to silent skipping.
+**Rejected**: Gemini and Qwen custom commands have first-class native namespace support (`/<ns>:<cmd>`). Skipping translation would throw away documented capability and produce inconsistent user experience.
 
 ### Alternative for D-3: Standalone scripts install step
 
@@ -178,7 +194,7 @@ Install a `scripts/` directory at the runtime root level, separate from skill pa
 
 Do not install scripts at all; document that users must manage scripts manually.
 
-**Rejected**: Hook scripts are functional requirements for Claude Code (T-001 through T-005 are all hook scripts). Removing scripts installation would regress existing Claude Code functionality. Other runtimes' embedded scripts are needed for skills that invoke helper workflows.
+**Rejected**: Hook scripts are functional requirements for Claude Code. Removing scripts installation would regress existing Claude Code functionality. Other runtimes' embedded scripts are needed for skills that invoke helper workflows.
 
 ### Alternative for D-4: JSON registry file
 
@@ -190,38 +206,19 @@ Store runtime metadata in `package/install/runtimes.json`, parsed via `jq` in `i
 
 Keep all path definitions as local variables or constants inside `install.sh` functions.
 
-**Rejected**: This is the current state and is what T-058 explicitly addresses. Inline constants in a 1200-line script are not auditable, produce the path-drift problem that T-065 and T-091 target, and make it impossible to add a fifth or sixth runtime without editing core logic throughout the file.
+**Rejected**: Inline constants in a large installer script are not auditable, produce path-drift risk, and make additional runtimes expensive to add because core logic must be edited repeatedly.
 
 ---
 
 ## Consequences
 
-### Impact on T-058..T-070 implementation
-
-**T-058 (Define canonical runtime registry)**: Creates `package/install/runtimes.sh` per D-4. All five runtimes defined with paths matching the research report matrix. This task must be completed first — all subsequent installer tasks depend on it.
-
-**T-059 (Add --opencode and --qwen flags)**: Straightforward once registry exists. Flag parsing in `main()` gains two cases; install/restore/cleanup dispatch gains two branches.
-
-**T-060..T-064 (Codify per-runtime paths)**: Each task validates that the registry entry for its runtime matches the canonical paths. Implementation work is verifying the registry, not writing new path logic throughout the script.
-
-**T-065 (Runtime path drift checks)**: Reads registry and cross-checks any computed paths. Requires D-4 registry to be in place.
-
-**T-066 (Frontmatter/schema transforms)**: Transform spec documents how `SKILL.md` frontmatter maps to each runtime's commands format. Operates independently of the registry but must reference the registry's `commands_format` field per runtime.
-
-**T-067 (Namespace grammar and validation)**: Implements the grammar defined in D-2. Validation function is a standalone helper sourced from `package/install/runtimes.sh` or a companion `namespace.sh`.
-
-**T-068 (Map dot-notation to agent paths)**: Implements the per-runtime translation table from D-2. Pure function: namespace string + runtime ID → path prefix.
-
-**T-069 (Preserve flat mode)**: No change to default behavior. D-2 flat-default decision confirms backward compatibility.
-
-**T-070 (Namespace-safe restore/cleanup)**: Restore and cleanup functions read `--namespace` and apply the per-runtime translation from D-2 to identify the correct subtree to target. Cross-namespace collision safety follows from namespaced subtrees being disjoint path prefixes.
-
 ### Positive
 
 - Single registry eliminates path drift between installer logic and documented runtime paths
-- Per-runtime capability flags allow unsupported-capability warnings (T-079) without conditional logic scattered through install functions
-- Flat default preserves all v0.1.x installs without migration
-- Per-runtime namespace translation gives correct native behavior for all five runtimes without a lowest-common-denominator compromise
+- Per-runtime capability flags allow unsupported-capability warnings without conditional logic scattered through install functions
+- Flat default preserves existing flat installs without migration
+- Per-runtime namespace translation gives correct native behavior for each supported namespace model (`:`, path scope, plugin namespace, flat identifiers)
+- Runtimes without official skill/subagent namespace contracts remain installable without synthetic-name recognition failures
 - Embedded scripts model requires no new install code paths
 
 ### Negative
@@ -232,8 +229,8 @@ Keep all path definitions as local variables or constants inside `install.sh` fu
 
 ### Mitigations
 
-- T-065 and T-091 provide drift detection and CI enforcement to catch registry divergence
-- Namespace translation is isolated in a pure function (T-068) independently testable
+- Drift detection and CI enforcement catch registry divergence
+- Namespace translation is isolated in a pure function and independently testable
 - macOS bash version constraint is an existing documented requirement, not introduced by this ADR
 
 ---
@@ -245,6 +242,5 @@ Keep all path definitions as local variables or constants inside `install.sh` fu
 - [ADR-008](008-multi-provider-integration-strategy.md) — Multi-provider integration strategy (runtime capability matrix context)
 - [ADR-013](013-extended-skills.md) — Extended skills (governance skills whose install behavior is governed by this ADR)
 - `docs/knowledge/decisions/flat-skill-paths.md` — Flat vs dot-prefix skill paths decision record (D-2 builds on this)
-- `reports/research/2026-02-19-multi-agent-install-plan.md` — Canonical capability matrix (source of truth for registry values)
-- `docs/development/ISSUES.md` — G-003 (frontmatter schema gap), G-001 (OpenCode hooks), G-002 (Gemini TOML)
-- BACKLOG T-058..T-091 — Implementation tasks for this architecture
+- `reports/research/2026-02-19-multi-agent-install-plan.md` — Canonical install mapping matrix (maintained summary)
+- `reports/research/2026-02-22-agent-capability-schema-deep-research.md` — Detailed capability + schema deep research (official docs + Context7 + DeepWiki)
