@@ -247,5 +247,4 @@ Keep all path definitions as local variables or constants inside `install.sh` fu
 - `docs/knowledge/decisions/flat-skill-paths.md` — Flat vs dot-prefix skill paths decision record (D-2 builds on this)
 - `reports/research/2026-02-19-multi-agent-install-plan.md` — Canonical capability matrix (source of truth for registry values)
 - `docs/development/ISSUES.md` — G-003 (frontmatter schema gap), G-001 (OpenCode hooks), G-002 (Gemini TOML)
-- `/workspace/spec-kit/src/specify_cli/extensions.py` — Reference implementation: `CommandRegistrar` transform pipeline
 - BACKLOG T-058..T-091 — Implementation tasks for this architecture
