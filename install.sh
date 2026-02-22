@@ -361,7 +361,7 @@ copy_directory() {
 
     mkdir -p "$target_dir"
 
-    find "$source_dir" -type f | while read -r file; do
+    while read -r file; do
         local rel_path="${file#"$source_dir"/}"
         local target_file="${target_dir}/${rel_path}"
         local backup_rel_path="${component_name}/${rel_path}"
@@ -390,7 +390,7 @@ copy_directory() {
                 fi
                 ;;
         esac
-    done
+    done < <(find "$source_dir" -type f)
 }
 
 # ---------------------------------------------------------------------------
@@ -1019,6 +1019,8 @@ install_runtime_global() {
         else
             eff_profile="commands"
         fi
+        # Codex: keep native skills, and also install legacy prompt commands for /prompts:* UX.
+        [[ "$rt" == "codex" ]] && eff_profile="all"
     fi
     local rt_namespace
     rt_namespace="$(effective_namespace_for_runtime "$rt")"
@@ -1030,12 +1032,18 @@ install_runtime_global() {
             if [ -n "$rt_namespace" ]; then
                 copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$backup_dir" "$rt"
             else
-                copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
-                # T-094: strip Claude-specific frontmatter for non-Claude runtimes (flat copy)
+                # Non-Claude runtimes persist transformed SKILL.md; copy transformed source to avoid repeated false diffs.
                 if [[ "$rt" != "claude" ]]; then
-                    for skill_md in "$skills_target"/*/SKILL.md; do
+                    local tmp_skills_dir
+                    tmp_skills_dir="$(mktemp -d)"
+                    cp -r "${PACKAGE_DIR}/skills/." "$tmp_skills_dir/"
+                    for skill_md in "$tmp_skills_dir"/*/SKILL.md; do
                         strip_claude_frontmatter "$skill_md"
                     done
+                    copy_directory "$tmp_skills_dir" "$skills_target" "$backup_dir"
+                    rm -rf "$tmp_skills_dir"
+                else
+                    copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
                 fi
             fi
         fi
@@ -1097,6 +1105,8 @@ install_runtime_project() {
         else
             eff_profile="commands"
         fi
+        # Codex: keep native skills, and also install legacy prompt commands for /prompts:* UX.
+        [[ "$rt" == "codex" ]] && eff_profile="all"
     fi
     local rt_namespace
     rt_namespace="$(effective_namespace_for_runtime "$rt")"
@@ -1108,12 +1118,18 @@ install_runtime_project() {
             if [ -n "$rt_namespace" ]; then
                 copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$backup_dir" "$rt"
             else
-                copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
-                # T-094: strip Claude-specific frontmatter for non-Claude runtimes (flat copy)
+                # Non-Claude runtimes persist transformed SKILL.md; copy transformed source to avoid repeated false diffs.
                 if [[ "$rt" != "claude" ]]; then
-                    for skill_md in "$skills_target"/*/SKILL.md; do
+                    local tmp_skills_dir
+                    tmp_skills_dir="$(mktemp -d)"
+                    cp -r "${PACKAGE_DIR}/skills/." "$tmp_skills_dir/"
+                    for skill_md in "$tmp_skills_dir"/*/SKILL.md; do
                         strip_claude_frontmatter "$skill_md"
                     done
+                    copy_directory "$tmp_skills_dir" "$skills_target" "$backup_dir"
+                    rm -rf "$tmp_skills_dir"
+                else
+                    copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
                 fi
             fi
         fi
