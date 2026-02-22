@@ -50,7 +50,7 @@ Start with L1 Workflow (hub-spoke, ACP-only optional, A2A primary), validate obs
 
 **Key Insight**: Each level adds protocol complexity and reduces orchestrator control.
 
-**Citation**: "L1: ACP only - orchestrator controls all coordination. L2: ACP primary, A2A optional for direct peer messaging. L3: A2A primary - agents autonomously collaborate, orchestrator provides minimal control" - [A2A-ACP Analysis](../../analysis/A2A-ACP-Analysis.md)
+**Citation**: Coordination model synthesized from ADR-007 protocol decision and ADR-009 framework selection.
 
 ### Risk Management
 
@@ -356,8 +356,6 @@ result = swarm.coordinate("Research and implement real-time collaboration")
 
 ### Related Documentation
 
-- [A2A-ACP Analysis](../../analysis/A2A-ACP-Analysis.md#multi-agent-coordination-levels)
-- [Multi-Agent Orchestration Research](../../analysis/Multi-Agent-Orchestration-Research.md)
 - [Strands Agents Documentation](https://strandsagents.com/)
 
 ---

@@ -421,7 +421,7 @@ v0 Milestone
 │   ├── Capability-Scoped Installer Profiles
 │   ├── UX & Documentation
 │   └── Validation & CI
-│       → TAG: v0.2.0
+│       → TAG: v0.2.0 (in progress)
 │
 └── v0.1.1: Governance & Quality ◄── v0.1.0
     └── Governance and Quality Controls (onboard, review, hitl + agent/workflow updates)

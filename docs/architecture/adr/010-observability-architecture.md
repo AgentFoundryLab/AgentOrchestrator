@@ -407,7 +407,6 @@ def handle_mcp_command(mcp_cmd):
 
 ### Related Documentation
 
-- [Multi-Agent Observability Analysis](../../analysis/Multi-Agent-Orchestration-Observability.md)
 - [W3C Trace Context Specification](https://www.w3.org/TR/trace-context/)
 - [OpenTelemetry Python SDK](https://opentelemetry-python.readthedocs.io/)
 

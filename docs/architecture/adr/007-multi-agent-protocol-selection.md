@@ -189,9 +189,8 @@ Using ACP would require **custom bridges** for every framework. A2A is framework
 
 ### Related Documentation
 
-- [Multi-Agent Orchestration Research](../../analysis/Multi-Agent-Orchestration-Research.md)
-- [Orchestrator-Agent Communication Analysis](../../analysis/Orchestrator-Agent-Communication.md)
-- [A2A-ACP Capabilities Comparison](../../analysis/A2A-ACP-Capabilities-Comparison.md)
+- [A2A Specification](https://google.github.io/A2A/#/)
+- [Model Context Protocol Specification](https://modelcontextprotocol.io/specification/2025-06-18)
 
 ---
 

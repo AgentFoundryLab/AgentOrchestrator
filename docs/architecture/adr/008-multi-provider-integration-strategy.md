@@ -263,7 +263,6 @@ task_id = send_message(
 
 ### Related Documentation
 
-- [Multi-Agent Orchestration Research](../../analysis/Multi-Agent-Orchestration-Research.md#option-e-hybrid-mcp--a2a-architecture)
 - [A2A-MCP Bridge GitHub](https://github.com/GongRzhe/A2A-MCP-Server)
 - [Claude Subscription Cost Analysis](https://www.reddit.com/r/ClaudeAI/comments/1qpcj8q/claude_subscriptions_are_up_to_36x_cheaper_than/)
 

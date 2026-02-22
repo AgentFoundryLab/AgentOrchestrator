@@ -316,7 +316,6 @@ os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://collector:4318"
 
 ### Related Documentation
 
-- [Multi-Agent Orchestration Research](../../analysis/Multi-Agent-Orchestration-Research.md#1-strands-agents-aws-open-source)
 - [Strands Agents Documentation](https://strandsagents.com/)
 - [AWS Blog: Strands Agents 1.0](https://aws.amazon.com/blogs/opensource/introducing-strands-agents-1-0-production-ready-multi-agent-orchestration-made-simple/)
 
