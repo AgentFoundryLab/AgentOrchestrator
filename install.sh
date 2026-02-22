@@ -6,7 +6,7 @@
 #   ./install.sh --project <path>      Install project templates to <path>
 #   ./install.sh [--claude|--gemini|--codex|--opencode|--qwen]  Select install targets (default: --claude)
 #   ./install.sh [--profile <profile>] Capability profile: skills|commands|hooks|scripts|all (default: auto)
-#   ./install.sh [--namespace <name>]  Override agent/skill namespace (default: jarvis)
+#   ./install.sh [--namespace <name>]  Override agent/skill namespace (default: flat)
 #   ./install.sh [--no-namespace]      Use flat agents/skills paths (no namespace)
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
 #   ./install.sh --restore             Remove installed artifacts, restore settings
@@ -18,7 +18,7 @@ set -e
 VERSION="0.2.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_DIR="${SCRIPT_DIR}/package"
-NAMESPACE="jarvis"
+NAMESPACE=""
 
 # Source canonical runtime registry (bash 4+ associative arrays)
 # shellcheck source=package/install/runtimes.sh
@@ -74,7 +74,7 @@ Profile flags (controls which capability artifacts are installed):
     --profile <profile>                Capability profile (default: auto per runtime)
                                        Values: skills, commands, hooks, scripts, all
                                        - skills: install skill packages (SKILL.md); requires runtime skills support
-                                       - commands: install commands (compatibility mode); Claude/Codex/Qwen use .md,
+                                       - commands: install command artifacts; Claude/Codex/Qwen use .md,
                                                    Gemini uses .toml transform
                                        - hooks: install hooks/scripts; requires runtime hooks support
                                        - scripts: embedded within skill packages (no extra step)
@@ -83,7 +83,7 @@ Profile flags (controls which capability artifacts are installed):
                                        Default when runtime does not support skills (gemini): commands
 
 Namespace flags:
-    --namespace <name>                 Override namespace for agents/skills (default: jarvis)
+    --namespace <name>                 Override namespace for agents/skills (default: flat)
                                        Grammar: dot-separated [a-z][a-z0-9-]* segments, max depth 3
                                        Example: --namespace orchestrator
     --no-namespace                     Use flat agents/skills paths (no namespace prefix)
@@ -95,8 +95,7 @@ Other flags:
     --check                            Validate registry paths vs package layout; exits non-zero on drift
     --help                             Show this help
 
-Flat install is the default when --namespace is omitted. Existing v0.1.x installs
-are unaffected; --claude with no other flags produces the same artifact set as before.
+Flat install is the default when --namespace is omitted.
 
 What gets installed per runtime (default skills profile):
 
@@ -151,8 +150,7 @@ Profile defaults per runtime:
     Runtimes without skills support (gemini):
         Default profile: commands
         Commands are installed to <runtime>/commands/<skill>.toml
-    Use --profile commands to override any runtime to install to legacy commands paths.
-    This is a compatibility mode — existing skills installs are not affected.
+    Use --profile commands to install command-format artifacts for selected runtimes.
 
 Examples:
     # Install to Claude Code only (default runtime)
@@ -167,7 +165,7 @@ Examples:
     # Namespaced install (agents/<ns>/, skills/<ns>.<skill>/)
     ./install.sh --global --claude --namespace orchestrator
 
-    # Install with commands compatibility profile (legacy paths)
+    # Install with commands profile
     ./install.sh --global --gemini --profile commands
 
     # Check registry paths against package layout (no writes)
@@ -623,13 +621,12 @@ inject_policy_refs() {
     local doc_files="$6"
     local start_tag="<!-- ${sentinel}:start -->"
     local end_tag="<!-- ${sentinel}:end -->"
-    local legacy_tag="<!-- ${sentinel} -->"
     local header="## Orchestrator Policy References"
 
     for md_file in $doc_files; do
         local f="${target_dir}/${md_file}"
         [ -f "$f" ] || continue
-        if grep -qF "$start_tag" "$f" 2>/dev/null || grep -qF "$legacy_tag" "$f" 2>/dev/null; then
+        if grep -qF "$start_tag" "$f" 2>/dev/null; then
             log_info "Refs present: $f"
             ((++UNCHANGED))
         else
@@ -803,7 +800,7 @@ strip_frontmatter() {
 }
 
 # ---------------------------------------------------------------------------
-# Commands compatibility mode — per-runtime SKILL.md schema/transform notes (T-084)
+# Commands profile — per-runtime SKILL.md schema/transform notes
 # ---------------------------------------------------------------------------
 # When --profile commands is used (or when a runtime defaults to commands, e.g. gemini),
 # each SKILL.md is transformed for the target runtime's commands directory.
@@ -876,9 +873,9 @@ skill_to_gemini_toml() {
         "$safe_name" "$safe_description" "$body"
 }
 
-# Install skills as commands (compatibility mode): copies each SKILL.md to the
+# Install skills as commands profile artifacts: copies each SKILL.md to the
 # runtime's commands directory, applying any needed transforms per runtime.
-# T-073: commands compat profile
+# T-073: commands profile
 install_runtime_commands_compat() {
     local rt="$1"
     local base_dir="$2"   # RUNTIME_CONF_DIR[rt] or rt_target
@@ -892,7 +889,7 @@ install_runtime_commands_compat() {
     fi
 
     if [ ! -d "${PACKAGE_DIR}/skills" ]; then
-        log_warning "${rt}: no skills source directory; skipping commands compat install"
+        log_warning "${rt}: no skills source directory; skipping commands profile install"
         return
     fi
 
@@ -1537,7 +1534,6 @@ strip_ref_block_if_present() {
     local sentinel="$2"
     local start_tag="<!-- ${sentinel}:start -->"
     local end_tag="<!-- ${sentinel}:end -->"
-    local legacy_tag="<!-- ${sentinel} -->"
     local tmp_file="${target_file}.tmp"
 
     [ -f "$target_file" ] || return 0
@@ -1557,29 +1553,6 @@ strip_ref_block_if_present() {
         log_success "Stripped refs from: $target_file"
         ((++PATCHED))
         return 0
-    fi
-
-    # Legacy unbounded marker fallback: remove only known injected lines.
-    if grep -qF "$legacy_tag" "$target_file" 2>/dev/null; then
-        awk -v legacy="$legacy_tag" '
-            {
-                if (!skip && index($0, legacy) > 0) { skip=1; next }
-                if (skip) {
-                    if ($0 ~ /^## Orchestrator Policy References/) next
-                    if ($0 ~ /^Read @/) next
-                    if ($0 ~ /^[[:space:]]*$/) next
-                    skip=0
-                }
-                lines[++n]=$0
-            }
-            END {
-                while (n > 0 && lines[n] ~ /^[[:space:]]*$/) n--
-                for (i = 1; i <= n; i++) print lines[i]
-            }
-        ' "$target_file" > "$tmp_file"
-        mv "$tmp_file" "$target_file"
-        log_success "Stripped legacy refs from: $target_file"
-        ((++PATCHED))
     fi
 
     return 0

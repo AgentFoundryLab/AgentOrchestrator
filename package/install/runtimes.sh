@@ -16,7 +16,7 @@
 # ============================================================================
 #
 # Defines how SKILL.md content maps to each runtime's commands format when
-# --commands compatibility mode is used. This is a documentation-only spec;
+# --profile commands is used. This is a documentation-only spec;
 # the actual transform implementation lives in install.sh transform functions.
 #
 # Source format (SKILL.md frontmatter, YAML):
@@ -35,11 +35,11 @@
 #    - SKILL.md is the native format. No transform needed.
 #    - Frontmatter keys: all preserved as-is.
 #    - Skills installed directly from package/skills/<name>/SKILL.md.
-#    - Compatibility path (.claude/commands/*.md) is legacy; not written by default.
+#    - Commands profile path (.claude/commands/*.md) is not written by default.
 #
 # 2. CODEX (target: .agents/skills/<name>/SKILL.md)
 #    - SKILL.md is the native format. No transform needed for skills mode.
-#    - Compatibility commands path (~/.codex/prompts/<name>.md):
+#    - Commands profile path (~/.codex/prompts/<name>.md):
 #        Strip YAML frontmatter block (---...---).
 #        Keep body content verbatim.
 #        Filename: <skill-name>.md
@@ -73,7 +73,7 @@
 # 5. QWEN (target: .qwen/skills/<name>/SKILL.md)
 #    - SKILL.md is native format. No transform needed for skills mode.
 #    - Commands path (.qwen/commands/<name>.md):
-#        Markdown format preferred. TOML legacy not written by default.
+#        Markdown format preferred. TOML path not written by default.
 #        Frontmatter: all keys preserved.
 #    - Scripts: !{...} inline and optional scripts/ helpers in skill packages.
 #
@@ -155,7 +155,7 @@ RUNTIME_COMMANDS_PATH[gemini]="commands"
 RUNTIME_COMMANDS_PATH[opencode]="commands"
 RUNTIME_COMMANDS_PATH[qwen]="commands"
 
-# Codex compatibility commands install base (overrides RUNTIME_CONF_DIR for commands only).
+# Codex commands-profile install base (overrides RUNTIME_CONF_DIR for commands only).
 # Empty = use RUNTIME_CONF_DIR[rt].
 declare -A RUNTIME_COMMANDS_CONF_OVERRIDE
 RUNTIME_COMMANDS_CONF_OVERRIDE[claude]=""
