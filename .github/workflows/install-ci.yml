@@ -1,0 +1,57 @@
+# Install CI — T-091: CI guardrail for runtime/path drift and install smoke tests.
+#
+# Triggers on any push or PR that modifies installer-related files.
+# Two jobs:
+#   drift-check   — validates registry paths vs package layout (no writes)
+#   smoke-tests   — runs all install smoke, conformance, restore, and idempotency tests
+#
+# Both jobs run in an isolated environment; no real ~/.claude/ or peer dirs are touched.
+
+name: Install CI
+
+on:
+  push:
+    paths:
+      - 'install.sh'
+      - 'package/install/**'
+      - 'package/skills/**'
+      - 'package/agents/**'
+      - 'package/hooks/**'
+      - 'tests/install/**'
+  pull_request:
+    paths:
+      - 'install.sh'
+      - 'package/install/**'
+      - 'package/skills/**'
+      - 'package/agents/**'
+      - 'package/hooks/**'
+      - 'tests/install/**'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # drift-check: validate that registry paths match package layout
+  # Fails with non-zero exit if any runtime path deviates from the canonical
+  # registry declared in package/install/runtimes.sh.
+  # ---------------------------------------------------------------------------
+  drift-check:
+    name: Runtime Path Drift Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check runtime path drift
+        run: bash install.sh --check
+
+  # ---------------------------------------------------------------------------
+  # smoke-tests: run all install tests (T-087..T-090) in isolated temp HOME
+  # ---------------------------------------------------------------------------
+  smoke-tests:
+    name: Install Smoke & Conformance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run install smoke tests
+        run: bash tests/install/smoke.sh

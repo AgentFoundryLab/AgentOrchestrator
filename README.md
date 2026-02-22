@@ -3,7 +3,7 @@
 Minimalist multi-agent orchestration framework for Claude Code.
 Inspired by SuperClaude.
 
-**Version**: 0.1.0  | **Status**: v0 Initial Phase Complete
+**Version**: 0.2.0  | **Status**: v0.2.0 Multi-Runtime Install
 
 ---
 
@@ -26,42 +26,65 @@ AgentOrchestrator transforms Claude Code from a single-turn assistant into an or
 - **uv**: Required for Python operations and Serena MCP (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - **jq**: Required for JSON merging during installation (`apt install jq` or `brew install jq`)
 
+### Runtime Support Matrix
+
+| Runtime     | Install flag  | Skills | Hooks | Commands         |
+|-------------|---------------|--------|-------|------------------|
+| Claude Code | `--claude`    | Yes    | Yes   | Yes (compat)     |
+| Codex CLI   | `--codex`     | Yes    | No    | Yes (compat)     |
+| Gemini CLI  | `--gemini`    | No     | No    | Yes (default)    |
+| OpenCode    | `--opencode`  | Yes    | Yes   | Yes              |
+| Qwen Code   | `--qwen`      | Yes    | No    | Yes              |
+
+"Skills" is the default profile for runtimes that support it. "Commands" is the default for Gemini and is available on all runtimes via `--profile commands`.
+
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/orchestrator.git
-cd orchestrator
-
-# Install globally (agents, skills, hooks, workflows)
+# Install globally to Claude Code (default runtime)
 ./install.sh --global
+
+# Install to multiple runtimes in one run
+./install.sh --global --codex --qwen
+
+# Install to all five runtimes
+./install.sh --global --claude --codex --gemini --opencode --qwen
+
+# Namespaced install (scopes agents and skills under a namespace)
+./install.sh --global --claude --namespace orchestrator
+
+# Install with commands compatibility profile (legacy paths)
+./install.sh --global --gemini --profile commands
 
 # Install project templates to a target project
 ./install.sh --project /path/to/your/project
 
-# Install both in one run
+# Install both global and project in one run
 ./install.sh --global --project /path/to/your/project
-
-# Optional: limit policy-ref targets (default is all 3)
-./install.sh --global --claude          # ~/.claude/CLAUDE.md only
-./install.sh --global --gemini          # ~/.gemini/GEMINI.md only
-./install.sh --global --codex           # ~/.codex/AGENTS.md only
 
 # Overwrite existing markdown files during reinstall
 ./install.sh --global --overwrite
+
+# Validate registry paths against package layout (no writes)
+./install.sh --check
 ```
 
 ### What Gets Installed
 
-**`--global` installs to `~/.claude/`:**
-- `agents/` - Agent definitions (7 files, default flat)
-- `skills/` - Skill definitions (15 directories, default flat)
-- `hooks/scripts/` - Hook scripts (5 files) + shared library
-- `settings.json` - Hook and MCP configuration
-- `policy/` - PRINCIPLES.md, RULES.md, GUIDELINES.md
-- `workflows/` - SWE.md, meta-learning.md
-- `templates/` - Vision, Blueprint, PRD, Architecture, ADR, Roadmap, Backlog, Issues
-Optional: pass `--namespace <name>` to install as `agents/<name>/` and `skills/<name>/`.
+**`--global` installs per runtime (default: `--claude`):**
+
+| Artifact          | claude (`~/.claude/`) | codex (`~/.agents/`)  | gemini (`~/.gemini/`) | opencode (`~/.config/opencode/`) | qwen (`~/.qwen/`) |
+|-------------------|-----------------------|-----------------------|-----------------------|----------------------------------|-------------------|
+| agents/           | Yes                   | Yes                   | No                    | Yes                              | Yes               |
+| skills/           | Yes (default)         | Yes (default)         | No                    | Yes (default)                    | Yes (default)     |
+| commands/         | Yes (compat)          | Yes (compat)          | Yes (default)         | Yes (default)                    | Yes (default)     |
+| hooks/            | Yes                   | No                    | No                    | Yes (plugins/)                   | No                |
+| settings.json     | Yes                   | No                    | No                    | No                               | No                |
+| policy/           | Yes                   | No                    | No                    | No                               | No                |
+| workflows/        | Yes                   | No                    | No                    | No                               | No                |
+| templates/        | Yes                   | No                    | No                    | No                               | No                |
+
+Pass `--namespace <name>` to install agents and skills under a namespace prefix (e.g., `agents/orchestrator/`, `skills/orchestrator.<skill>/`).
 
 **`--project` installs to `<path>/`:**
 - `.claude/agents/` - Project-local agents (default flat)
@@ -352,6 +375,22 @@ Milestone (v0, v1)     -> Git Tag
 - [Rules](package/policy/RULES.md) - Agent behavioral rules
 - [Standards](docs/policy/STANDARDS.md) - Project technical standards
 - [Guidelines](docs/policy/GUIDELINES.md) - User guidance
+
+---
+
+## Migration Notes
+
+### v0.1.x to v0.2.0
+
+**Backward compatibility**: The `--claude` flag behavior is unchanged. Running `./install.sh --global` or `./install.sh --global --claude` produces the same artifact set as v0.1.x.
+
+**Default namespace**: The default namespace remains `jarvis` when `--namespace` is not specified. Existing installs with the flat default are unaffected.
+
+**New runtimes**: `--opencode` and `--qwen` are new in v0.2.0 and have no v0.1.x equivalent. They can be combined with `--claude` or other runtime flags in a single run.
+
+**Profile flag**: `--profile commands` is opt-in and installs skills as commands to legacy paths (e.g., `.claude/commands/`, `~/.codex/prompts/`). Existing skills installs are not affected unless `--profile commands` is explicitly passed. The `--profile` flag did not exist in v0.1.x.
+
+**Gemini note**: Gemini CLI does not support skills. The TOML transform for Gemini commands compatibility is not yet implemented; Gemini installs warn and skip during commands compat mode.
 
 ---
 

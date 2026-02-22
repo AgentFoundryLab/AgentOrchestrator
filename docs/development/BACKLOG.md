@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
-**Version**: 0.1.2
-**Updated**: 2026-02-20 (56/57 v0 tasks done)
+**Version**: 0.2.0
+**Updated**: 2026-02-22 (91/91 v0 tasks done; 3 gap tasks pending)
 **Scope**: v0 Milestone
 
 ---
@@ -67,6 +67,44 @@
 | T-055 | v0 | Governance & Quality | Governance and Quality Controls | Update tech-writer.md (add review skill) | ADR-013 | P0 | ✅ |
 | T-056 | v0 | Governance & Quality | Governance and Quality Controls | Update SWE.md (/review gate in full workflow) | ADR-013, T-029 | P0 | ✅ |
 | T-057 | v0 | Governance & Quality | Governance and Quality Controls | Update PRD.md FR2 (17 skills) | R-001 | P0 | ✅ |
+| T-058 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Define canonical runtime registry | v0.2.0 | P0 | ✅ |
+| T-059 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add installer targets for --opencode and --qwen | v0.2.0 | P0 | ✅ |
+| T-060 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Claude paths | v0.2.0 | P0 | ✅ |
+| T-061 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Codex paths | v0.2.0 | P0 | ✅ |
+| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths | v0.2.0 | P0 | ✅ |
+| T-063 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify OpenCode paths | v0.2.0 | P0 | ✅ |
+| T-064 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Qwen paths | v0.2.0 | P0 | ✅ |
+| T-065 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add runtime path drift checks | v0.2.0 | P1 | ✅ |
+| T-066 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Define frontmatter/schema transforms (skills->commands) | v0.2.0 | P1 | ✅ |
+| T-067 | v0 | Installer Extension | Namespace & Dot-Notation Semantics | Define namespace grammar and validation | v0.2.0 | P0 | ✅ |
+| T-068 | v0 | Installer Extension | Namespace & Dot-Notation Semantics | Map dot-notation namespace to agent paths and skill names | v0.2.0 | P0 | ✅ |
+| T-069 | v0 | Installer Extension | Namespace & Dot-Notation Semantics | Preserve flat mode as backward-compatible default | v0.2.0 | P0 | ✅ |
+| T-070 | v0 | Installer Extension | Namespace & Dot-Notation Semantics | Namespace-safe restore/cleanup semantics | v0.2.0 | P0 | ✅ |
+| T-071 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Split install profiles by capability | v0.2.0 | P0 | ✅ |
+| T-072 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Make skills the default profile when runtime supports skills | v0.2.0 | P0 | ✅ |
+| T-073 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Add commands compatibility profile selectable by flag | v0.2.0 | P1 | ✅ |
+| T-074 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Claude profile (commands+skills+hooks+scripts) | v0.2.0 | P0 | ✅ |
+| T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
+| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | v0.2.0 | P0 | ✅ |
+| T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+hooks+scripts) | v0.2.0 | P0 | ✅ |
+| T-078 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Qwen profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
+| T-079 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Emit warnings for unsupported capabilities per runtime | v0.2.0 | P1 | ✅ |
+| T-080 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Runtime-aware idempotent policy-ref injection | v0.2.0 | P1 | ✅ |
+| T-081 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Prevent cross-runtime collisions in shared context docs | v0.2.0 | P1 | ✅ |
+| T-082 | v0 | Installer Extension | UX & Documentation | Update install.sh --help with multi-agent + namespaced examples | v0.2.0 | P1 | ✅ |
+| T-083 | v0 | Installer Extension | UX & Documentation | Document skills default and commands compatibility mode | v0.2.0 | P1 | ✅ |
+| T-084 | v0 | Installer Extension | UX & Documentation | Document per-agent schema/frontmatter differences in commands mode | v0.2.0 | P1 | ✅ |
+| T-085 | v0 | Installer Extension | UX & Documentation | Update README.md install matrix for all 5 runtimes | v0.2.0 | P1 | ✅ |
+| T-086 | v0 | Installer Extension | UX & Documentation | Document migration notes for legacy namespace and runtime paths | v0.2.0 | P2 | ✅ |
+| T-087 | v0 | Installer Extension | Validation & CI | Add install smoke tests for runtime matrix (global + project) | v0.2.0 | P0 | ✅ |
+| T-088 | v0 | Installer Extension | Validation & CI | Add capability conformance tests per runtime | v0.2.0 | P0 | ✅ |
+| T-089 | v0 | Installer Extension | Validation & CI | Add restore/cleanup regression tests for namespaced installs | v0.2.0 | P1 | ✅ |
+| T-090 | v0 | Installer Extension | Validation & CI | Add idempotency tests for repeated installs with mixed runtime subsets | v0.2.0 | P1 | ✅ |
+| T-091 | v0 | Installer Extension | Validation & CI | Add CI guardrail for runtime/path drift | v0.2.0 | P0 | ✅ |
+| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | G-002 | P1 | 🔲 |
+| T-093 | v0 | Installer Extension | OpenCode Hooks | Implement OpenCode hook adapter (SH → JS/TS plugin wrapper) | G-001 | P2 | 🔲 |
+| T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | G-003 | P1 | 🔲 |
+| T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | G-003 | P2 | 🔲 |
 
 ---
 
@@ -598,6 +636,395 @@
 - Add valid $schema to `.claude/settings.json`
 - Add valid $schema to `package/settings.json`
 - Schema: `https://json.schemastore.org/claude-code-settings.json`
+
+---
+
+### T-058: Define canonical runtime registry
+**AC**:
+- A single registry file (e.g., `package/install/runtimes.sh` or equivalent) declares all 5 runtimes: `claude`, `codex`, `gemini`, `opencode`, `qwen`
+- Each runtime entry maps to its canonical project path, user/global path, and supported capabilities (`commands`, `skills`, `hooks`, `scripts`)
+- Paths match the research report matrix exactly (e.g., Claude skills: `.claude/skills/<name>/SKILL.md`; Gemini commands: `.gemini/commands/*.toml`)
+- Registry is the single source of truth referenced by all other installer functions
+- No hardcoded runtime paths outside this registry
+
+---
+
+### T-059: Add installer targets for --opencode and --qwen
+**AC**:
+- `install.sh` accepts `--opencode` and `--qwen` runtime flags in addition to existing `--claude`, `--codex`, `--gemini`
+- `--help` output lists all 5 runtime flags
+- Flags are composable: `--claude --qwen` installs to both runtimes in one run
+- Unknown flags produce a clear error message and non-zero exit code
+- Backward compatibility preserved: existing `--claude` behavior unchanged
+
+---
+
+### T-060: Codify Claude paths
+**AC**:
+- Canonical install path for Claude skills: `.claude/skills/<name>/SKILL.md` (project), `~/.claude/skills/<name>/SKILL.md` (global)
+- Compatibility read path for Claude commands: `.claude/commands/*.md` — installer writes here only when `--commands` flag is passed
+- Hook installation targets Claude settings JSON hierarchy: `.claude/settings.json` (project), `~/.claude/settings.json` (global)
+- Scripts install to `package/hooks/scripts/` under relevant `.claude/` tree
+- Registry entry for `claude` reflects these paths verbatim
+
+---
+
+### T-061: Codify Codex paths
+**AC**:
+- Canonical install path for Codex skills: `.agents/skills/<name>/SKILL.md` (project), `~/.agents/skills/<name>/SKILL.md` (global)
+- Compatibility install path for Codex commands (prompts): `~/.codex/prompts/<name>.md` — only written when `--commands` compatibility flag is passed
+- No hook installation for Codex (hooks not supported; installer must not create hook artifacts for Codex target)
+- Scripts install via skills package under `.agents/skills/` tree
+- Registry entry for `codex` reflects these paths verbatim
+
+---
+
+### T-062: Codify Gemini paths
+**AC**:
+- Install path for Gemini commands: `.gemini/commands/` (project), `~/.gemini/commands/` (global); format is `.toml` (not `.md`)
+- No skills installation for Gemini (not supported; installer must not create skills artifacts for Gemini target)
+- No hook installation for Gemini (not supported)
+- Shell script execution support via `!{...}` in command bodies is noted in registry but requires no separate installer step
+- Registry entry for `gemini` reflects these paths verbatim
+
+---
+
+### T-063: Codify OpenCode paths
+**AC**:
+- Canonical install path for OpenCode skills: `.opencode/skills/<name>/SKILL.md` (project), `~/.config/opencode/skills/<name>/SKILL.md` (global)
+- Commands install to `.opencode/commands/` (project), `~/.config/opencode/commands/` (global)
+- Hook/plugin installation targets `.opencode/plugins/` (project), `~/.config/opencode/plugins/` (global) via plugin event system
+- OpenCode also reads `.claude/skills` and `.agents/skills` — installer notes this cross-read compatibility but does not duplicate artifacts
+- Registry entry for `opencode` reflects these paths verbatim
+
+---
+
+### T-064: Codify Qwen paths
+**AC**:
+- Canonical install path for Qwen skills: `.qwen/skills/<name>/SKILL.md` (project), `~/.qwen/skills/<name>/SKILL.md` (global)
+- Commands install to `.qwen/commands/` (project), `~/.qwen/commands/` (global); Markdown format preferred, TOML legacy not written by default
+- No hook installation for Qwen (not supported; installer must not create hook artifacts for Qwen target)
+- Scripts supported via skill helper scripts and `!{...}` in commands; installer places helpers under `.qwen/skills/` tree
+- Registry entry for `qwen` reflects these paths verbatim
+
+---
+
+### T-065: Add runtime path drift checks
+**AC**:
+- A validation function (or standalone check script) compares installer path constants against the canonical registry
+- Drift check runs at install time and emits a warning (non-fatal) if any computed path deviates from the registry definition
+- Drift check is also callable standalone (`install.sh --check`) without performing any writes
+- Output identifies the runtime, expected path, and actual path for each drift found
+- Zero drift on a freshly cloned repo against the research report matrix
+
+---
+
+### T-066: Define frontmatter/schema transforms (skills->commands)
+**AC**:
+- A transform spec (documented in installer or a companion file) defines how `SKILL.md` frontmatter maps to each runtime's commands format when `--commands` compatibility mode is used
+- At minimum covers: Claude (`SKILL.md` → `.claude/commands/*.md`), Codex (`SKILL.md` → `.codex/prompts/*.md`), Gemini (`SKILL.md` → `.gemini/commands/*.toml`)
+- Transform preserves skill name, description, and body; drops unsupported frontmatter keys with a warning
+- Transform is deterministic: same input always produces same output
+- Transform spec is referenced from installer code and installer README
+
+---
+
+### T-067: Define namespace grammar and validation
+**AC**:
+- Namespace grammar defined: one or more dot-separated segments, each segment matching `[a-z][a-z0-9-]*` (lowercase, alphanumeric, hyphen; no leading digit or hyphen)
+- Maximum namespace depth documented (e.g., 3 segments)
+- A validation function in `install.sh` (or sourced helper) accepts a namespace string and returns 0 for valid, non-zero with error message for invalid
+- Empty namespace (omitting `--namespace`) is valid and activates flat/default mode
+- Validation is invoked at the start of any install/restore/cleanup run that receives `--namespace`
+
+---
+
+### T-068: Map dot-notation namespace to agent paths and skill names
+**AC**:
+- Given namespace `foo.bar`, agents install under `<runtime-root>/foo/bar/agents/` and skills under `<runtime-root>/foo/bar/skills/`
+- Skill invocation name within the runtime becomes `foo.bar.<skill-name>` (dot-separated, not slash-separated)
+- Mapping logic is a pure function (namespace string → path prefix) tested independently of install I/O
+- Mapping is consistent across all 5 runtimes: same namespace always produces the same relative sub-path
+- Documentation (inline comments or companion doc) shows worked examples for at least 2 namespace depths
+
+---
+
+### T-069: Preserve flat mode as backward-compatible default
+**AC**:
+- When `--namespace` is not passed, installer behavior is identical to pre-v0.2.0 behavior (flat install, no subdirectory nesting)
+- Existing global and project installs from v0.1.x are unaffected by upgrading the installer (no path changes, no broken references)
+- Flat mode is explicitly documented as the default in `--help` output
+- A regression test confirms that `install.sh --claude` (no namespace) produces the same directory layout as before
+
+---
+
+### T-070: Namespace-safe restore/cleanup semantics
+**AC**:
+- `install.sh --restore` and `install.sh --cleanup` (or equivalent) accept an optional `--namespace` argument
+- Restore/cleanup with a namespace targets only the namespaced subtree; files outside the namespace are untouched
+- Restore/cleanup without a namespace targets only the flat (non-namespaced) install; namespaced subtrees are untouched
+- A cross-namespace collision scenario (two namespaces sharing a runtime root) is tested and does not produce data loss
+- Behavior is documented in `--help` for restore/cleanup subcommands
+
+---
+
+### T-071: Split install profiles by capability
+**AC**:
+- Installer recognizes four capability tokens: `commands`, `skills`, `hooks`, `scripts`
+- A `--profile` flag (or equivalent) accepts a comma-separated list of capabilities (e.g., `--profile commands,skills`)
+- When `--profile` is omitted, the default profile is applied per runtime (see T-072)
+- Profile selection is validated against the runtime's capability matrix; unsupported capabilities trigger a warning (see T-079)
+- Profile logic is isolated in a function or module separate from path resolution
+
+---
+
+### T-072: Make skills the default profile when runtime supports skills
+**AC**:
+- For runtimes that support skills (`claude`, `codex`, `opencode`, `qwen`), default profile is `skills` (plus `hooks` and `scripts` where supported)
+- For runtimes that do not support skills (`gemini`), default profile falls back to `commands` (plus `scripts`)
+- Default profile selection is documented in `--help` and in the installer README
+- Running `install.sh --claude` with no `--profile` flag installs skills (not commands) by default
+- A test verifies default profile selection for each of the 5 runtimes
+
+---
+
+### T-073: Add commands compatibility profile selectable by flag
+**AC**:
+- Passing `--profile commands` (or `--commands` shorthand) activates commands compatibility mode for the selected runtime(s)
+- In commands mode, `SKILL.md` files are transformed and written to the runtime's commands path using the transform defined in T-066
+- Commands mode is explicitly marked as compatibility/legacy in help text
+- Skills-mode artifacts are not written when `--profile commands` is used (no duplication)
+- A test verifies that `--profile commands` produces only command-format artifacts at the correct paths
+
+---
+
+### T-074: Implement Claude profile (commands+skills+hooks+scripts)
+**AC**:
+- Default Claude install writes: skills to `.claude/skills/`, hooks to `.claude/settings.json`, scripts to hooks scripts directory
+- With `--profile commands` additionally writes: commands to `.claude/commands/`
+- No artifacts written outside these paths for the Claude runtime
+- Install summary output lists each artifact type written and its target path
+- A smoke test (`install.sh --claude --dry-run` or equivalent) enumerates all would-be writes and matches expected list
+
+---
+
+### T-075: Implement Codex profile (commands+skills+scripts, no hooks)
+**AC**:
+- Default Codex install writes: skills to `.agents/skills/`; scripts included within skill packages
+- With `--profile commands` additionally writes: prompts to `~/.codex/prompts/`
+- No hook artifacts written for Codex under any profile
+- Installer emits a clear warning if `--profile hooks` is explicitly requested for Codex runtime
+- A smoke test enumerates all would-be writes and confirms absence of hook artifacts
+
+---
+
+### T-076: Implement Gemini profile (commands+scripts only)
+**AC**:
+- Default Gemini install writes: commands to `.gemini/commands/` as `.toml` files; no skills, no hooks artifacts
+- SKILL.md sources are transformed to TOML command format using the transform defined in T-066
+- Installer emits a clear warning if `--profile skills` or `--profile hooks` is explicitly requested for Gemini runtime
+- Scripts support noted in command bodies (`!{...}`) but requires no separate file installation
+- A smoke test enumerates all would-be writes: only `.toml` command files at Gemini paths
+
+---
+
+### T-077: Implement OpenCode profile (commands+skills+hooks+scripts)
+**AC**:
+- Default OpenCode install writes: skills to `.opencode/skills/`, commands to `.opencode/commands/`, plugin hooks to `.opencode/plugins/`, scripts within skill/plugin packages
+- Hook artifacts use the plugin event system format (not Claude-style settings JSON)
+- OpenCode cross-read compatibility (reads `.claude/skills` and `.agents/skills`) is documented but installer does not duplicate artifacts to those paths for OpenCode-only installs
+- Install summary lists each artifact type and target path
+- A smoke test enumerates all would-be writes and matches expected list
+
+---
+
+### T-078: Implement Qwen profile (commands+skills+scripts, no hooks)
+**AC**:
+- Default Qwen install writes: skills to `.qwen/skills/`, commands to `.qwen/commands/` as Markdown files; scripts within skill packages
+- TOML command format is not written by default (Markdown preferred per research report)
+- No hook artifacts written for Qwen under any profile
+- Installer emits a clear warning if `--profile hooks` is explicitly requested for Qwen runtime
+- A smoke test enumerates all would-be writes and confirms absence of hook artifacts and TOML files
+
+---
+
+### T-079: Emit warnings for unsupported capabilities per runtime
+**AC**:
+- Any explicit `--profile` token that requests a capability not supported by the selected runtime produces a stderr warning: `[WARN] <runtime> does not support <capability>; skipping`
+- Warning does not abort the install; remaining supported capabilities are installed normally
+- Warning is emitted once per unsupported capability per runtime per run (no duplicate warnings)
+- Warning behavior is covered by at least one test (e.g., `--gemini --profile skills` → warning emitted, zero skill artifacts written)
+- No warnings emitted when only supported capabilities are requested
+
+---
+
+### T-080: Runtime-aware idempotent policy-ref injection
+**AC**:
+- Policy reference injection (e.g., AGENTS.md, CLAUDE.md, or equivalent context doc) is runtime-aware: each runtime's context doc format and location is used
+- Re-running the installer with the same arguments does not produce duplicate policy-ref entries
+- Idempotency is verified by running the installer twice and diffing the output files (zero diff for policy-ref sections)
+- When multiple runtimes are installed in one run, each runtime's context doc receives its own policy ref without cross-contamination
+- Behavior documented in installer README
+
+---
+
+### T-081: Prevent cross-runtime collisions in shared context docs
+**AC**:
+- Installer identifies any context/docs files shared between runtimes (e.g., a root-level AGENTS.md)
+- When multiple runtimes are installed to the same project, shared docs are written once and not overwritten by subsequent runtime installs in the same run
+- If a shared doc already exists with different content, installer warns and does not overwrite (consistent with existing MD handling policy from T-038)
+- A test installs two runtimes to the same project directory and verifies shared doc is present exactly once with correct content
+- No cross-runtime path collisions in skills, commands, or hooks directories
+
+---
+
+### T-082: Update install.sh --help with multi-agent + namespaced examples
+**AC**:
+- `--help` output includes a section showing multi-runtime flag combinations (e.g., `--claude --codex`, `--all`)
+- `--help` output includes at least one namespaced install example (e.g., `--claude --namespace orchestrator`)
+- All 5 runtime flags are listed with one-line descriptions
+- `--profile` flag is described with supported tokens and per-runtime defaults noted
+- `--namespace` flag grammar and constraints are described
+- Help text fits in a standard 80-column terminal without wrapping key content
+
+---
+
+### T-083: Document skills default and commands compatibility mode behavior
+**AC**:
+- A documentation section (in installer README or `docs/`) explains: skills mode is the default for skill-capable runtimes; commands mode is a compatibility fallback
+- Document explains when to use commands mode (e.g., runtime does not read skills natively, or legacy workflow)
+- Document explains that commands mode uses a transform from SKILL.md (see T-066) and lists known lossy transforms (dropped frontmatter keys)
+- Document is cross-referenced from `--help` output
+- No contradictions between this document and actual installer behavior
+
+---
+
+### T-084: Document per-agent schema/frontmatter differences in commands mode
+**AC**:
+- A documentation table or section lists each runtime's commands format alongside the SKILL.md source format
+- For each runtime in commands mode: lists which SKILL.md frontmatter keys are preserved, transformed, or dropped
+- Gemini TOML format differences are explicitly documented (key names, structure)
+- Document is located in `docs/` or installer README and linked from the transform spec (T-066)
+- At least one worked example showing a SKILL.md source and its per-runtime commands output
+
+---
+
+### T-085: Update README.md install matrix for all 5 runtimes
+**AC**:
+- README.md contains a table with rows for each runtime (`claude`, `codex`, `gemini`, `opencode`, `qwen`) and columns for each capability (`commands`, `skills`, `hooks`, `scripts`)
+- Each cell shows support status (Yes/No/Compatibility) matching the research report matrix exactly
+- README includes quick-start install examples for each runtime (global and project modes)
+- README notes the skills-default vs commands-compatibility distinction
+- README is updated to reflect v0.2.0 version and new flags
+
+---
+
+### T-086: Document migration notes for legacy namespace and runtime path behavior
+**AC**:
+- A migration section (in README.md or a dedicated `docs/MIGRATION.md`) documents what changes between v0.1.x and v0.2.0 for existing users
+- Covers: new `--opencode` and `--qwen` flags are additive; existing `--claude`/`--codex`/`--gemini` behavior unchanged
+- Covers: flat install (no namespace) remains the default; existing installs require no action
+- Covers: if user was manually placing files at runtime paths, new canonical paths are listed
+- Migration notes are dated and versioned (v0.1.x → v0.2.0)
+
+---
+
+### T-087: Add install smoke tests for runtime matrix (global + project)
+**AC**:
+- A test script (or test suite entry) runs `install.sh` for each of the 5 runtimes in both global and project modes
+- Each smoke test asserts: expected artifact paths exist, no unexpected paths created, exit code 0
+- Tests are runnable without a live Claude/Codex/Gemini/OpenCode/Qwen installation (filesystem-only assertions)
+- Tests run in an isolated temp directory (no pollution of real user config)
+- All 5 runtimes x 2 modes = 10 smoke test cases pass on a clean run
+
+---
+
+### T-088: Add capability conformance tests per runtime
+**AC**:
+- For each runtime, a conformance test asserts that exactly the capabilities in the registry are installed (no more, no less)
+- Claude conformance: skills + hooks + scripts artifacts present; commands artifacts absent (default profile)
+- Codex conformance: skills + scripts present; hooks absent
+- Gemini conformance: commands (TOML) present; skills + hooks absent
+- OpenCode conformance: skills + commands + hooks (plugins) + scripts present
+- Qwen conformance: skills + commands (MD) + scripts present; hooks absent
+- Conformance tests fail if installer produces an artifact outside the declared capability set
+
+---
+
+### T-089: Add restore/cleanup regression tests for namespaced installs
+**AC**:
+- Test installs to a namespace (e.g., `--namespace test.ns`), then runs restore/cleanup with the same namespace
+- After cleanup, all and only the namespaced artifacts are removed; flat-mode artifacts (if any) are untouched
+- Test installs two namespaces, cleans up one, verifies the other is intact
+- Restore test: after cleanup, re-running install produces identical artifact set to the original install
+- All regression tests pass on a clean run with no manual setup
+
+---
+
+### T-090: Add idempotency tests for repeated installs with mixed runtime subsets
+**AC**:
+- Test runs `install.sh --claude --codex` twice in sequence on the same target directory
+- After the second run, all artifact files are byte-for-byte identical to after the first run (no duplicated content, no timestamp changes beyond mtime)
+- Test runs `install.sh --claude` then `install.sh --claude --qwen` and verifies: Claude artifacts unchanged, Qwen artifacts added, no collisions
+- Policy-ref injection is idempotent (T-080 AC verified here via integration)
+- All idempotency tests pass with zero diff on repeated runs
+
+---
+
+### T-091: Add CI guardrail for runtime/path drift
+**AC**:
+- A CI job runs `install.sh --check` on every PR that modifies installer-related files
+- CI job fails with a non-zero exit code and clear output if any runtime path in the installer deviates from the canonical registry
+- CI job passes on the current codebase (no drift on merge)
+- Guardrail is documented in the CI configuration file with a comment explaining its purpose
+- False-positive rate: guardrail does not fail on non-installer file changes (scoped trigger)
+
+---
+
+### T-092: Implement SKILL.md → Gemini TOML command transform
+**Scope**: Format conversion only (MD → TOML). Frontmatter key filtering is T-094's scope.
+**Blocks**: Gemini commands install being functional (currently skipped with warning)
+**AC**:
+- `install.sh --gemini` (or `--profile commands`) produces `.toml` files under `.gemini/commands/`
+- Each `.toml` is generated from `SKILL.md`: `name` and `description` from YAML frontmatter; body in `prompt` key as TOML multiline string; `$ARGUMENTS` converted to `{{args}}`
+- Unknown frontmatter keys are passed through as-is (key filtering handled by T-094 which runs first)
+- `--check` gemini commands row status changes from `GAP` to `OK`
+- Conformance test T-088 verifies `.toml` files present after gemini install
+
+---
+
+### T-093: Implement OpenCode hook adapter (SH → JS/TS plugin wrapper)
+**AC**:
+- `install.sh --opencode` installs functional hook behavior to `.opencode/plugins/`
+- Each Claude SH hook script has a corresponding JS/TS plugin wrapper subscribing to the equivalent OpenCode plugin event and executing the SH script via `child_process.exec`
+- `RUNTIME_SUPPORTS_HOOKS[opencode]` set back to `true`; `RUNTIME_HOOKS_PATH[opencode]` set to `plugins`
+- `--check` shows opencode hooks row with status `OK`
+
+---
+
+### T-094: Strip Claude-specific frontmatter keys for non-Claude runtime installs
+**Milestone**: v0.2.0
+**See**: ADR-014 D-5 (minimal universal schema)
+**AC**:
+- `strip_claude_frontmatter(file)` function added to `install.sh`; strips `argument-hint`, `user-invocable`, `context`, `agent` keys from SKILL.md YAML frontmatter in-place
+- Applied after any skill directory copy to a non-Claude target (skills mode and commands mode)
+- Universal keys preserved: `name`, `description`, `tools`, `scripts`
+- Commands mode: `$ARGUMENTS` placeholder converted to `{{args}}` for Qwen and Gemini targets
+- `--check` shows `PARTIAL` (not `GAP`) for non-Claude frontmatter rows once implemented
+- Existing smoke tests pass; new conformance test verifies Claude-specific keys absent from Codex/Qwen/OpenCode installs
+
+---
+
+### T-095: Per-runtime key map + TOML schema adjustments
+**Milestone**: v0.2.1
+**Depends on**: T-094 (minimal schema), T-092 (Gemini TOML format)
+**See**: ADR-014 D-5 (per-runtime extension)
+**AC**:
+- Schema map documented: `runtime × mode × key → action (keep|drop|rename|transform)` sourced from official runtime docs
+- `transform_skill(file, runtime, mode)` function extends T-094 minimal strip with per-runtime rules (e.g. Codex invocation field, runtime-specific skill metadata)
+- Gemini TOML schema adjustments (beyond basic T-092 format): any Gemini-specific TOML fields or structural requirements not covered by the basic transform
+- `--check` non-Claude frontmatter rows change from `PARTIAL` to `OK` once full per-runtime schema is applied
+- Conformance tests verify correct schema per runtime × mode
 
 ---
 

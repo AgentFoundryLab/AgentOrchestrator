@@ -1,7 +1,7 @@
 # AgentOrchestrator Roadmap
 
-**Version**: 0.3.4
-**Updated**: 2026-02-20
+**Version**: 0.3.5
+**Updated**: 2026-02-21
 
 ---
 
@@ -126,77 +126,6 @@ Integration testing and documentation.
 
 ---
 
-## v0.2.0: Multi-Agent Installer Extension
-
-**Goal**: Extend installer for multi-agent runtimes with namespaced (dot-notation) install paths.
-
----
-
-### Installer Extension Phase
-
-Runtime expansion and namespace standardization for install/restore/cleanup workflows.
-
-Policy details are maintained in:
-- `reports/research/2026-02-19-multi-agent-install-plan.md` (Final Capability Policy + Installer Default Policy + canonical mappings)
-
-#### Epic: Runtime Matrix & Canonical Paths
-**Depends on**: v0.1.0 complete
-
-- [ ] Define canonical runtime registry for `claude`, `gemini`, `codex`, `opencode`, `qwen`
-- [ ] Add installer targets for `--opencode` and `--qwen` (alongside existing runtime flags)
-- [ ] Codify Claude paths (`.claude/skills` canonical, `.claude/commands` compatibility)
-- [ ] Codify Codex paths (`.agents/skills` canonical, `.codex/prompts` compatibility commands)
-- [ ] Codify Gemini paths (`.gemini/commands` only, no skills/hooks)
-- [ ] Codify OpenCode paths (`.opencode/commands`, `.opencode/skills`, plugin hooks)
-- [ ] Codify Qwen paths (`.qwen/commands`, `.qwen/skills`, no hooks)
-- [ ] Add runtime path drift checks (installer map vs package layout)
-- [ ] Define canonical frontmatter/schema transforms for `skills -> commands` conversion per runtime
-
-#### Epic: Namespace & Dot-Notation Semantics
-**Depends on**: Runtime Matrix & Canonical Paths
-
-- [ ] Define namespace grammar and validation (`<segment>[.<segment>...]`)
-- [ ] Map dot-notation namespace to agent paths (directory tree) and skill names (`<ns>.<skill>`)
-- [ ] Preserve flat mode as backward-compatible default when `--namespace` is omitted
-- [ ] Ensure namespace-safe restore/cleanup semantics for global and project modes
-
-#### Epic: Capability-Scoped Installer Profiles
-**Depends on**: Runtime Matrix & Canonical Paths
-
-- [ ] Split install profiles by capability (`commands`, `skills`, `hooks`, `scripts`)
-- [ ] Make `skills` the default profile when runtime supports skills
-- [ ] Add `commands` compatibility profile selectable by flag
-- [ ] Implement Claude profile (`commands+skills+hooks+scripts`)
-- [ ] Implement Codex profile (`commands+skills+scripts`, no hooks)
-- [ ] Implement Gemini profile (`commands+scripts` only)
-- [ ] Implement OpenCode profile (`commands+skills+hooks+scripts`)
-- [ ] Implement Qwen profile (`commands+skills+scripts`, no hooks)
-- [ ] Emit explicit warnings when user requests unsupported capabilities for selected runtime
-- [ ] Make policy-ref injection runtime-aware and idempotent across selected targets
-- [ ] Prevent cross-runtime collisions in context docs/files (e.g., shared root docs)
-
-#### Epic: UX & Documentation
-**Depends on**: Namespace & Dot-Notation Semantics, Capability-Scoped Installer Profiles
-
-- [ ] Update `install.sh --help` with multi-agent + namespaced examples
-- [ ] Document `skills` default and `commands` compatibility mode behavior
-- [ ] Document per-agent schema/frontmatter differences in commands mode
-- [ ] Update `README.md` install matrix for Claude/Codex/Gemini/OpenCode/Qwen
-- [ ] Document migration notes for legacy namespace and runtime path behavior
-
-#### Epic: Validation & CI
-**Depends on**: All Installer Extension epics
-
-- [ ] Add install smoke tests for runtime matrix (`global`, `project`)
-- [ ] Add capability conformance tests per runtime (commands/skills/hooks/scripts assertions)
-- [ ] Add restore/cleanup regression tests for namespaced installs (dot-notation)
-- [ ] Add idempotency tests for repeated installs with mixed runtime subsets
-- [ ] Add CI guardrail to fail on runtime/path drift
-
-**→ TAG: v0.2.0 (planned)**
-
----
-
 ## v0.1.1: Governance and Quality Controls
 
 **Goal**: Governance bootstrapping (`/onboard`), cross-artifact review gate (`/review`), and unified HITL escalation protocol (`/hitl`).
@@ -220,7 +149,78 @@ Three skill additions addressing governance bootstrapping, pre-implementation re
 - [x] Update `SWE.md` — insert /review gate between /plan and /implement (full workflow)
 - [x] Update `PRD.md` — FR2 amended to 17 skills
 
-**→ TAG: v0.1.1**
+**→ TAG: v0.1.1 ✅**
+
+---
+
+## v0.2.0: Multi-Agent Installer Extension
+
+**Goal**: Extend installer for multi-agent runtimes with namespaced (dot-notation) install paths.
+
+---
+
+### Installer Extension Phase
+
+Runtime expansion and namespace standardization for install/restore/cleanup workflows.
+
+Policy details are maintained in:
+- `reports/research/2026-02-19-multi-agent-install-plan.md` (Final Capability Policy + Installer Default Policy + canonical mappings)
+
+#### Epic: Runtime Matrix & Canonical Paths
+**Depends on**: v0.1.0 complete
+
+- [x] Define canonical runtime registry for `claude`, `gemini`, `codex`, `opencode`, `qwen`
+- [x] Add installer targets for `--opencode` and `--qwen` (alongside existing runtime flags)
+- [x] Codify Claude paths (`.claude/skills` canonical, `.claude/commands` compatibility)
+- [x] Codify Codex paths (`.agents/skills` canonical, `.codex/prompts` compatibility commands)
+- [x] Codify Gemini paths (`.gemini/commands` only, no skills/hooks)
+- [x] Codify OpenCode paths (`.opencode/commands`, `.opencode/skills`, plugin hooks)
+- [x] Codify Qwen paths (`.qwen/commands`, `.qwen/skills`, no hooks)
+- [x] Add runtime path drift checks (installer map vs package layout)
+- [x] Define canonical frontmatter/schema transforms for `skills -> commands` conversion per runtime
+
+#### Epic: Namespace & Dot-Notation Semantics
+**Depends on**: Runtime Matrix & Canonical Paths
+
+- [x] Define namespace grammar and validation (`<segment>[.<segment>...]`)
+- [x] Map dot-notation namespace to agent paths (directory tree) and skill names (`<ns>.<skill>`)
+- [x] Preserve flat mode as backward-compatible default when `--namespace` is omitted
+- [x] Ensure namespace-safe restore/cleanup semantics for global and project modes
+
+#### Epic: Capability-Scoped Installer Profiles
+**Depends on**: Runtime Matrix & Canonical Paths
+
+- [x] Split install profiles by capability (`commands`, `skills`, `hooks`, `scripts`)
+- [x] Make `skills` the default profile when runtime supports skills
+- [x] Add `commands` compatibility profile selectable by flag
+- [x] Implement Claude profile (`commands+skills+hooks+scripts`)
+- [x] Implement Codex profile (`commands+skills+scripts`, no hooks)
+- [x] Implement Gemini profile (`commands+scripts` only)
+- [x] Implement OpenCode profile (`commands+skills+hooks+scripts`)
+- [x] Implement Qwen profile (`commands+skills+scripts`, no hooks)
+- [x] Emit explicit warnings when user requests unsupported capabilities for selected runtime
+- [x] Make policy-ref injection runtime-aware and idempotent across selected targets
+- [x] Prevent cross-runtime collisions in context docs/files (e.g., shared root docs)
+
+#### Epic: UX & Documentation
+**Depends on**: Namespace & Dot-Notation Semantics, Capability-Scoped Installer Profiles
+
+- [x] Update `install.sh --help` with multi-agent + namespaced examples
+- [x] Document `skills` default and `commands` compatibility mode behavior
+- [x] Document per-agent schema/frontmatter differences in commands mode
+- [x] Update `README.md` install matrix for Claude/Codex/Gemini/OpenCode/Qwen
+- [x] Document migration notes for legacy namespace and runtime path behavior
+
+#### Epic: Validation & CI
+**Depends on**: All Installer Extension epics
+
+- [x] Add install smoke tests for runtime matrix (`global`, `project`)
+- [x] Add capability conformance tests per runtime (commands/skills/hooks/scripts assertions)
+- [x] Add restore/cleanup regression tests for namespaced installs (dot-notation)
+- [x] Add idempotency tests for repeated installs with mixed runtime subsets
+- [x] Add CI guardrail to fail on runtime/path drift
+
+**→ TAG: v0.2.0 ✅**
 
 ---
 
@@ -459,7 +459,7 @@ v1 Milestone
 |-----------|-------|-------|-------|--------|
 | v0 | Initial | 10 | 40 | ✅ Complete |
 | v0 | Validation | 1 | 3 | ✅ Complete |
-| v0 | Installer Extension (v0.2.0) | 5 | 34 | 🔲 Not started |
+| v0 | Installer Extension (v0.2.0) | 5 | 34 | ✅ Complete |
 | v0 | Governance & Quality (v0.1.1) | 1 | 7 | ✅ Complete |
 | v1 | POC | 3 | 8 | 🔲 Not started |
 | v1 | MVP | 3 | 9 | 🔲 Not started |

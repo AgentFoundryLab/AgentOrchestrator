@@ -1,21 +1,28 @@
 #!/bin/bash
 # AgentOrchestrator Installer
+# Requires: bash 4.0+ (associative arrays). macOS ships bash 3.2; install via: brew install bash
 # Usage:
 #   ./install.sh --global              Install to ~/.claude/
 #   ./install.sh --project <path>      Install project templates to <path>
-#   ./install.sh [--claude|--gemini|--codex]  Limit policy-ref targets (default: all)
+#   ./install.sh [--claude|--gemini|--codex|--opencode|--qwen]  Select install targets (default: --claude)
+#   ./install.sh [--profile <profile>] Capability profile: skills|commands|hooks|scripts|all (default: auto)
 #   ./install.sh [--namespace <name>]  Override agent/skill namespace (default: jarvis)
 #   ./install.sh [--no-namespace]      Use flat agents/skills paths (no namespace)
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
 #   ./install.sh --restore             Remove installed artifacts, restore settings
 #   ./install.sh --cleanup             Remove installed artifacts, unpatch files (no backup restore)
+#   ./install.sh --check               Check registry paths against package layout (no writes)
 
 set -e
 
-VERSION="0.1.0 "
+VERSION="0.2.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_DIR="${SCRIPT_DIR}/package"
 NAMESPACE="jarvis"
+
+# Source canonical runtime registry (bash 4+ associative arrays)
+# shellcheck source=package/install/runtimes.sh
+. "${PACKAGE_DIR}/install/runtimes.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -36,58 +43,172 @@ OVERWRITE=false
 REF_CLAUDE=true
 REF_GEMINI=true
 REF_CODEX=true
+REF_OPENCODE=false
+REF_QWEN=false
 REF_TARGETS_EXPLICIT=false
+
+# Profile: "auto" = runtime-specific default, or one of: skills, commands, hooks, scripts, all
+PROFILE="auto"
 
 # Print usage
 usage() {
     cat << EOF
 AgentOrchestrator Installer v${VERSION}
+Requires: bash 4.0+ (macOS: brew install bash)
 
 Usage:
-    ./install.sh --global              Install to ~/.claude/
+    ./install.sh --global              Install to ~/.claude/ (and other runtime dirs)
     ./install.sh --project <path>      Install project templates to <path>
-    ./install.sh --claude              Target CLAUDE.md refs only
-    ./install.sh --gemini              Target GEMINI.md refs only
-    ./install.sh --codex               Target AGENTS.md refs only
-    ./install.sh --namespace <name>    Override namespace for agents/skills paths (default: jarvis)
-    ./install.sh --no-namespace        Use flat agents/skills paths (no namespace)
-    ./install.sh --overwrite           Overwrite existing markdown files (backup to .backup/)
-    ./install.sh --restore             Remove installed artifacts, restore settings from backup
-    ./install.sh --cleanup             Remove installed artifacts, strip injected refs (no backup restore)
-    ./install.sh --help                Show this help
 
-Policy-ref target flags are optional.
-If none are provided, installer targets all three: --claude + --gemini + --codex.
+Runtime target flags (composable, default: --claude):
+    --claude                           Install to Claude Code paths (~/.claude/, .claude/)
+    --codex                            Install to Codex CLI paths (~/.agents/, .agents/)
+    --gemini                           Install to Gemini CLI paths (~/.gemini/, .gemini/)
+    --opencode                         Install to OpenCode paths (~/.config/opencode/, .opencode/)
+    --qwen                             Install to Qwen Code paths (~/.qwen/, .qwen/)
 
-What gets installed:
+    Combine flags: --claude --codex installs to both runtimes in one run.
+    If no runtime flag is provided, --claude is the default.
 
---global installs to ~/.claude/:
-    - agents/jarvis/    Agent definitions (7 files, default namespace: jarvis)
-    - skills/jarvis.<skill>/ Dot-prefixed namespaced skills (default namespace: jarvis, e.g. /jarvis.spec)
-    - agents/<ns>/      Namespaced agents (override with --namespace)
-    - skills/<ns>.<skill>/ Namespaced skills (override with --namespace)
-    - hooks/scripts/    Hook scripts (5 files)
-    - settings.json     Hook and MCP configuration
-    - policy/           PRINCIPLES.md, RULES.md
-    - workflows/        SWE.md, meta-learning.md
-    - templates/        PRD, architecture, ADR, roadmap, backlog, issues
+Profile flags (controls which capability artifacts are installed):
+    --profile <profile>                Capability profile (default: auto per runtime)
+                                       Values: skills, commands, hooks, scripts, all
+                                       - skills: install skill packages (SKILL.md); requires runtime skills support
+                                       - commands: install commands (compatibility mode); Claude/Codex/Qwen use .md,
+                                                   Gemini uses .toml transform
+                                       - hooks: install hooks/scripts; requires runtime hooks support
+                                       - scripts: embedded within skill packages (no extra step)
+                                       - all: install all capabilities supported by the runtime
+                                       Default when runtime supports skills: skills
+                                       Default when runtime does not support skills (gemini): commands
 
---project installs to <path>/:
-    - docs/             Provisioned folder tree with .gitkeep
-    - docs/policy/      STANDARDS.md, GUIDELINES.md templates (from package/templates/)
-    - docs/knowledge/   README.md (from package/templates/)
-    - reports/          analysis/, research/ directories
-    - .claude/agents/jarvis/ Agent definitions (project-local, default namespace: jarvis)
-    - .claude/skills/jarvis.<skill>/ Dot-prefixed namespaced skills (default namespace: jarvis)
-    - .claude/agents/<ns>/ Namespaced agents (override with --namespace)
-    - .claude/skills/<ns>.<skill>/ Namespaced skills (override with --namespace)
-    - .claude/templates/ Templates (project-local copy, agents prefer over global)
-    - .claude/policy/   PRINCIPLES.md, RULES.md (project-local copies)
-    - .claude/workflows/ SWE.md, meta-learning.md (project-local copies)
-    - .serena/          project.yml (auto-detected languages, requires uvx)
-    - Injects @policy refs into existing CLAUDE.md/AGENTS.md/GEMINI.md
+Namespace flags:
+    --namespace <name>                 Override namespace for agents/skills (default: jarvis)
+                                       Grammar: dot-separated [a-z][a-z0-9-]* segments, max depth 3
+                                       Example: --namespace orchestrator
+    --no-namespace                     Use flat agents/skills paths (no namespace prefix)
+
+Other flags:
+    --overwrite                        Overwrite existing markdown files (backup to .backup/)
+    --restore                          Remove installed artifacts, restore settings from backup
+    --cleanup                          Remove installed artifacts, strip injected refs (no backup restore)
+    --check                            Validate registry paths vs package layout; exits non-zero on drift
+    --help                             Show this help
+
+Flat install is the default when --namespace is omitted. Existing v0.1.x installs
+are unaffected; --claude with no other flags produces the same artifact set as before.
+
+What gets installed per runtime (default skills profile):
+
+  claude  (~/.claude/, .claude/):
+    - agents/<ns>/         Agent definitions
+    - skills/<ns>.<skill>/ Namespaced skills (dot-prefix) [default profile]
+    - commands/            Commands in .md format [--profile commands only]
+    - hooks/scripts/       Hook scripts [default profile]
+    - settings.json        Hook and MCP configuration
+    - policy/              PRINCIPLES.md, RULES.md
+    - workflows/           SWE.md, meta-learning.md
+    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
+
+  codex  (~/.agents/, .agents/):
+    - agents/<ns>/         Agent definitions
+    - skills/<ns>.<skill>/ Namespaced skills (dot-prefix) [default profile]
+    - commands/            Commands in .md (strip frontmatter) [--profile commands only]
+    - [no hooks — not supported by Codex CLI]
+
+  gemini  (~/.gemini/, .gemini/):
+    - commands/*.toml      Commands in TOML format (from SKILL.md transform) [default profile]
+    - [no skills, no hooks — not supported by Gemini CLI]
+
+  opencode  (~/.config/opencode/, .opencode/):
+    - agents/<ns>/         Agent definitions
+    - skills/<name>/       Skills (subdirectory namespace) [default profile]
+    - commands/            Commands in .md format [default profile]
+    - plugins/             Plugin event hooks (placeholder) [default profile]
+
+  qwen  (~/.qwen/, .qwen/):
+    - agents/<ns>/         Agent definitions
+    - skills/<ns>.<skill>/ Namespaced skills (dot-prefix) [default profile]
+    - commands/            Commands in Markdown format [default profile]
+    - [no hooks — not supported by Qwen Code]
+
+--project installs to <path>/ (runtime-agnostic scaffolding):
+    - docs/                Provisioned folder tree with .gitkeep
+    - docs/policy/         STANDARDS.md, GUIDELINES.md templates
+    - docs/knowledge/      README.md
+    - reports/             analysis/, research/ directories
+    - .serena/             project.yml (requires uvx)
+    - Injects @policy refs into runtime context docs
+
+Profile defaults per runtime:
+    Runtimes with skills support (claude, codex, opencode, qwen):
+        Default profile: skills
+        Skills are installed to <runtime>/skills/<ns>.<skill>/ (dot-prefix runtimes)
+        or <runtime>/skills/<ns>/<skill>/ (subdirectory runtimes, e.g. opencode)
+        Hooks are also installed when the runtime supports them (claude, opencode).
+    Runtimes without skills support (gemini):
+        Default profile: commands
+        Commands are installed to <runtime>/commands/<skill>.toml
+    Use --profile commands to override any runtime to install to legacy commands paths.
+    This is a compatibility mode — existing skills installs are not affected.
+
+Examples:
+    # Install to Claude Code only (default runtime)
+    ./install.sh --global
+
+    # Install to multiple runtimes in one run
+    ./install.sh --global --codex --qwen
+
+    # Install to all five runtimes
+    ./install.sh --global --claude --codex --gemini --opencode --qwen
+
+    # Namespaced install (agents/<ns>/, skills/<ns>.<skill>/)
+    ./install.sh --global --claude --namespace orchestrator
+
+    # Install with commands compatibility profile (legacy paths)
+    ./install.sh --global --gemini --profile commands
+
+    # Check registry paths against package layout (no writes)
+    ./install.sh --check
 
 EOF
+}
+
+# ---------------------------------------------------------------------------
+# validate_namespace — T-067: Validate namespace grammar
+# ---------------------------------------------------------------------------
+# Grammar: dot-separated segments, each matching [a-z][a-z0-9-]*, max 3 segments.
+# Empty string is valid (means no namespace / flat mode).
+# Returns 0 for valid, 1 for invalid (with error message to stderr).
+validate_namespace() {
+    local ns="$1"
+
+    # Empty namespace is valid (flat mode)
+    [ -z "$ns" ] && return 0
+
+    # Check segment count (max 3)
+    local segment_count
+    segment_count=$(printf '%s' "$ns" | tr -cd '.' | wc -c)
+    segment_count=$((segment_count + 1))
+    if [ "$segment_count" -gt 3 ]; then
+        log_error "Invalid namespace '${ns}': must be dot-separated lowercase segments [a-z][a-z0-9-]*, max 3 levels"
+        return 1
+    fi
+
+    # Validate each segment against [a-z][a-z0-9-]*
+    local old_ifs="$IFS"
+    IFS='.'
+    local segment
+    for segment in $ns; do
+        if [[ ! "$segment" =~ ^[a-z][a-z0-9-]*$ ]]; then
+            IFS="$old_ifs"
+            log_error "Invalid namespace '${ns}': must be dot-separated lowercase segments [a-z][a-z0-9-]*, max 3 levels"
+            return 1
+        fi
+    done
+    IFS="$old_ifs"
+
+    return 0
 }
 
 # Log functions
@@ -256,8 +377,13 @@ copy_directory() {
     done
 }
 
+# ---------------------------------------------------------------------------
+# Namespaced skills install/restore — T-068: dot-prefix and subdirectory modes
+# ---------------------------------------------------------------------------
+
 # Install skills with dot-prefix namespace: skills/<ns>.<skill>/ + patch name: field
-copy_namespaced_skills() {
+# Used by dot-prefix runtimes (claude, codex, qwen).
+copy_namespaced_skills_dot_prefix() {
     local source_dir="$1"
     local target_parent="$2"
     local namespace="$3"
@@ -275,18 +401,74 @@ copy_namespaced_skills() {
         local ns_skill="${namespace}.${skill_name}"
         local target_skill_dir="${target_parent}/${ns_skill}"
 
-        copy_directory "$skill_dir" "$target_skill_dir" "$backup_dir"
-
-        # Patch name: field in SKILL.md to match namespaced directory name
-        local skill_md="${target_skill_dir}/SKILL.md"
-        if [ -f "$skill_md" ]; then
-            sed -i "s/^name: ${skill_name}$/name: ${ns_skill}/" "$skill_md"
+        # Pre-apply namespace transform to a temp copy so diff compares transformed
+        # source against the already-namespaced target (avoids false diff warnings).
+        local tmp_skill_dir
+        tmp_skill_dir="$(mktemp -d)"
+        cp -r "${skill_dir%/}/." "$tmp_skill_dir/"
+        local tmp_skill_md="${tmp_skill_dir}/SKILL.md"
+        if [ -f "$tmp_skill_md" ]; then
+            sed -i "s/^name: ${skill_name}$/name: ${ns_skill}/" "$tmp_skill_md"
+            # T-094: strip Claude-specific frontmatter for non-Claude runtimes
+            [[ "${_skills_rt:-claude}" != "claude" ]] && strip_claude_frontmatter "$tmp_skill_md"
         fi
+
+        copy_directory "$tmp_skill_dir" "$target_skill_dir" "$backup_dir"
+        rm -rf "$tmp_skill_dir"
     done
 }
 
-# Remove dot-prefixed namespaced skill directories installed by copy_namespaced_skills
-restore_namespaced_skills() {
+# Install skills with subdirectory namespace: skills/<ns_path>/<skill>/
+# Used by subdirectory runtimes (opencode, gemini).
+# Dots in namespace become path separators: orchestrator -> myorg/team/<skill>/
+copy_namespaced_skills_subdirectory() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+    local backup_dir="$4"
+
+    if [ ! -d "$source_dir" ]; then
+        log_warning "Source directory not found: $source_dir"
+        return
+    fi
+
+    # Convert dot-separated namespace to slash-separated path
+    local ns_path="${namespace//.//}"
+
+    for skill_dir in "$source_dir"/*/; do
+        [ -d "$skill_dir" ] || continue
+        local skill_name
+        skill_name="$(basename "$skill_dir")"
+        local target_skill_dir="${target_parent}/${ns_path}/${skill_name}"
+
+        copy_directory "$skill_dir" "$target_skill_dir" "$backup_dir"
+        # T-094: strip Claude-specific frontmatter for non-Claude runtimes
+        [[ "${_skills_rt:-claude}" != "claude" ]] && strip_claude_frontmatter "${target_skill_dir}/SKILL.md"
+    done
+}
+
+# Install namespaced skills: dispatch to dot-prefix or subdirectory mode based on runtime.
+# Arguments: source_dir target_parent namespace backup_dir [runtime]
+# Examples (dot-prefix):    namespace=orchestrator -> skills/orchestrator.<skill>/
+# Examples (subdirectory):  namespace=orchestrator -> skills/myorg/team/<skill>/
+copy_namespaced_skills() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+    local backup_dir="$4"
+    local rt="${5:-claude}"
+    local _skills_rt="$rt"  # thread runtime into sub-functions via env var
+
+    local ns_mode="${RUNTIME_NAMESPACE_MODE[${rt}]:-dot-prefix}"
+    if [[ "$ns_mode" == "subdirectory" ]]; then
+        copy_namespaced_skills_subdirectory "$source_dir" "$target_parent" "$namespace" "$backup_dir"
+    else
+        copy_namespaced_skills_dot_prefix "$source_dir" "$target_parent" "$namespace" "$backup_dir"
+    fi
+}
+
+# Remove dot-prefixed namespaced skill directories
+restore_namespaced_skills_dot_prefix() {
     local source_dir="$1"
     local target_parent="$2"
     local namespace="$3"
@@ -304,6 +486,43 @@ restore_namespaced_skills() {
             ((++CREATED))
         fi
     done
+}
+
+# Remove subdirectory-namespaced skill tree.
+# Removes the top-level namespace directory: skills/<ns_top>/
+# This is safe because the ns_top subtree was created by this installer for this namespace.
+restore_namespaced_skills_subdirectory() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+
+    [ -d "$source_dir" ] || return 0
+
+    # The top-level namespace dir is the first dot-segment
+    local ns_top="${namespace%%.*}"
+    local target_ns_dir="${target_parent}/${ns_top}"
+
+    if [ -d "$target_ns_dir" ]; then
+        rm -rf "$target_ns_dir"
+        log_success "Removed: $target_ns_dir"
+        ((++CREATED))
+    fi
+}
+
+# Remove namespaced skill directories: dispatch to dot-prefix or subdirectory mode.
+# Arguments: source_dir target_parent namespace [runtime]
+restore_namespaced_skills() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+    local rt="${4:-claude}"
+
+    local ns_mode="${RUNTIME_NAMESPACE_MODE[${rt}]:-dot-prefix}"
+    if [[ "$ns_mode" == "subdirectory" ]]; then
+        restore_namespaced_skills_subdirectory "$source_dir" "$target_parent" "$namespace"
+    else
+        restore_namespaced_skills_dot_prefix "$source_dir" "$target_parent" "$namespace"
+    fi
 }
 
 # Restore or remove installed file:
@@ -389,60 +608,574 @@ inject_policy_refs() {
     done
 }
 
-# Install global components to ~/.claude/
+# ---------------------------------------------------------------------------
+# check_drift (invoked by --check) — T-065
+# ---------------------------------------------------------------------------
+# Validates two things only:
+#   1. SOURCE exists on disk  — package layout is intact (package/skills/, agents/, hooks/)
+#   2. Registry declarations  — conf/project dir values are non-empty strings
+#
+# TARGET column is INFORMATIONAL only — it shows where artifacts would be installed.
+# Missing target dirs (e.g. ~/.qwen/) are expected pre-install and are NOT checked here.
+# To validate a post-install state, run a conformance test (tests/install/smoke.sh).
+#
+# STATUS values:
+#   OK      — source exists and registry declaration is populated
+#   MISSING — source directory absent from package layout (drift: fix package or registry)
+#   DRIFT   — registry declaration is empty (fix runtimes.sh)
+#   PARTIAL — installed but not fully compatible (e.g. frontmatter not yet transformed, D-5)
+#   GAP     — not installed at all; implementation blocked by incompatibility (G-001, G-002)
+#
+# Respects --profile: skills (default) shows skills/agents/hooks rows;
+#                     commands shows commands rows.
+# Exits non-zero on MISSING or DRIFT. PARTIAL and GAP rows do not fail the check.
+check_drift() {
+    local drift_found=0
+    # Resolve effective profile: auto -> skills (default for drift check)
+    local effective_profile="${PROFILE}"
+    [[ "$effective_profile" == "auto" ]] && effective_profile="skills"
+
+    echo ""
+    echo "Runtime Path Drift Check"
+    echo "========================"
+    printf "%-12s | %-5s | %-24s | %-45s | %-38s | %s\n" "RUNTIME" "TYPE" "PATH TYPE" "SOURCE" "TARGET" "STATUS"
+    printf "%-12s-+-%-5s-+-%-24s-+-%-45s-+-%-38s-+-%s\n" \
+        "------------" "-----" "------------------------" \
+        "---------------------------------------------" \
+        "--------------------------------------" "--------"
+
+    _drift_row() {
+        # Usage: _drift_row rt atype path_type source target [check_src] [status_override]
+        # check_src:       directory to verify exists on disk (SOURCE check). Empty = skip.
+        # status_override: "GAP"     — not implemented; no failure counted
+        #                  "PARTIAL" — installs but schema/transform incomplete; no failure counted
+        #                  empty     — derive from check_src result (OK or MISSING)
+        local rt="$1" atype="$2" ptype="$3" src="$4" tgt="$5" check="${6:-}" override="${7:-}"
+        local status="OK"
+        if [[ -n "$override" ]]; then
+            status="$override"
+        elif [[ -n "$check" ]] && [ ! -d "$check" ]; then
+            status="MISSING"
+            drift_found=1
+        fi
+        printf "%-12s | %-5s | %-24s | %-45s | %-38s | %s\n" "$rt" "$atype" "$ptype" "$src" "$tgt" "$status"
+    }
+
+    for rt in "${RUNTIMES[@]}"; do
+        local conf_dir="${RUNTIME_CONF_DIR[${rt}]:-}"
+        local proj_dir="${RUNTIME_PROJECT_DIR[${rt}]:-}"
+        local skills_src="${PACKAGE_DIR}/skills"
+        local agents_src="${PACKAGE_DIR}/agents"
+        local hooks_src="${PACKAGE_DIR}/hooks"
+        # Artifact type for commands: TOML for gemini, MD for all others
+        local cmd_type="MD"
+        [[ "$rt" == "gemini" ]] && cmd_type="TOML"
+
+        if [[ "$effective_profile" == "commands" ]]; then
+            # Commands profile: show commands source → target for each runtime
+            if [[ "${RUNTIME_SUPPORTS_COMMANDS[${rt}]:-false}" == "true" ]]; then
+                local cmd_conf_dir="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-${conf_dir}}"
+                local cmd_path="${RUNTIME_COMMANDS_PATH[${rt}]:-commands}"
+                local cmd_gap=""
+                local cmd_override=""
+                [[ "$rt" == "gemini" ]] && cmd_override="GAP"  # G-002: TOML transform not implemented (T-092)
+                _drift_row "$rt" "$cmd_type" "commands" "$skills_src" "${cmd_conf_dir}/${cmd_path}/" "$skills_src" "$cmd_override"
+                # G-003: minimal MD schema applied; full per-runtime key map pending T-095
+                [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(minimal schema)" "${cmd_conf_dir}/${cmd_path}/" "" "PARTIAL"
+            fi
+        else
+            # Skills profile (default): show skills / agents / hooks rows
+            if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]]; then
+                local skills_target="${conf_dir}/${RUNTIME_SKILLS_PATH[${rt}]}/"
+                _drift_row "$rt" "MD" "skills" "$skills_src" "$skills_target" "$skills_src"
+                # G-003: minimal MD schema applied; full per-runtime key map pending T-095
+                [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(minimal schema)" "$skills_target" "" "PARTIAL"
+            fi
+
+            # GAP G-002: Gemini commands TOML transform not implemented
+            if [[ "$rt" == "gemini" ]]; then
+                local cmd_conf_dir="${RUNTIME_COMMANDS_CONF_OVERRIDE[gemini]:-${conf_dir}}"
+                local cmd_path="${RUNTIME_COMMANDS_PATH[gemini]:-commands}"
+                _drift_row "gemini" "TOML" "commands" "$skills_src" "${cmd_conf_dir}/${cmd_path}/" "$skills_src" "GAP"  # G-002: TOML transform not implemented (T-092)
+            fi
+
+            if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]]; then
+                local agents_target="${conf_dir}/${RUNTIME_AGENTS_PATH[${rt}]}/"
+                _drift_row "$rt" "MD" "agents" "$agents_src" "$agents_target" "$agents_src"
+            fi
+
+            if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]]; then
+                local hooks_target="${conf_dir}/${RUNTIME_HOOKS_PATH[${rt}]}/"
+                _drift_row "$rt" "SH" "hooks" "$hooks_src" "$hooks_target" "$hooks_src"
+            fi
+            # GAP G-001: OpenCode hooks incompatible with JS/TS plugin system
+            [[ "$rt" == "opencode" ]] && _drift_row "opencode" "SH" "hooks" "$hooks_src" "${conf_dir}/plugins/" "" "GAP"  # G-001: SH hooks incompatible with JS/TS plugin system (T-093)
+        fi
+
+        # Registry declarations (always shown regardless of profile)
+        if [[ -n "$conf_dir" ]]; then
+            _drift_row "$rt" "DIR" "conf dir" "(registry)" "$conf_dir"
+        else
+            printf "%-12s | %-5s | %-24s | %-45s | %-38s | %s\n" "$rt" "DIR" "conf dir" "(registry)" "(empty)" "DRIFT"
+            drift_found=1
+        fi
+        if [[ -n "$proj_dir" ]]; then
+            _drift_row "$rt" "DIR" "project dir" "(registry)" "$proj_dir"
+        else
+            printf "%-12s | %-5s | %-24s | %-45s | %-38s | %s\n" "$rt" "DIR" "project dir" "(registry)" "(empty)" "DRIFT"
+            drift_found=1
+        fi
+    done
+
+    echo ""
+    if [[ $drift_found -eq 0 ]]; then
+        echo "[OK] No drift detected. Registry matches package layout."
+    else
+        echo "[ERROR] Drift detected. Update package/install/runtimes.sh or the package layout."
+        return 1
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Runtime install helpers (registry-driven)
+# ---------------------------------------------------------------------------
+
+# strip_claude_frontmatter — T-094: Remove Claude-specific keys from SKILL.md in-place.
+# Preserves universal keys: name, description, tools, scripts (and any unknown keys).
+# Drops Claude-only keys: argument-hint, user-invocable, context, agent.
+# No-op if file does not exist or has no frontmatter.
+strip_claude_frontmatter() {
+    local f="$1"
+    [ -f "$f" ] || return 0
+    sed -i '/^argument-hint:/d; /^user-invocable:/d; /^context:/d; /^agent:/d' "$f"
+}
+
+# convert_args_placeholder — T-094: Replace $ARGUMENTS with {{args}} for runtimes that use it.
+# Applies to commands mode targets for Qwen and Gemini (official docs confirmed).
+convert_args_placeholder() {
+    local f="$1"
+    [ -f "$f" ] || return 0
+    sed -i 's/\$ARGUMENTS/{{args}}/g' "$f"
+}
+
+# Strip YAML frontmatter (---...---) from a file, printing remaining content to stdout.
+strip_frontmatter() {
+    local src="$1"
+    if head -1 "$src" | grep -q '^---$'; then
+        awk '/^---$/{found++; if(found==2){found=0; skip=0; next} else {skip=1; next}} !skip' "$src"
+    else
+        cat "$src"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Commands compatibility mode — per-runtime SKILL.md schema/transform notes (T-084)
+# ---------------------------------------------------------------------------
+# When --profile commands is used (or when a runtime defaults to commands, e.g. gemini),
+# each SKILL.md is transformed for the target runtime's commands directory.
+#
+# Runtime | Target path                          | Transform applied
+# --------|--------------------------------------|-------------------------------
+# claude  | .claude/commands/<skill>.md          | Copied as-is (YAML frontmatter preserved)
+# codex   | ~/.codex/prompts/<skill>.md          | YAML frontmatter block stripped; body only
+# gemini  | .gemini/commands/<skill>.toml        | TOML transform NOT YET IMPLEMENTED; warn + skip
+# opencode| .opencode/commands/<skill>.md        | Copied as-is (YAML frontmatter preserved)
+# qwen    | .qwen/commands/<skill>.md            | Copied as-is (YAML frontmatter preserved)
+#
+# The gemini TOML transform is deferred; a warning is emitted and the skill is skipped.
+# ---------------------------------------------------------------------------
+
+# Install skills as commands (compatibility mode): copies each SKILL.md to the
+# runtime's commands directory, applying any needed transforms per runtime.
+# T-073: commands compat profile
+install_runtime_commands_compat() {
+    local rt="$1"
+    local base_dir="$2"   # RUNTIME_CONF_DIR[rt] or rt_target
+    local backup_dir="$3"
+
+    local commands_base="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-}"
+    if [ -n "$commands_base" ]; then
+        local commands_dir="${commands_base}/${RUNTIME_COMMANDS_PATH[${rt}]}"
+    else
+        local commands_dir="${base_dir}/${RUNTIME_COMMANDS_PATH[${rt}]}"
+    fi
+
+    if [ ! -d "${PACKAGE_DIR}/skills" ]; then
+        log_warning "${rt}: no skills source directory; skipping commands compat install"
+        return
+    fi
+
+    case "$rt" in
+        gemini)
+            log_warning "gemini: TOML transform not yet implemented; skipping commands compat install"
+            return
+            ;;
+    esac
+
+    mkdir -p "$commands_dir"
+
+    for skill_dir in "${PACKAGE_DIR}/skills"/*/; do
+        [ -d "$skill_dir" ] || continue
+        local skill_name
+        skill_name="$(basename "$skill_dir")"
+        local skill_md="${skill_dir}/SKILL.md"
+        [ -f "$skill_md" ] || continue
+
+        local target_file="${commands_dir}/${skill_name}.md"
+
+        case "$rt" in
+            codex)
+                # Strip YAML frontmatter for Codex prompts
+                local tmp_file
+                tmp_file="$(mktemp)"
+                strip_frontmatter "$skill_md" > "$tmp_file"
+                if [ -f "$target_file" ]; then
+                    if diff -q "$tmp_file" "$target_file" > /dev/null 2>&1; then
+                        log_info "Unchanged: $target_file"
+                        ((++UNCHANGED))
+                    elif [ "$OVERWRITE" = true ]; then
+                        local backup_file="${backup_dir}/commands-compat-${rt}/${skill_name}.md"
+                        mkdir -p "$(dirname "$backup_file")"
+                        cp "$target_file" "$backup_file"
+                        cp "$tmp_file" "$target_file"
+                        log_success "Overwritten: $target_file"
+                        ((++BACKUPS))
+                        ((++CREATED))
+                    else
+                        log_warning "$target_file exists and differs; use --overwrite to replace"
+                    fi
+                else
+                    cp "$tmp_file" "$target_file"
+                    log_success "Created: $target_file"
+                    ((++CREATED))
+                fi
+                rm -f "$tmp_file"
+                ;;
+            *)
+                # claude, opencode, qwen: plain copy
+                copy_markdown "$skill_md" "$target_file" "$backup_dir" "commands-compat-${rt}/${skill_name}.md"
+                ;;
+        esac
+    done
+}
+
+# check_runtime_collisions — T-081: Detect shared paths between selected runtimes.
+check_runtime_collisions() {
+    # OpenCode reads .claude/skills and .agents/skills natively
+    if [ "$REF_OPENCODE" = true ]; then
+        [ "$REF_CLAUDE" = true ] && log_info "Note: OpenCode natively reads .claude/skills — Claude and OpenCode will share that path"
+        [ "$REF_CODEX" = true ]  && log_info "Note: OpenCode natively reads .agents/skills — Codex and OpenCode will share that path"
+    fi
+
+    # Check for shared project root doc files
+    local shared_docs=()
+    local doc_files=()
+    local active_rts
+    read -ra active_rts <<< "$(get_active_runtimes)"
+    for rt in "${active_rts[@]}"; do
+        local doc="${RUNTIME_DOC_FILE[${rt}]}"
+        for existing in "${doc_files[@]}"; do
+            [ "$doc" = "$existing" ] && shared_docs+=("$doc")
+        done
+        doc_files+=("$doc")
+    done
+    for shared in "${shared_docs[@]}"; do
+        log_info "Note: ${shared} is shared between multiple runtimes; policy refs from all runtimes will be injected"
+    done
+}
+
+# Install global artifacts for a single runtime (registry-driven)
+install_runtime_global() {
+    local rt="$1"
+    local backup_dir="$2"
+    local target="${RUNTIME_CONF_DIR[${rt}]}"
+
+    log_info "Installing runtime '${rt}' to ${target} (profile: ${PROFILE})"
+
+    # T-079: warn and skip when requested profile is unsupported by this runtime
+    if [[ "$PROFILE" == "hooks" ]] && [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" != "true" ]]; then
+        log_warning "${rt}: hooks not supported; --profile hooks ignored for this runtime"
+        return
+    fi
+    if [[ "$PROFILE" == "skills" ]] && [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" != "true" ]]; then
+        log_warning "${rt}: skills not supported; --profile skills ignored for this runtime (use --profile commands)"
+        return
+    fi
+
+    # Resolve effective profile for this runtime
+    local eff_profile="$PROFILE"
+    if [[ "$eff_profile" == "auto" ]]; then
+        if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]]; then
+            eff_profile="skills"
+        else
+            eff_profile="commands"
+        fi
+    fi
+
+    # Skills: install when profile is skills or all
+    if [[ "$eff_profile" == "skills" || "$eff_profile" == "all" ]]; then
+        if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
+            local skills_target="${target}/${RUNTIME_SKILLS_PATH[${rt}]}"
+            if [ -n "$NAMESPACE" ]; then
+                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE" "$backup_dir" "$rt"
+            else
+                copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
+                # T-094: strip Claude-specific frontmatter for non-Claude runtimes (flat copy)
+                if [[ "$rt" != "claude" ]]; then
+                    for skill_md in "$skills_target"/*/SKILL.md; do
+                        strip_claude_frontmatter "$skill_md"
+                    done
+                fi
+            fi
+        fi
+    fi
+
+    # Commands compat: install when profile is commands or all
+    if [[ "$eff_profile" == "commands" || "$eff_profile" == "all" ]]; then
+        install_runtime_commands_compat "$rt" "$target" "$backup_dir"
+    fi
+
+    # Agents: only if runtime has agents path (not gated by profile)
+    if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
+        local ns_path=""
+        [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+        local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
+        copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+    fi
+
+    # Hooks: install when profile is hooks or all, and runtime supports hooks
+    if [[ "$eff_profile" == "hooks" || "$eff_profile" == "all" ]]; then
+        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/hooks" ]; then
+            local hooks_target="${target}/${RUNTIME_HOOKS_PATH[${rt}]}"
+            copy_directory "${PACKAGE_DIR}/hooks" "$hooks_target" "$backup_dir"
+        fi
+    elif [[ "$eff_profile" == "skills" ]]; then
+        # skills profile also installs hooks (existing behavior for claude)
+        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/hooks" ]; then
+            local hooks_target="${target}/${RUNTIME_HOOKS_PATH[${rt}]}"
+            copy_directory "${PACKAGE_DIR}/hooks" "$hooks_target" "$backup_dir"
+        fi
+    fi
+}
+
+# Install project artifacts for a single runtime (registry-driven)
+install_runtime_project() {
+    local rt="$1"
+    local target="$2"
+    local backup_dir="$3"
+    local rt_dir="${RUNTIME_PROJECT_DIR[${rt}]}"
+    local rt_target="${target}/${rt_dir}"
+
+    log_info "Installing runtime '${rt}' project artifacts to ${rt_target} (profile: ${PROFILE})"
+
+    # T-079: warn and skip when requested profile is unsupported by this runtime
+    if [[ "$PROFILE" == "hooks" ]] && [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" != "true" ]]; then
+        log_warning "${rt}: hooks not supported; --profile hooks ignored for this runtime"
+        return
+    fi
+    if [[ "$PROFILE" == "skills" ]] && [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" != "true" ]]; then
+        log_warning "${rt}: skills not supported; --profile skills ignored for this runtime (use --profile commands)"
+        return
+    fi
+
+    # Resolve effective profile for this runtime
+    local eff_profile="$PROFILE"
+    if [[ "$eff_profile" == "auto" ]]; then
+        if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]]; then
+            eff_profile="skills"
+        else
+            eff_profile="commands"
+        fi
+    fi
+
+    # Skills: install when profile is skills or all
+    if [[ "$eff_profile" == "skills" || "$eff_profile" == "all" ]]; then
+        if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
+            local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
+            if [ -n "$NAMESPACE" ]; then
+                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE" "$backup_dir"
+            else
+                copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
+            fi
+        fi
+    fi
+
+    # Commands compat: install when profile is commands or all
+    if [[ "$eff_profile" == "commands" || "$eff_profile" == "all" ]]; then
+        install_runtime_commands_compat "$rt" "$rt_target" "$backup_dir"
+    fi
+
+    # Agents: only if runtime has agents path (not gated by profile)
+    if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
+        local ns_path=""
+        [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+        local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
+        copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+    fi
+
+    # Hooks: install when profile is hooks or all, and runtime supports hooks
+    if [[ "$eff_profile" == "hooks" || "$eff_profile" == "all" ]]; then
+        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/hooks" ]; then
+            local hooks_target="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
+            copy_directory "${PACKAGE_DIR}/hooks" "$hooks_target" "$backup_dir"
+        fi
+    elif [[ "$eff_profile" == "skills" ]]; then
+        # skills profile also installs hooks (existing behavior for claude)
+        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/hooks" ]; then
+            local hooks_target="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
+            copy_directory "${PACKAGE_DIR}/hooks" "$hooks_target" "$backup_dir"
+        fi
+    fi
+}
+
+# Restore global artifacts for a single runtime (registry-driven)
+restore_runtime_global() {
+    local rt="$1"
+    local backup_dir="$2"
+    local target="${RUNTIME_CONF_DIR[${rt}]}"
+
+    # Skills
+    if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
+        local skills_target="${target}/${RUNTIME_SKILLS_PATH[${rt}]}"
+        if [ -n "$NAMESPACE" ]; then
+            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE"
+        else
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir" "skills"
+        fi
+    fi
+
+    # Agents
+    if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
+        local ns_path=""
+        [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+        local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
+        restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents"
+    fi
+
+    # Hooks
+    if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]]; then
+        local hooks_dir="${target}/${RUNTIME_HOOKS_PATH[${rt}]}"
+        if [ -d "$hooks_dir" ]; then
+            rm -rf "$hooks_dir"
+            log_success "Removed: $hooks_dir"
+            ((++CREATED))
+        fi
+    fi
+}
+
+# Restore project artifacts for a single runtime (registry-driven)
+restore_runtime_project() {
+    local rt="$1"
+    local target="$2"
+    local backup_dir="$3"
+    local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
+
+    # Skills
+    if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
+        local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
+        if [ -n "$NAMESPACE" ]; then
+            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE"
+        else
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir" "skills"
+        fi
+    fi
+
+    # Agents
+    if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
+        local ns_path=""
+        [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+        local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
+        restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents"
+    fi
+
+    # Hooks
+    if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]]; then
+        local hooks_dir="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
+        if [ -d "$hooks_dir" ]; then
+            rm -rf "$hooks_dir"
+            log_success "Removed: $hooks_dir"
+            ((++CREATED))
+        fi
+    fi
+}
+
+# Build list of active runtimes based on REF_* flags
+get_active_runtimes() {
+    local active=()
+    [ "$REF_CLAUDE" = true ]    && active+=(claude)
+    [ "$REF_CODEX" = true ]     && active+=(codex)
+    [ "$REF_GEMINI" = true ]    && active+=(gemini)
+    [ "$REF_OPENCODE" = true ]  && active+=(opencode)
+    [ "$REF_QWEN" = true ]      && active+=(qwen)
+    echo "${active[@]}"
+}
+
+# Install global components to runtime conf dirs
 install_global() {
-    local target="${HOME}/.claude"
-    log_info "Installing global components to $target"
+    local claude_target="${RUNTIME_CONF_DIR[claude]}"
+    log_info "Installing global components"
     local ns_path=""
     if [ -n "$NAMESPACE" ]; then
         ns_path="/${NAMESPACE}"
         log_info "Using namespace: agents → agents/${NAMESPACE}/, skills → skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Using namespace: jarvis (default)"
+        log_info "Using flat paths (no namespace prefix)"
     fi
 
+    # Claude is the primary runtime for shared assets (policy, workflows, templates, settings, mcp)
     local backup_dir
-    backup_dir=$(create_backup_dir "$target")
+    backup_dir=$(create_backup_dir "$claude_target")
 
-    # Install package/ contents (source-of-truth in repository)
-    if [ -d "${PACKAGE_DIR}" ]; then
-        copy_directory "${PACKAGE_DIR}/agents" "${target}/agents${ns_path}" "$backup_dir"
-        if [ -n "$NAMESPACE" ]; then
-            copy_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/skills" "$NAMESPACE" "$backup_dir"
-        else
-            copy_directory "${PACKAGE_DIR}/skills" "${target}/skills" "$backup_dir"
-        fi
-        copy_directory "${PACKAGE_DIR}/hooks" "${target}/hooks" "$backup_dir"
-        copy_directory "${PACKAGE_DIR}/policy" "${target}/policy" "$backup_dir"
-        copy_directory "${PACKAGE_DIR}/workflows" "${target}/workflows" "$backup_dir"
-        copy_directory "${PACKAGE_DIR}/templates" "${target}/templates" "$backup_dir"
+    # Install shared assets to ~/.claude/ when claude runtime is active
+    if [ "$REF_CLAUDE" = true ] && [ -d "${PACKAGE_DIR}" ]; then
+        copy_directory "${PACKAGE_DIR}/policy" "${claude_target}/policy" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/workflows" "${claude_target}/workflows" "$backup_dir"
+        copy_directory "${PACKAGE_DIR}/templates" "${claude_target}/templates" "$backup_dir"
 
         # Handle global settings.json
         if [ -f "${PACKAGE_DIR}/settings.json" ]; then
-            merge_json "${PACKAGE_DIR}/settings.json" "${target}/settings.json" "$backup_dir"
+            merge_json "${PACKAGE_DIR}/settings.json" "${claude_target}/settings.json" "$backup_dir"
+        fi
+
+        # Install global MCP servers to ~/.claude.json (user-scope)
+        if [ -f "${PACKAGE_DIR}/mcp.json" ]; then
+            merge_json "${PACKAGE_DIR}/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
         fi
     fi
 
-    # Install global MCP servers to ~/.claude.json (user-scope)
-    if [ -f "${PACKAGE_DIR}/mcp.json" ]; then
-        merge_json "${PACKAGE_DIR}/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
-    fi
+    # T-081: check for cross-runtime path collisions
+    check_runtime_collisions
+
+    # Install per-runtime artifacts using registry
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+    for rt in "${active_runtimes[@]}"; do
+        install_runtime_global "$rt" "$backup_dir"
+    done
 
     # Inject @-references for global policies into selected runtime docs.
     # Use home-scoped absolute refs to avoid project-relative resolution.
     local global_refs
     global_refs="$(printf 'Read @~/.claude/policy/PRINCIPLES.md\nRead @~/.claude/policy/RULES.md')"
     if [ "$REF_CLAUDE" = true ]; then
-        inject_policy_refs "${HOME}/.claude" "orchestrator:global-refs" \
-            "$global_refs" "$backup_dir" "claude" "CLAUDE.md"
+        inject_policy_refs "${RUNTIME_CONF_DIR[claude]}" "orchestrator:global-refs" \
+            "$global_refs" "$backup_dir" "claude" "${RUNTIME_DOC_FILE[claude]}"
     fi
     if [ "$REF_GEMINI" = true ]; then
-        inject_policy_refs "${HOME}/.gemini" "orchestrator:global-refs" \
-            "$global_refs" "$backup_dir" "gemini" "GEMINI.md"
+        inject_policy_refs "${RUNTIME_CONF_DIR[gemini]}" "orchestrator:global-refs" \
+            "$global_refs" "$backup_dir" "gemini" "${RUNTIME_DOC_FILE[gemini]}"
     fi
     if [ "$REF_CODEX" = true ]; then
-        inject_policy_refs "${HOME}/.codex" "orchestrator:global-refs" \
-            "$global_refs" "$backup_dir" "codex" "AGENTS.md"
+        local codex_doc_dir="${RUNTIME_DOC_DIR_OVERRIDE[codex]:-${RUNTIME_CONF_DIR[codex]}}"
+        inject_policy_refs "$codex_doc_dir" "orchestrator:global-refs" \
+            "$global_refs" "$backup_dir" "codex" "${RUNTIME_DOC_FILE[codex]}"
+    fi
+    if [ "$REF_OPENCODE" = true ]; then
+        log_info "opencode: policy-ref injection into opencode.json not yet implemented (JSON format differs)"
+    fi
+    if [ "$REF_QWEN" = true ]; then
+        inject_policy_refs "${RUNTIME_CONF_DIR[qwen]}" "orchestrator:global-refs" \
+            "$global_refs" "$backup_dir" "qwen" "${RUNTIME_DOC_FILE[qwen]}"
     fi
 
     log_success "Global installation complete"
@@ -451,7 +1184,6 @@ install_global() {
 # Install project scaffolding to specified path
 install_project() {
     local target="$1"
-    local ns_path=""
 
     if [ -z "$target" ]; then
         log_error "Project path required for --project"
@@ -461,10 +1193,9 @@ install_project() {
 
     log_info "Installing project scaffolding to $target"
     if [ -n "$NAMESPACE" ]; then
-        ns_path="/${NAMESPACE}"
         log_info "Using namespace: agents → agents/${NAMESPACE}/, skills → skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Using namespace: jarvis (default)"
+        log_info "Using flat paths (no namespace prefix)"
     fi
 
     local backup_dir
@@ -490,38 +1221,38 @@ install_project() {
     copy_markdown "${PACKAGE_DIR}/templates/guidelines.md" \
                   "${target}/docs/policy/GUIDELINES.md" "$backup_dir" "docs/policy/GUIDELINES.md"
 
-    # 4. Inject @-references for project policies into selected local runtime docs
-    local project_doc_files=""
-    [ "$REF_CLAUDE" = true ] && project_doc_files="${project_doc_files} CLAUDE.md"
-    [ "$REF_CODEX" = true ] && project_doc_files="${project_doc_files} AGENTS.md"
-    [ "$REF_GEMINI" = true ] && project_doc_files="${project_doc_files} GEMINI.md"
-    inject_policy_refs "$target" "orchestrator:project-refs" \
-        "$(printf 'Read @docs/policy/STANDARDS.md\nRead @docs/policy/GUIDELINES.md')" "$backup_dir" "project-root" "$project_doc_files"
-
-    # 5. Deploy templates to project-local .claude/templates/
+    # 4. Deploy shared claude assets (templates, policy, workflows) — always written to .claude/
+    #    regardless of which runtimes are active, as these are project-level reference files.
     copy_directory "${PACKAGE_DIR}/templates" "${target}/.claude/templates" "$backup_dir"
-
-    # 6. Deploy policy to project-local .claude/policy/ (read-only copies, /onboard hydrates docs/policy/)
     copy_directory "${PACKAGE_DIR}/policy" "${target}/.claude/policy" "$backup_dir"
-
-    # 7. Deploy workflows to project-local .claude/workflows/
     if [ -d "${PACKAGE_DIR}/workflows" ]; then
         copy_directory "${PACKAGE_DIR}/workflows" "${target}/.claude/workflows" "$backup_dir"
     fi
 
-    # 8. Deploy project-local agent/skill namespaces (dogfood-safe)
-    if [ -d "${PACKAGE_DIR}/agents" ]; then
-        copy_directory "${PACKAGE_DIR}/agents" "${target}/.claude/agents${ns_path}" "$backup_dir"
-    fi
-    if [ -d "${PACKAGE_DIR}/skills" ]; then
-        if [ -n "$NAMESPACE" ]; then
-            copy_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "$NAMESPACE" "$backup_dir"
-        else
-            copy_directory "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "$backup_dir"
-        fi
+    # T-081: check for cross-runtime path collisions
+    check_runtime_collisions
+
+    # 5. Install per-runtime project artifacts using registry
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+    for rt in "${active_runtimes[@]}"; do
+        install_runtime_project "$rt" "$target" "$backup_dir"
+    done
+
+    # 6. Inject @-references for project policies into selected local runtime docs
+    local project_doc_files=""
+    [ "$REF_CLAUDE" = true ]    && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[claude]}"
+    [ "$REF_CODEX" = true ]     && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[codex]}"
+    [ "$REF_GEMINI" = true ]    && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[gemini]}"
+    [ "$REF_QWEN" = true ]      && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[qwen]}"
+    # opencode.json injection skipped (JSON format differs from markdown ref pattern)
+    if [ -n "$project_doc_files" ]; then
+        inject_policy_refs "$target" "orchestrator:project-refs" \
+            "$(printf 'Read @docs/policy/STANDARDS.md\nRead @docs/policy/GUIDELINES.md')" \
+            "$backup_dir" "project-root" "$project_doc_files"
     fi
 
-    # 9. Initialize Serena project if uvx is available
+    # 7. Initialize Serena project if uvx is available
     init_serena_project "$target"
 
     log_success "Project installation complete"
@@ -753,82 +1484,81 @@ restore_policy_refs() {
 
 # Restore global installation (remove installed artifacts + restore settings)
 restore_global() {
-    local target="${HOME}/.claude"
-    log_info "Restoring global installation from $target"
-    local ns_path=""
+    local claude_target="${RUNTIME_CONF_DIR[claude]}"
+    log_info "Restoring global installation"
     if [ -n "$NAMESPACE" ]; then
-        ns_path="/${NAMESPACE}"
         log_info "Restoring namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Restoring namespace: jarvis (default)"
+        log_info "Restoring flat paths"
     fi
 
     local backup_dir
-    backup_dir=$(find_latest_backup "$target")
+    backup_dir=$(find_latest_backup "$claude_target")
 
-    # Restore/remove installed agents/skills surgically.
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/agents" \
-        "${target}/agents${ns_path}" \
-        "$backup_dir" \
-        "agents"
-    if [ -n "$NAMESPACE" ]; then
-        restore_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/skills" "$NAMESPACE"
-    else
-        restore_or_remove_installed_tree \
-            "${PACKAGE_DIR}/skills" \
-            "${target}/skills" \
-            "$backup_dir" \
-            "skills"
-    fi
-
-    # Remove managed shared directories.
-    local dirs_to_remove=("hooks" "policy" "workflows" "templates")
-    for dir in "${dirs_to_remove[@]}"; do
-        if [ -d "${target:?}/${dir}" ]; then
-            rm -rf "${target:?}/${dir}"
-            log_success "Removed: ${target}/${dir}"
-            ((++CREATED))
-        fi
+    # Restore per-runtime artifacts using registry
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+    for rt in "${active_runtimes[@]}"; do
+        restore_runtime_global "$rt" "$backup_dir"
     done
 
-    # Restore settings.json from backup
-    restore_settings "$target" "$backup_dir"
+    # Remove managed shared directories from ~/.claude/ (only when claude runtime active)
+    if [ "$REF_CLAUDE" = true ]; then
+        local dirs_to_remove=("policy" "workflows" "templates")
+        for dir in "${dirs_to_remove[@]}"; do
+            if [ -d "${claude_target:?}/${dir}" ]; then
+                rm -rf "${claude_target:?}/${dir}"
+                log_success "Removed: ${claude_target}/${dir}"
+                ((++CREATED))
+            fi
+        done
 
-    # Restore ~/.claude.json from backup if present, fallback to mcpServers deletion
-    local claude_json_backup=""
-    if [ -n "$backup_dir" ]; then
-        claude_json_backup="${backup_dir}/.claude.json"
-    fi
-    if ! restore_file_from_backup "$claude_json_backup" "${HOME}/.claude.json"; then
-        if command -v jq &> /dev/null && [ -f "${HOME}/.claude.json" ]; then
-            if jq 'has("mcpServers")' "${HOME}/.claude.json" | grep -q true; then
-                local effective_backup_dir="$backup_dir"
-                if [ -z "$effective_backup_dir" ]; then
-                    effective_backup_dir=$(create_backup_dir "$target")
-                    log_warning "No prior backup found. Created backup directory: $effective_backup_dir"
+        # Restore settings.json from backup
+        restore_settings "$claude_target" "$backup_dir"
+
+        # Restore ~/.claude.json from backup if present, fallback to mcpServers deletion
+        local claude_json_backup=""
+        if [ -n "$backup_dir" ]; then
+            claude_json_backup="${backup_dir}/.claude.json"
+        fi
+        if ! restore_file_from_backup "$claude_json_backup" "${HOME}/.claude.json"; then
+            if command -v jq &> /dev/null && [ -f "${HOME}/.claude.json" ]; then
+                if jq 'has("mcpServers")' "${HOME}/.claude.json" | grep -q true; then
+                    local effective_backup_dir="$backup_dir"
+                    if [ -z "$effective_backup_dir" ]; then
+                        effective_backup_dir=$(create_backup_dir "$claude_target")
+                        log_warning "No prior backup found. Created backup directory: $effective_backup_dir"
+                    fi
+
+                    local fallback_backup="${effective_backup_dir}/.claude.json"
+                    mkdir -p "$(dirname "$fallback_backup")"
+                    cp "${HOME}/.claude.json" "$fallback_backup"
+                    jq 'del(.mcpServers)' "${HOME}/.claude.json" > "${HOME}/.claude.json.tmp"
+                    mv "${HOME}/.claude.json.tmp" "${HOME}/.claude.json"
+                    log_success "Removed mcpServers from ~/.claude.json (backup: $fallback_backup)"
+                    ((++BACKUPS))
                 fi
-
-                local fallback_backup="${effective_backup_dir}/.claude.json"
-                mkdir -p "$(dirname "$fallback_backup")"
-                cp "${HOME}/.claude.json" "$fallback_backup"
-                jq 'del(.mcpServers)' "${HOME}/.claude.json" > "${HOME}/.claude.json.tmp"
-                mv "${HOME}/.claude.json.tmp" "${HOME}/.claude.json"
-                log_success "Removed mcpServers from ~/.claude.json (backup: $fallback_backup)"
-                ((++BACKUPS))
             fi
         fi
     fi
 
     # Restore global injected refs in selected runtime docs.
     if [ "$REF_CLAUDE" = true ]; then
-        restore_policy_refs "${HOME}/.claude" "$backup_dir" "orchestrator:global-refs" "claude" "CLAUDE.md"
+        restore_policy_refs "${RUNTIME_CONF_DIR[claude]}" "$backup_dir" \
+            "orchestrator:global-refs" "claude" "${RUNTIME_DOC_FILE[claude]}"
     fi
     if [ "$REF_GEMINI" = true ]; then
-        restore_policy_refs "${HOME}/.gemini" "$backup_dir" "orchestrator:global-refs" "gemini" "GEMINI.md"
+        restore_policy_refs "${RUNTIME_CONF_DIR[gemini]}" "$backup_dir" \
+            "orchestrator:global-refs" "gemini" "${RUNTIME_DOC_FILE[gemini]}"
     fi
     if [ "$REF_CODEX" = true ]; then
-        restore_policy_refs "${HOME}/.codex" "$backup_dir" "orchestrator:global-refs" "codex" "AGENTS.md"
+        local codex_doc_dir="${RUNTIME_DOC_DIR_OVERRIDE[codex]:-${RUNTIME_CONF_DIR[codex]}}"
+        restore_policy_refs "$codex_doc_dir" "$backup_dir" \
+            "orchestrator:global-refs" "codex" "${RUNTIME_DOC_FILE[codex]}"
+    fi
+    if [ "$REF_QWEN" = true ]; then
+        restore_policy_refs "${RUNTIME_CONF_DIR[qwen]}" "$backup_dir" \
+            "orchestrator:global-refs" "qwen" "${RUNTIME_DOC_FILE[qwen]}"
     fi
 
     log_success "Global restore complete"
@@ -837,7 +1567,6 @@ restore_global() {
 # Restore project installation (remove installed artifacts + strip refs)
 restore_project() {
     local target="$1"
-    local ns_path=""
 
     if [ -z "$target" ]; then
         log_error "Project path required for --restore with --project"
@@ -847,10 +1576,9 @@ restore_project() {
 
     log_info "Restoring project installation from $target"
     if [ -n "$NAMESPACE" ]; then
-        ns_path="/${NAMESPACE}"
         log_info "Restoring namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Restoring namespace: jarvis (default)"
+        log_info "Restoring flat paths"
     fi
 
     local backup_dir
@@ -878,7 +1606,7 @@ restore_project() {
         "${target}/docs/policy/GUIDELINES.md" \
         "$docs_backup_guidelines"
 
-    # Restore/remove managed .claude trees (surgical file-level).
+    # Restore/remove managed .claude shared trees (surgical file-level).
     restore_or_remove_installed_tree \
         "${PACKAGE_DIR}/templates" \
         "${target}/.claude/templates" \
@@ -895,21 +1623,12 @@ restore_project() {
         "$backup_dir" \
         "workflows"
 
-    # Restore/remove managed agents/skills surgically.
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/agents" \
-        "${target}/.claude/agents${ns_path}" \
-        "$backup_dir" \
-        "agents"
-    if [ -n "$NAMESPACE" ]; then
-        restore_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "$NAMESPACE"
-    else
-        restore_or_remove_installed_tree \
-            "${PACKAGE_DIR}/skills" \
-            "${target}/.claude/skills" \
-            "$backup_dir" \
-            "skills"
-    fi
+    # Restore per-runtime project artifacts using registry
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+    for rt in "${active_runtimes[@]}"; do
+        restore_runtime_project "$rt" "$target" "$backup_dir"
+    done
 
     # Remove Serena project file only if this installer created it.
     local serena_marker="${target}/.serena/.orchestrator-created-project-yml"
@@ -926,72 +1645,104 @@ restore_project() {
 
     # Restore project injected refs in selected local runtime docs
     local project_doc_files=""
-    [ "$REF_CLAUDE" = true ] && project_doc_files="${project_doc_files} CLAUDE.md"
-    [ "$REF_CODEX" = true ] && project_doc_files="${project_doc_files} AGENTS.md"
-    [ "$REF_GEMINI" = true ] && project_doc_files="${project_doc_files} GEMINI.md"
-    restore_policy_refs "$target" "$backup_dir" "orchestrator:project-refs" "project-root" "$project_doc_files"
+    [ "$REF_CLAUDE" = true ]    && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[claude]}"
+    [ "$REF_CODEX" = true ]     && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[codex]}"
+    [ "$REF_GEMINI" = true ]    && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[gemini]}"
+    [ "$REF_QWEN" = true ]      && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[qwen]}"
+    if [ -n "$project_doc_files" ]; then
+        restore_policy_refs "$target" "$backup_dir" "orchestrator:project-refs" "project-root" "$project_doc_files"
+    fi
 
     log_success "Project restore complete"
 }
 
 # Cleanup global installation (remove installed artifacts, strip injected refs - no backup restore)
 cleanup_global() {
-    local target="${HOME}/.claude"
-    log_info "Cleaning up global installation from $target"
-    local ns_path=""
+    local claude_target="${RUNTIME_CONF_DIR[claude]}"
+    log_info "Cleaning up global installation"
     if [ -n "$NAMESPACE" ]; then
-        ns_path="/${NAMESPACE}"
         log_info "Cleaning namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Cleaning namespace: jarvis (default)"
+        log_info "Cleaning flat paths"
     fi
 
-    # Remove/check installed agents/skills surgically (no backup restore).
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/agents" \
-        "${target}/agents${ns_path}" \
-        "" "agents"
-    if [ -n "$NAMESPACE" ]; then
-        restore_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/skills" "$NAMESPACE"
-    else
-        restore_or_remove_installed_tree \
-            "${PACKAGE_DIR}/skills" \
-            "${target}/skills" \
-            "" "skills"
-    fi
+    # Remove per-runtime artifacts using registry (no backup restore).
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+    for rt in "${active_runtimes[@]}"; do
+        local rt_target="${RUNTIME_CONF_DIR[${rt}]}"
 
-    # Remove managed shared directories.
-    local dirs_to_remove=("hooks" "policy" "workflows" "templates")
-    for dir in "${dirs_to_remove[@]}"; do
-        if [ -d "${target:?}/${dir}" ]; then
-            rm -rf "${target:?}/${dir}"
-            log_success "Removed: ${target}/${dir}"
-            ((++CREATED))
+        # Skills
+        if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
+            local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
+            if [ -n "$NAMESPACE" ]; then
+                restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE"
+            else
+                restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "" "skills"
+            fi
+        fi
+
+        # Agents
+        if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
+            local ns_path=""
+            [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+            local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "" "agents"
+        fi
+
+        # Hooks
+        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]]; then
+            local hooks_dir="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
+            if [ -d "$hooks_dir" ]; then
+                rm -rf "$hooks_dir"
+                log_success "Removed: $hooks_dir"
+                ((++CREATED))
+            fi
         fi
     done
 
-    # Unpatch settings.json by removing installer-contributed keys (no backup restore).
-    unpatch_settings_json "${target}/settings.json"
+    # Remove managed shared directories from ~/.claude/ (only when claude runtime active)
+    if [ "$REF_CLAUDE" = true ]; then
+        local dirs_to_remove=("policy" "workflows" "templates")
+        for dir in "${dirs_to_remove[@]}"; do
+            if [ -d "${claude_target:?}/${dir}" ]; then
+                rm -rf "${claude_target:?}/${dir}"
+                log_success "Removed: ${claude_target}/${dir}"
+                ((++CREATED))
+            fi
+        done
 
-    # Remove mcpServers from ~/.claude.json without creating a backup.
-    if command -v jq &> /dev/null && [ -f "${HOME}/.claude.json" ]; then
-        if jq 'has("mcpServers")' "${HOME}/.claude.json" | grep -q true; then
-            jq 'del(.mcpServers)' "${HOME}/.claude.json" > "${HOME}/.claude.json.tmp"
-            mv "${HOME}/.claude.json.tmp" "${HOME}/.claude.json"
-            log_success "Removed mcpServers from ~/.claude.json"
-            ((++PATCHED))
+        # Unpatch settings.json by removing installer-contributed keys (no backup restore).
+        unpatch_settings_json "${claude_target}/settings.json"
+
+        # Remove mcpServers from ~/.claude.json without creating a backup.
+        if command -v jq &> /dev/null && [ -f "${HOME}/.claude.json" ]; then
+            if jq 'has("mcpServers")' "${HOME}/.claude.json" | grep -q true; then
+                jq 'del(.mcpServers)' "${HOME}/.claude.json" > "${HOME}/.claude.json.tmp"
+                mv "${HOME}/.claude.json.tmp" "${HOME}/.claude.json"
+                log_success "Removed mcpServers from ~/.claude.json"
+                ((++PATCHED))
+            fi
         fi
     fi
 
     # Strip injected refs via sentinel (no backup restore).
     if [ "$REF_CLAUDE" = true ]; then
-        strip_ref_block_if_present "${HOME}/.claude/CLAUDE.md" "orchestrator:global-refs"
+        strip_ref_block_if_present \
+            "${RUNTIME_CONF_DIR[claude]}/${RUNTIME_DOC_FILE[claude]}" "orchestrator:global-refs"
     fi
     if [ "$REF_GEMINI" = true ]; then
-        strip_ref_block_if_present "${HOME}/.gemini/GEMINI.md" "orchestrator:global-refs"
+        strip_ref_block_if_present \
+            "${RUNTIME_CONF_DIR[gemini]}/${RUNTIME_DOC_FILE[gemini]}" "orchestrator:global-refs"
     fi
     if [ "$REF_CODEX" = true ]; then
-        strip_ref_block_if_present "${HOME}/.codex/AGENTS.md" "orchestrator:global-refs"
+        local codex_doc_dir="${RUNTIME_DOC_DIR_OVERRIDE[codex]:-${RUNTIME_CONF_DIR[codex]}}"
+        strip_ref_block_if_present \
+            "${codex_doc_dir}/${RUNTIME_DOC_FILE[codex]}" "orchestrator:global-refs"
+    fi
+    if [ "$REF_QWEN" = true ]; then
+        strip_ref_block_if_present \
+            "${RUNTIME_CONF_DIR[qwen]}/${RUNTIME_DOC_FILE[qwen]}" "orchestrator:global-refs"
     fi
 
     log_success "Global cleanup complete"
@@ -1000,7 +1751,6 @@ cleanup_global() {
 # Cleanup project installation (remove installed artifacts, strip injected refs - no backup restore)
 cleanup_project() {
     local target="$1"
-    local ns_path=""
 
     if [ -z "$target" ]; then
         log_error "Project path required for --cleanup with --project"
@@ -1010,10 +1760,9 @@ cleanup_project() {
 
     log_info "Cleaning up project installation from $target"
     if [ -n "$NAMESPACE" ]; then
-        ns_path="/${NAMESPACE}"
         log_info "Cleaning namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
     else
-        log_info "Cleaning namespace: jarvis (default)"
+        log_info "Cleaning flat paths"
     fi
 
     # Remove docs files installed from templates (no backup restore).
@@ -1027,7 +1776,7 @@ cleanup_project() {
         "${PACKAGE_DIR}/templates/guidelines.md" \
         "${target}/docs/policy/GUIDELINES.md" ""
 
-    # Remove managed .claude trees (no backup restore).
+    # Remove managed .claude shared trees (no backup restore).
     restore_or_remove_installed_tree \
         "${PACKAGE_DIR}/templates" "${target}/.claude/templates" "" "templates"
     restore_or_remove_installed_tree \
@@ -1035,15 +1784,40 @@ cleanup_project() {
     restore_or_remove_installed_tree \
         "${PACKAGE_DIR}/workflows" "${target}/.claude/workflows" "" "workflows"
 
-    # Remove managed agents/skills surgically (no backup restore).
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/agents" "${target}/.claude/agents${ns_path}" "" "agents"
-    if [ -n "$NAMESPACE" ]; then
-        restore_namespaced_skills "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "$NAMESPACE"
-    else
-        restore_or_remove_installed_tree \
-            "${PACKAGE_DIR}/skills" "${target}/.claude/skills" "" "skills"
-    fi
+    # Remove per-runtime project artifacts using registry (no backup restore).
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+    for rt in "${active_runtimes[@]}"; do
+        local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
+
+        # Skills
+        if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
+            local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
+            if [ -n "$NAMESPACE" ]; then
+                restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE"
+            else
+                restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "" "skills"
+            fi
+        fi
+
+        # Agents
+        if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
+            local ns_path=""
+            [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+            local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "" "agents"
+        fi
+
+        # Hooks
+        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]]; then
+            local hooks_dir="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
+            if [ -d "$hooks_dir" ]; then
+                rm -rf "$hooks_dir"
+                log_success "Removed: $hooks_dir"
+                ((++CREATED))
+            fi
+        fi
+    done
 
     # Remove Serena project file only if this installer created it.
     local serena_marker="${target}/.serena/.orchestrator-created-project-yml"
@@ -1060,9 +1834,10 @@ cleanup_project() {
 
     # Strip injected refs via sentinel (no backup restore).
     local project_doc_files=""
-    [ "$REF_CLAUDE" = true ] && project_doc_files="${project_doc_files} CLAUDE.md"
-    [ "$REF_CODEX" = true ] && project_doc_files="${project_doc_files} AGENTS.md"
-    [ "$REF_GEMINI" = true ] && project_doc_files="${project_doc_files} GEMINI.md"
+    [ "$REF_CLAUDE" = true ]    && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[claude]}"
+    [ "$REF_CODEX" = true ]     && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[codex]}"
+    [ "$REF_GEMINI" = true ]    && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[gemini]}"
+    [ "$REF_QWEN" = true ]      && project_doc_files="${project_doc_files} ${RUNTIME_DOC_FILE[qwen]}"
     for md_file in $project_doc_files; do
         strip_ref_block_if_present "${target}/${md_file}" "orchestrator:project-refs"
     done
@@ -1081,21 +1856,26 @@ main() {
     local do_project=false
     local do_restore=false
     local do_cleanup=false
+    local do_check_drift=false
     local project_path=""
 
     while [ $# -gt 0 ]; do
         case "$1" in
-            --claude|--gemini|--codex)
+            --claude|--gemini|--codex|--opencode|--qwen)
                 if [ "$REF_TARGETS_EXPLICIT" = false ]; then
                     REF_CLAUDE=false
                     REF_GEMINI=false
                     REF_CODEX=false
+                    REF_OPENCODE=false
+                    REF_QWEN=false
                     REF_TARGETS_EXPLICIT=true
                 fi
                 case "$1" in
-                    --claude) REF_CLAUDE=true ;;
-                    --gemini) REF_GEMINI=true ;;
-                    --codex) REF_CODEX=true ;;
+                    --claude)   REF_CLAUDE=true ;;
+                    --gemini)   REF_GEMINI=true ;;
+                    --codex)    REF_CODEX=true ;;
+                    --opencode) REF_OPENCODE=true ;;
+                    --qwen)     REF_QWEN=true ;;
                 esac
                 shift
                 ;;
@@ -1107,8 +1887,7 @@ main() {
                     exit 1
                 fi
                 NAMESPACE="$1"
-                if [[ "$NAMESPACE" == *"/"* ]]; then
-                    log_error "Invalid namespace '$NAMESPACE' (must not contain '/')"
+                if ! validate_namespace "$NAMESPACE"; then
                     exit 1
                 fi
                 shift
@@ -1141,6 +1920,24 @@ main() {
                 do_cleanup=true
                 shift
                 ;;
+            --profile)
+                shift
+                if [ $# -eq 0 ] || [[ "$1" =~ ^-- ]]; then
+                    log_error "--profile requires a value"
+                    usage
+                    exit 1
+                fi
+                PROFILE="$1"
+                case "$PROFILE" in
+                    skills|commands|hooks|scripts|all|auto) ;;
+                    *) log_error "Invalid --profile: ${PROFILE}. Valid: skills commands hooks scripts all auto"; exit 1 ;;
+                esac
+                shift
+                ;;
+            --check)
+                do_check_drift=true
+                shift
+                ;;
             --help|-h)
                 usage
                 exit 0
@@ -1153,10 +1950,20 @@ main() {
         esac
     done
 
+    # --check: validate registry then exit (no writes)
+    if [ "$do_check_drift" = true ]; then
+        register_runtime_defaults || exit 1
+        check_drift
+        exit $?
+    fi
+
     echo ""
     echo "AgentOrchestrator Installer v${VERSION}"
     echo "=================================="
     echo ""
+
+    # Validate registry before any install operations
+    register_runtime_defaults || exit 1
 
     if [ "$do_restore" = true ] && [ "$do_cleanup" = true ]; then
         log_error "--restore and --cleanup are mutually exclusive"
