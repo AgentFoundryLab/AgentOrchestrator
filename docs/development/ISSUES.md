@@ -5,7 +5,7 @@
 | ID | Issue | Priority | Status | Task |
 |----|-------|----------|--------|------|
 | G-001 | OpenCode hooks incompatibility: Claude SH hooks ≠ OpenCode JS/TS plugin system | P2 | 🔲 Open | T-093 |
-| G-002 | Gemini TOML transform not implemented: SKILL.md → `.toml` commands skipped | P1 | 🔲 Open | T-092 |
+| G-002 | Gemini TOML command transform invalid schema and syntax errors | P1 | 🔲 Open | T-092 |
 | G-003 | No per-runtime frontmatter schema validation or transform in skills/commands install | P1 | 🔲 Open | T-094 |
 
 ---
@@ -25,14 +25,14 @@ Implementation details and AC in T-093.
 
 ---
 
-## G-002: Gemini TOML command transform not implemented
+## G-002: Gemini TOML command transform invalid schema and syntax errors
 
-**Type**: Gap
-**Discovered**: During v0.2.0 implementation (T-076 deferred)
+**Type**: Defect
+**Discovered**: 2026-02-22
 **Affects**: `--gemini` install (default and `--profile commands`)
 **Task**: T-092
 
-Gemini CLI commands are `.toml` files. The installer has no SKILL.md → TOML transform. `install.sh --gemini` skips commands install with a warning; `--check` shows `TBD` for the gemini commands row.
+Gemini CLI commands are `.toml` files. The installer's SKILL.md → TOML transform uses an incorrect schema (wraps fields in a `[command]` table) and fails to properly escape backslashes in the body, leading to `tomllib.TOMLDecodeError` on load.
 
 Implementation details and AC in T-092.
 

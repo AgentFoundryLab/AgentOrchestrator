@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
 **Version**: 0.2.0
-**Updated**: 2026-02-22 (91/91 v0 tasks done; 3 gap tasks pending)
+**Updated**: 2026-02-22 (90/91 v0 tasks done; 4 gap tasks pending)
 **Scope**: v0 Milestone
 
 ---
@@ -101,7 +101,7 @@
 | T-089 | v0 | Installer Extension | Validation & CI | Add restore/cleanup regression tests for namespaced installs | v0.2.0 | P1 | ✅ |
 | T-090 | v0 | Installer Extension | Validation & CI | Add idempotency tests for repeated installs with mixed runtime subsets | v0.2.0 | P1 | ✅ |
 | T-091 | v0 | Installer Extension | Validation & CI | Add CI guardrail for runtime/path drift | v0.2.0 | P0 | ✅ |
-| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | G-002 | P1 | ✅ |
+| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | G-002 | P1 | 🔄 |
 | T-093 | v0 | Installer Extension | OpenCode Hooks | Implement OpenCode hook adapter (SH → JS/TS plugin wrapper) | G-001 | P2 | 🔲 |
 | T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | G-003 | P1 | 🔲 |
 | T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | G-003 | P2 | 🔲 |
@@ -983,13 +983,15 @@
 
 ### T-092: Implement SKILL.md → Gemini TOML command transform
 **Scope**: Format conversion only (MD → TOML). Frontmatter key filtering is T-094's scope.
-**Blocks**: Gemini commands install being functional (currently skipped with warning)
+**Blocks**: Gemini commands install being functional (currently failing validation due to schema & escape issues)
 **AC**:
-- `install.sh --gemini` (or `--profile commands`) produces `.toml` files under `.gemini/commands/`
-- Each `.toml` is generated from `SKILL.md`: `name` and `description` from YAML frontmatter; body in `prompt` key as TOML multiline string; `$ARGUMENTS` converted to `{{args}}`
-- Unknown frontmatter keys are passed through as-is (key filtering handled by T-094 which runs first)
+- `install.sh --gemini` (or `--profile commands`) produces valid `.toml` files under `.gemini/commands/`
+- Each `.toml` is generated from `SKILL.md` with top-level fields (no `[command]` table)
+- `description` extracted from YAML frontmatter; body in `prompt` key as TOML multiline string; `$ARGUMENTS` converted to `{{args}}`
+- Backslashes in the body must be properly escaped (`\\`) to prevent TOML syntax errors in basic strings
+- `name` field is omitted from TOML (derived from filename by Gemini CLI)
 - `--check` gemini commands row status changes from `GAP` to `OK`
-- Conformance test T-088 verifies `.toml` files present after gemini install
+- Conformance test T-088 verifies `.toml` files present and syntactically valid after gemini install
 
 ---
 
