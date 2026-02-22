@@ -218,9 +218,10 @@ RUNTIME_SUPPORTS_SCRIPTS[qwen]="true"
 #                  e.g., skills/myorg.spec/ → /myorg.spec
 # "subdirectory" — namespace becomes path segments
 #                  e.g., commands/myorg/spec.toml → /myorg:spec
+# "disabled"     — namespace is ignored for this runtime (flat install only)
 declare -A RUNTIME_NAMESPACE_MODE
 RUNTIME_NAMESPACE_MODE[claude]="dot-prefix"
-RUNTIME_NAMESPACE_MODE[codex]="dot-prefix"
+RUNTIME_NAMESPACE_MODE[codex]="disabled"
 RUNTIME_NAMESPACE_MODE[gemini]="subdirectory"
 RUNTIME_NAMESPACE_MODE[opencode]="subdirectory"
 RUNTIME_NAMESPACE_MODE[qwen]="dot-prefix"
@@ -303,8 +304,8 @@ register_runtime_defaults() {
     # Validate namespace mode values
     for rt in "${RUNTIMES[@]}"; do
         local ns_mode="${RUNTIME_NAMESPACE_MODE[${rt}]:-}"
-        if [[ "$ns_mode" != "dot-prefix" && "$ns_mode" != "subdirectory" ]]; then
-            echo "[ERROR] runtimes.sh: RUNTIME_NAMESPACE_MODE[${rt}] must be 'dot-prefix' or 'subdirectory', got: '${ns_mode}'" >&2
+        if [[ "$ns_mode" != "dot-prefix" && "$ns_mode" != "subdirectory" && "$ns_mode" != "disabled" ]]; then
+            echo "[ERROR] runtimes.sh: RUNTIME_NAMESPACE_MODE[${rt}] must be 'dot-prefix', 'subdirectory', or 'disabled', got: '${ns_mode}'" >&2
             ((++errors))
         fi
     done

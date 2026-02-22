@@ -111,8 +111,8 @@ What gets installed per runtime (default skills profile):
     - templates/           PRD, architecture, ADR, roadmap, backlog, issues
 
   codex  (~/.agents/, .agents/):
-    - agents/<ns>/         Agent definitions
-    - skills/<ns>.<skill>/ Namespaced skills (dot-prefix) [default profile]
+    - agents/              Agent definitions (flat path)
+    - skills/<skill>/      Skills (flat path) [default profile]
     - commands/            Commands in .md (strip frontmatter) [--profile commands only]
     - [no hooks — not supported by Codex CLI]
 
@@ -143,8 +143,10 @@ What gets installed per runtime (default skills profile):
 Profile defaults per runtime:
     Runtimes with skills support (claude, codex, opencode, qwen):
         Default profile: skills
-        Skills are installed to <runtime>/skills/<ns>.<skill>/ (dot-prefix runtimes)
-        or <runtime>/skills/<ns>/<skill>/ (subdirectory runtimes, e.g. opencode)
+        Skills are installed to:
+          - Claude/Qwen: <runtime>/skills/<ns>.<skill>/ (dot-prefix)
+          - OpenCode: <runtime>/skills/<ns>/<skill>/ (subdirectory)
+          - Codex: <runtime>/skills/<skill>/
         Hooks are also installed when the runtime supports them (claude, opencode).
     Runtimes without skills support (gemini):
         Default profile: commands
@@ -209,6 +211,22 @@ validate_namespace() {
     IFS="$old_ifs"
 
     return 0
+}
+
+# Resolve effective namespace for a runtime.
+# Some runtimes intentionally ignore namespace and always install flat paths.
+effective_namespace_for_runtime() {
+    local rt="$1"
+    local ns="${2:-$NAMESPACE}"
+
+    [ -z "$ns" ] && { echo ""; return 0; }
+
+    local ns_mode="${RUNTIME_NAMESPACE_MODE[${rt}]:-dot-prefix}"
+    if [[ "$ns_mode" == "disabled" ]]; then
+        echo ""
+    else
+        echo "$ns"
+    fi
 }
 
 # Log functions
@@ -382,7 +400,7 @@ copy_directory() {
 # ---------------------------------------------------------------------------
 
 # Install skills with dot-prefix namespace: skills/<ns>.<skill>/ + patch name: field
-# Used by dot-prefix runtimes (claude, codex, qwen).
+# Used by dot-prefix runtimes (claude, qwen).
 copy_namespaced_skills_dot_prefix() {
     local source_dir="$1"
     local target_parent="$2"
@@ -533,13 +551,30 @@ restore_or_remove_installed_file() {
     local source_file="$1"
     local target_file="$2"
     local backup_file="$3"
+    local component="${4:-}"
+    local rt="${5:-claude}"
 
     if restore_file_from_backup "$backup_file" "$target_file"; then
         return
     fi
 
     if [ -f "$target_file" ]; then
+        local matches=false
+
         if [ -f "$source_file" ] && diff -q "$source_file" "$target_file" > /dev/null 2>&1; then
+            matches=true
+        elif [[ "$component" == "skills" && "$rt" != "claude" && "$(basename "$source_file")" == "SKILL.md" ]]; then
+            local tmp_source
+            tmp_source="$(mktemp)"
+            cp "$source_file" "$tmp_source"
+            strip_claude_frontmatter "$tmp_source"
+            if diff -q "$tmp_source" "$target_file" > /dev/null 2>&1; then
+                matches=true
+            fi
+            rm -f "$tmp_source"
+        fi
+
+        if [ "$matches" = true ]; then
             rm -f "$target_file"
             log_success "Removed installed file: $target_file"
             ((++CREATED))
@@ -557,6 +592,7 @@ restore_or_remove_installed_tree() {
     local target_dir="$2"
     local backup_dir="$3"
     local backup_prefix="$4"
+    local rt="${5:-claude}"
 
     [ -d "$source_dir" ] || return 0
     [ -d "$target_dir" ] || return 0
@@ -568,7 +604,7 @@ restore_or_remove_installed_tree() {
         if [ -n "$backup_dir" ]; then
             backup_file="${backup_dir}/${backup_prefix}/${rel_path}"
         fi
-        restore_or_remove_installed_file "$source_file" "$target_file" "$backup_file"
+        restore_or_remove_installed_file "$source_file" "$target_file" "$backup_file" "$backup_prefix" "$rt"
     done
 
     # Prune empty directories under the managed tree.
@@ -987,13 +1023,15 @@ install_runtime_global() {
             eff_profile="commands"
         fi
     fi
+    local rt_namespace
+    rt_namespace="$(effective_namespace_for_runtime "$rt")"
 
     # Skills: install when profile is skills or all
     if [[ "$eff_profile" == "skills" || "$eff_profile" == "all" ]]; then
         if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
             local skills_target="${target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-            if [ -n "$NAMESPACE" ]; then
-                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE" "$backup_dir" "$rt"
+            if [ -n "$rt_namespace" ]; then
+                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$backup_dir" "$rt"
             else
                 copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
                 # T-094: strip Claude-specific frontmatter for non-Claude runtimes (flat copy)
@@ -1014,7 +1052,7 @@ install_runtime_global() {
     # Agents: only if runtime has agents path (not gated by profile)
     if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
         local ns_path=""
-        [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+        [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
         local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
         copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
     fi
@@ -1063,15 +1101,23 @@ install_runtime_project() {
             eff_profile="commands"
         fi
     fi
+    local rt_namespace
+    rt_namespace="$(effective_namespace_for_runtime "$rt")"
 
     # Skills: install when profile is skills or all
     if [[ "$eff_profile" == "skills" || "$eff_profile" == "all" ]]; then
         if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
             local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-            if [ -n "$NAMESPACE" ]; then
-                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE" "$backup_dir"
+            if [ -n "$rt_namespace" ]; then
+                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$backup_dir" "$rt"
             else
                 copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
+                # T-094: strip Claude-specific frontmatter for non-Claude runtimes (flat copy)
+                if [[ "$rt" != "claude" ]]; then
+                    for skill_md in "$skills_target"/*/SKILL.md; do
+                        strip_claude_frontmatter "$skill_md"
+                    done
+                fi
             fi
         fi
     fi
@@ -1084,7 +1130,7 @@ install_runtime_project() {
     # Agents: only if runtime has agents path (not gated by profile)
     if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
         local ns_path=""
-        [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+        [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
         local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
         copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
     fi
@@ -1109,23 +1155,25 @@ restore_runtime_global() {
     local rt="$1"
     local backup_dir="$2"
     local target="${RUNTIME_CONF_DIR[${rt}]}"
+    local rt_namespace
+    rt_namespace="$(effective_namespace_for_runtime "$rt")"
 
     # Skills
     if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
         local skills_target="${target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-        if [ -n "$NAMESPACE" ]; then
-            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE"
+        if [ -n "$rt_namespace" ]; then
+            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$rt"
         else
-            restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir" "skills"
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir" "skills" "$rt"
         fi
     fi
 
     # Agents
     if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
         local ns_path=""
-        [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+        [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
         local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-        restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents"
+        restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents" "$rt"
     fi
 
     # Hooks
@@ -1145,23 +1193,25 @@ restore_runtime_project() {
     local target="$2"
     local backup_dir="$3"
     local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
+    local rt_namespace
+    rt_namespace="$(effective_namespace_for_runtime "$rt")"
 
     # Skills
     if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
         local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-        if [ -n "$NAMESPACE" ]; then
-            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE"
+        if [ -n "$rt_namespace" ]; then
+            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$rt"
         else
-            restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir" "skills"
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir" "skills" "$rt"
         fi
     fi
 
     # Agents
     if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
         local ns_path=""
-        [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+        [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
         local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-        restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents"
+        restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents" "$rt"
     fi
 
     # Hooks
@@ -1190,10 +1240,8 @@ get_active_runtimes() {
 install_global() {
     local claude_target="${RUNTIME_CONF_DIR[claude]}"
     log_info "Installing global components"
-    local ns_path=""
     if [ -n "$NAMESPACE" ]; then
-        ns_path="/${NAMESPACE}"
-        log_info "Using namespace: agents → agents/${NAMESPACE}/, skills → skills/${NAMESPACE}.<skill>/"
+        log_info "Using namespace '${NAMESPACE}' where supported by runtime"
     else
         log_info "Using flat paths (no namespace prefix)"
     fi
@@ -1269,7 +1317,7 @@ install_project() {
 
     log_info "Installing project scaffolding to $target"
     if [ -n "$NAMESPACE" ]; then
-        log_info "Using namespace: agents → agents/${NAMESPACE}/, skills → skills/${NAMESPACE}.<skill>/"
+        log_info "Using namespace '${NAMESPACE}' where supported by runtime"
     else
         log_info "Using flat paths (no namespace prefix)"
     fi
@@ -1563,7 +1611,7 @@ restore_global() {
     local claude_target="${RUNTIME_CONF_DIR[claude]}"
     log_info "Restoring global installation"
     if [ -n "$NAMESPACE" ]; then
-        log_info "Restoring namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
+        log_info "Restoring namespace '${NAMESPACE}' where supported by runtime"
     else
         log_info "Restoring flat paths"
     fi
@@ -1652,7 +1700,7 @@ restore_project() {
 
     log_info "Restoring project installation from $target"
     if [ -n "$NAMESPACE" ]; then
-        log_info "Restoring namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
+        log_info "Restoring namespace '${NAMESPACE}' where supported by runtime"
     else
         log_info "Restoring flat paths"
     fi
@@ -1737,7 +1785,7 @@ cleanup_global() {
     local claude_target="${RUNTIME_CONF_DIR[claude]}"
     log_info "Cleaning up global installation"
     if [ -n "$NAMESPACE" ]; then
-        log_info "Cleaning namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
+        log_info "Cleaning namespace '${NAMESPACE}' where supported by runtime"
     else
         log_info "Cleaning flat paths"
     fi
@@ -1747,23 +1795,25 @@ cleanup_global() {
     read -ra active_runtimes <<< "$(get_active_runtimes)"
     for rt in "${active_runtimes[@]}"; do
         local rt_target="${RUNTIME_CONF_DIR[${rt}]}"
+        local rt_namespace
+        rt_namespace="$(effective_namespace_for_runtime "$rt")"
 
         # Skills
         if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
             local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-            if [ -n "$NAMESPACE" ]; then
-                restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE"
+            if [ -n "$rt_namespace" ]; then
+                restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$rt"
             else
-                restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "" "skills"
+                restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "" "skills" "$rt"
             fi
         fi
 
         # Agents
         if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
             local ns_path=""
-            [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+            [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
             local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "" "agents"
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "" "agents" "$rt"
         fi
 
         # Hooks
@@ -1836,7 +1886,7 @@ cleanup_project() {
 
     log_info "Cleaning up project installation from $target"
     if [ -n "$NAMESPACE" ]; then
-        log_info "Cleaning namespace: agents/${NAMESPACE}/, skills/${NAMESPACE}.<skill>/"
+        log_info "Cleaning namespace '${NAMESPACE}' where supported by runtime"
     else
         log_info "Cleaning flat paths"
     fi
@@ -1865,23 +1915,25 @@ cleanup_project() {
     read -ra active_runtimes <<< "$(get_active_runtimes)"
     for rt in "${active_runtimes[@]}"; do
         local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
+        local rt_namespace
+        rt_namespace="$(effective_namespace_for_runtime "$rt")"
 
         # Skills
         if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
             local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-            if [ -n "$NAMESPACE" ]; then
-                restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$NAMESPACE"
+            if [ -n "$rt_namespace" ]; then
+                restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$rt"
             else
-                restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "" "skills"
+                restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "" "skills" "$rt"
             fi
         fi
 
         # Agents
         if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
             local ns_path=""
-            [ -n "$NAMESPACE" ] && ns_path="/${NAMESPACE}"
+            [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
             local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "" "agents"
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "" "agents" "$rt"
         fi
 
         # Hooks

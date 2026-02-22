@@ -75,8 +75,8 @@ AgentOrchestrator transforms Claude Code from a single-turn assistant into an or
 
 | Artifact          | claude (`~/.claude/`) | codex (`~/.agents/`)  | gemini (`~/.gemini/`) | opencode (`~/.config/opencode/`) | qwen (`~/.qwen/`) |
 |-------------------|-----------------------|-----------------------|-----------------------|----------------------------------|-------------------|
-| agents/           | Yes                   | Yes                   | No                    | Yes                              | Yes               |
-| skills/           | Yes (default)         | Yes (default)         | No                    | Yes (default)                    | Yes (default)     |
+| agents/           | Yes                   | Yes (flat-only)       | No                    | Yes                              | Yes               |
+| skills/           | Yes (default)         | Yes (default, flat-only) | No                 | Yes (default)                    | Yes (default)     |
 | commands/         | Yes (compat)          | Yes (compat)          | Yes (default)         | Yes (default)                    | Yes (default)     |
 | hooks/            | Yes                   | No                    | No                    | Yes (plugins/)                   | No                |
 | settings.json     | Yes                   | No                    | No                    | No                               | No                |

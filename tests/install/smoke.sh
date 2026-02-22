@@ -265,6 +265,62 @@ test_cleanup_namespace() {
 }
 run_test "cleanup-namespace-myorg-skills-removed" test_cleanup_namespace
 
+# Codex: namespace flag is ignored; install remains flat and does not create namespaced dirs
+test_codex_namespace_ignored_flat_install() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.agents/skills" || ok=1
+    assert_dir_exists "${tmp}/.agents/agents" || ok=1
+    local ns_skill_count flat_skill_count
+    ns_skill_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg.*" -type d 2>/dev/null | wc -l)
+    flat_skill_count=$(find "${tmp}/.agents/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    [ "$ns_skill_count" -eq 0 ] || ok=1
+    [ "$flat_skill_count" -gt 0 ] || ok=1
+    if [ -d "${tmp}/.agents/agents/myorg" ]; then
+        echo "  [assert] unexpected codex namespace dir exists: ${tmp}/.agents/agents/myorg" >&2
+        ok=1
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "codex-namespace-ignored-flat-install" test_codex_namespace_ignored_flat_install
+
+# Codex: restore with namespace still targets flat install paths
+test_codex_restore_namespace_targets_flat() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg >/dev/null 2>&1
+    local before_count
+    before_count=$(find "${tmp}/.agents/skills" -type f 2>/dev/null | wc -l)
+    [ "$before_count" -gt 0 ] || { echo "  [setup] no codex skill files installed" >&2; rm -rf "$tmp"; return 1; }
+
+    HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg --restore >/dev/null 2>&1
+    local after_count
+    after_count=$(find "${tmp}/.agents/skills" -type f 2>/dev/null | wc -l)
+    rm -rf "$tmp"
+    [ "$after_count" -eq 0 ]
+}
+run_test "codex-restore-with-namespace-removes-flat-skills" test_codex_restore_namespace_targets_flat
+
+# Codex: cleanup with namespace still targets flat install paths
+test_codex_cleanup_namespace_targets_flat() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg >/dev/null 2>&1
+    local before_count
+    before_count=$(find "${tmp}/.agents/skills" -type f 2>/dev/null | wc -l)
+    [ "$before_count" -gt 0 ] || { echo "  [setup] no codex skill files installed" >&2; rm -rf "$tmp"; return 1; }
+
+    HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg --cleanup >/dev/null 2>&1
+    local after_count
+    after_count=$(find "${tmp}/.agents/skills" -type f 2>/dev/null | wc -l)
+    rm -rf "$tmp"
+    [ "$after_count" -eq 0 ]
+}
+run_test "codex-cleanup-with-namespace-removes-flat-skills" test_codex_cleanup_namespace_targets_flat
+
 # Flat install then restore — flat skills removed
 test_restore_flat() {
     local tmp
