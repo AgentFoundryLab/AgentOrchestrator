@@ -240,7 +240,7 @@ Skill instructions with:
 - Arguments: $ARGUMENTS (or appended as "ARGUMENTS: <value>")
 - Session ID: ${CLAUDE_SESSION_ID}
 - Dynamic context: !`shell command here`
-- File references: see [reference.md](reference.md)
+- File references: see `reference.md`
 ```
 
 #### Skill Directory Structure

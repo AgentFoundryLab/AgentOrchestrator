@@ -169,7 +169,7 @@
 ## Related Documents
 
 - [VISION.md](../objectives/VISION.md) - Why and for whom
-- [PRD.md](PRD.md) - Detailed requirements and user stories
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Technical specification
+- [PRD.md](../architecture/PRD.md) - Detailed requirements and user stories
+- [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Technical specification
 - [ROADMAP.md](../objectives/ROADMAP.md) - Milestones, phases, epics
-- [ADRs](adr/) - Architecture decision records
+- [ADRs](../architecture/adr/) - Architecture decision records

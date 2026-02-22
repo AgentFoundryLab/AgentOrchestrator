@@ -7,7 +7,7 @@
 | G-001 | OpenCode hooks incompatibility: Claude SH hooks ≠ OpenCode JS/TS plugin system | P2 | 🔲 Open | T-093 |
 | G-002 | Gemini TOML command transform invalid schema and syntax errors | P1 | 🔲 Open | T-092 |
 | G-003 | No per-runtime frontmatter schema validation or transform in skills/commands install | P1 | 🔲 Open | T-094 |
-| I-001 | Namespace mode drift: installer runtime namespace mapping not aligned with ADR-014 D-2 | P1 | 🔲 Open | T-096 |
+| I-001 | ADR-014 D-2 drift: runtime namespace mapping and architecture install model not aligned with accepted decision | P1 | 🔲 Open | T-096 |
 | I-002 | Gemini capability drift: installer still enforces commands-only despite validated skills/hooks support in docs research | P1 | 🔲 Open | T-097 |
 | I-003 | Legacy compatibility/workaround bloat in installer UX and docs (stale migration text, compat-first wording, fallback markers) | P2 | 🔲 Open | T-098 |
 
@@ -58,16 +58,18 @@ Implementation details and AC in T-094.
 
 ---
 
-## I-001: Namespace mode drift vs ADR-014 D-2
+## I-001: ADR-014 D-2 drift (runtime mapping + architecture model)
 
 **Type**: Defect
 **Discovered**: 2026-02-22
-**Affects**: Namespace handling in installer runtime registry and namespace-aware skill copy/restore behavior
+**Affects**: Namespace handling in installer runtime registry, namespace-aware skill copy/restore behavior, and `docs/architecture/ARCHITECTURE.md` install model
 **Task**: T-096
 
 ADR-014 D-2 defines runtime-native namespace behavior with flat mode as default for all runtimes, and optional `--namespace` applied only where the selected runtime/profile supports namespace semantics.
 
 Current installer runtime registry still has legacy namespace modes that can synthesize namespaced skill identifiers for runtimes/artifacts that should remain flat under ADR-014 D-2.
+
+`ARCHITECTURE.md` installation targets still model Claude-only paths and namespace behavior, while ADR-014 defines a multi-runtime capability baseline (Claude/Codex/Gemini/OpenCode/Qwen).
 
 Implementation details and AC in T-096.
 

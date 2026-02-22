@@ -164,7 +164,7 @@ Three skill additions addressing governance bootstrapping, pre-implementation re
 Runtime expansion and namespace standardization for install/restore/cleanup workflows.
 
 Policy details are maintained in:
-- `reports/research/2026-02-19-multi-agent-install-plan.md` (Final Capability Policy + Installer Default Policy + canonical mappings)
+- `reports/research/2026-02-22-agent-capability-report.md` (Final capability policy, schema summary, and canonical mappings)
 
 #### Epic: Runtime Matrix & Canonical Paths
 **Depends on**: v0.1.0 complete
@@ -173,7 +173,7 @@ Policy details are maintained in:
 - [x] Add installer targets for `--opencode` and `--qwen` (alongside existing runtime flags)
 - [x] Codify Claude paths (`.claude/skills` canonical, `.claude/commands` compatibility)
 - [x] Codify Codex paths (`.agents/skills` canonical, `.codex/prompts` compatibility commands)
-- [x] Codify Gemini paths (`.gemini/commands` only, no skills/hooks)
+- [ ] Codify Gemini paths (`.gemini/commands` only, no skills/hooks; I-002 / T-097 open)
 - [x] Codify OpenCode paths (`.opencode/commands`, `.opencode/skills`, plugin hooks)
 - [x] Codify Qwen paths (`.qwen/commands`, `.qwen/skills`, no hooks)
 - [x] Add runtime path drift checks (installer map vs package layout)
@@ -195,7 +195,7 @@ Policy details are maintained in:
 - [x] Add `commands` compatibility profile selectable by flag
 - [x] Implement Claude profile (`commands+skills+hooks+scripts`)
 - [x] Implement Codex profile (`commands+skills+scripts`, no hooks)
-- [x] Implement Gemini profile (`commands+scripts` only)
+- [ ] Implement Gemini profile (`commands+scripts` only; T-097 open)
 - [x] Implement OpenCode profile (`commands+skills+hooks+scripts`)
 - [x] Implement Qwen profile (`commands+skills+scripts`, no hooks)
 - [x] Emit explicit warnings when user requests unsupported capabilities for selected runtime
@@ -220,7 +220,7 @@ Policy details are maintained in:
 - [x] Add idempotency tests for repeated installs with mixed runtime subsets
 - [x] Add CI guardrail to fail on runtime/path drift
 
-**→ TAG: v0.2.0 ✅**
+**→ TAG: v0.2.0 🔄 In progress**
 
 ---
 
@@ -228,7 +228,7 @@ Policy details are maintained in:
 
 **Goal**: Full Orchestrator vision with observability, execution engine, and advanced workflows.
 
-**Prerequisite**: v0.2.0 complete
+**Prerequisite**: v0.2.0 in progress
 
 ---
 
@@ -236,7 +236,7 @@ Policy details are maintained in:
 
 Strands Framework integration with A2A protocol foundation.
 
-**Prerequisite**: v0.2.0 complete
+**Prerequisite**: v0.2.0 in progress
 
 ### Epic: Setup
 **Depends on**: v0 complete
@@ -459,7 +459,7 @@ v1 Milestone
 |-----------|-------|-------|-------|--------|
 | v0 | Initial | 10 | 40 | ✅ Complete |
 | v0 | Validation | 1 | 3 | ✅ Complete |
-| v0 | Installer Extension (v0.2.0) | 5 | 34 | ✅ Complete |
+| v0 | Installer Extension (v0.2.0) | 5 | 34 | 🔄 In progress |
 | v0 | Governance & Quality (v0.1.1) | 1 | 7 | ✅ Complete |
 | v1 | POC | 3 | 8 | 🔲 Not started |
 | v1 | MVP | 3 | 9 | 🔲 Not started |

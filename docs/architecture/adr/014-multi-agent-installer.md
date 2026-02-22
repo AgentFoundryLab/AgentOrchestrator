@@ -242,5 +242,4 @@ Keep all path definitions as local variables or constants inside `install.sh` fu
 - [ADR-008](008-multi-provider-integration-strategy.md) — Multi-provider integration strategy (runtime capability matrix context)
 - [ADR-013](013-extended-skills.md) — Extended skills (governance skills whose install behavior is governed by this ADR)
 - `docs/knowledge/decisions/flat-skill-paths.md` — Flat vs dot-prefix skill paths decision record (D-2 builds on this)
-- `reports/research/2026-02-19-multi-agent-install-plan.md` — Canonical install mapping matrix (maintained summary)
-- `reports/research/2026-02-22-agent-capability-schema-deep-research.md` — Detailed capability + schema deep research (official docs + Context7 + DeepWiki)
+- `reports/research/2026-02-22-agent-capability-report.md` — Consolidated capability matrix + schema deep research (official docs + Context7 + DeepWiki)

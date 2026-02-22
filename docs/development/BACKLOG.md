@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
 **Version**: 0.2.0
-**Updated**: 2026-02-22 (90/91 v0 tasks done; 7 gap tasks pending)
+**Updated**: 2026-02-22 (89/98 v0 tasks done; 3 in progress; 6 pending)
 **Scope**: v0 Milestone
 
 ---
@@ -71,7 +71,7 @@
 | T-059 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add installer targets for --opencode and --qwen | v0.2.0 | P0 | ✅ |
 | T-060 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Claude paths | v0.2.0 | P0 | ✅ |
 | T-061 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Codex paths | v0.2.0 | P0 | ✅ |
-| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths | v0.2.0 | P0 | ✅ |
+| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths | v0.2.0 | P0 | 🔄 |
 | T-063 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify OpenCode paths | v0.2.0 | P0 | ✅ |
 | T-064 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Qwen paths | v0.2.0 | P0 | ✅ |
 | T-065 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add runtime path drift checks | v0.2.0 | P1 | ✅ |
@@ -85,7 +85,7 @@
 | T-073 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Add commands compatibility profile selectable by flag | v0.2.0 | P1 | ✅ |
 | T-074 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Claude profile (commands+skills+hooks+scripts) | v0.2.0 | P0 | ✅ |
 | T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
-| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | v0.2.0 | P0 | ✅ |
+| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | v0.2.0 | P0 | 🔄 |
 | T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+hooks+scripts) | v0.2.0 | P0 | ✅ |
 | T-078 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Qwen profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
 | T-079 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Emit warnings for unsupported capabilities per runtime | v0.2.0 | P1 | ✅ |
