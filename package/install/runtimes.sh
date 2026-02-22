@@ -229,7 +229,7 @@ RUNTIME_NAMESPACE_MODE[qwen]="dot-prefix"
 declare -A RUNTIME_DOC_FORMAT
 RUNTIME_DOC_FORMAT[claude]="markdown"
 RUNTIME_DOC_FORMAT[codex]="markdown"    # PARTIAL G-003: Claude-specific frontmatter keys stripped (T-094); full key map pending T-095
-RUNTIME_DOC_FORMAT[gemini]="toml"       # GAP G-002: TOML transform not implemented (T-092); PARTIAL G-003 (T-094/T-095)
+RUNTIME_DOC_FORMAT[gemini]="toml"       # T-092 implemented; PARTIAL G-003 (T-094/T-095)
 RUNTIME_DOC_FORMAT[opencode]="markdown" # PARTIAL G-003: Claude-specific frontmatter keys stripped (T-094); full key map pending T-095
 RUNTIME_DOC_FORMAT[qwen]="markdown"    # PARTIAL G-003: Claude-specific frontmatter keys stripped (T-094); full key map pending T-095
 

@@ -101,7 +101,7 @@
 | T-089 | v0 | Installer Extension | Validation & CI | Add restore/cleanup regression tests for namespaced installs | v0.2.0 | P1 | ✅ |
 | T-090 | v0 | Installer Extension | Validation & CI | Add idempotency tests for repeated installs with mixed runtime subsets | v0.2.0 | P1 | ✅ |
 | T-091 | v0 | Installer Extension | Validation & CI | Add CI guardrail for runtime/path drift | v0.2.0 | P0 | ✅ |
-| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | G-002 | P1 | 🔲 |
+| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | G-002 | P1 | ✅ |
 | T-093 | v0 | Installer Extension | OpenCode Hooks | Implement OpenCode hook adapter (SH → JS/TS plugin wrapper) | G-001 | P2 | 🔲 |
 | T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | G-003 | P1 | 🔲 |
 | T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | G-003 | P2 | 🔲 |

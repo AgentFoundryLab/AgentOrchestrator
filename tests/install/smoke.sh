@@ -133,7 +133,7 @@ test_conformance_codex() {
 }
 run_test "conformance-codex-skills-present-hooks-absent" test_conformance_codex
 
-# Gemini: no skills dir, no hooks dir
+# Gemini: no skills dir, no hooks dir; .toml commands present (T-092)
 test_conformance_gemini() {
     local tmp
     tmp=$(mktemp -d)
@@ -141,10 +141,19 @@ test_conformance_gemini() {
     local ok=0
     assert_dir_absent "${tmp}/.gemini/skills" || ok=1
     assert_dir_absent "${tmp}/.gemini/hooks" || ok=1
+    # T-092: TOML command files must be present
+    assert_dir_exists "${tmp}/.gemini/commands" || ok=1
+    assert_no_file_matching "${tmp}/.gemini/commands" "*.md" || ok=1
+    local toml_count
+    toml_count=$(find "${tmp}/.gemini/commands" -name "*.toml" 2>/dev/null | wc -l)
+    if [ "$toml_count" -eq 0 ]; then
+        echo "  [assert] expected .toml files in ${tmp}/.gemini/commands" >&2
+        ok=1
+    fi
     rm -rf "$tmp"
     return $ok
 }
-run_test "conformance-gemini-no-skills-no-hooks" test_conformance_gemini
+run_test "conformance-gemini-no-skills-no-hooks-toml-present" test_conformance_gemini
 
 # OpenCode: skills present; agents present; plugins absent (G-001: SH hooks incompatible with JS/TS plugin system)
 test_conformance_opencode() {

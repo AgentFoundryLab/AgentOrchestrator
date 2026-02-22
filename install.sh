@@ -676,9 +676,7 @@ check_drift() {
             if [[ "${RUNTIME_SUPPORTS_COMMANDS[${rt}]:-false}" == "true" ]]; then
                 local cmd_conf_dir="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-${conf_dir}}"
                 local cmd_path="${RUNTIME_COMMANDS_PATH[${rt}]:-commands}"
-                local cmd_gap=""
                 local cmd_override=""
-                [[ "$rt" == "gemini" ]] && cmd_override="GAP"  # G-002: TOML transform not implemented (T-092)
                 _drift_row "$rt" "$cmd_type" "commands" "$skills_src" "${cmd_conf_dir}/${cmd_path}/" "$skills_src" "$cmd_override"
                 # G-003: minimal MD schema applied; full per-runtime key map pending T-095
                 [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(minimal schema)" "${cmd_conf_dir}/${cmd_path}/" "" "PARTIAL"
@@ -692,11 +690,11 @@ check_drift() {
                 [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(minimal schema)" "$skills_target" "" "PARTIAL"
             fi
 
-            # GAP G-002: Gemini commands TOML transform not implemented
+            # T-092: Gemini commands TOML transform — show status row in skills profile view
             if [[ "$rt" == "gemini" ]]; then
                 local cmd_conf_dir="${RUNTIME_COMMANDS_CONF_OVERRIDE[gemini]:-${conf_dir}}"
                 local cmd_path="${RUNTIME_COMMANDS_PATH[gemini]:-commands}"
-                _drift_row "gemini" "TOML" "commands" "$skills_src" "${cmd_conf_dir}/${cmd_path}/" "$skills_src" "GAP"  # G-002: TOML transform not implemented (T-092)
+                _drift_row "gemini" "TOML" "commands" "$skills_src" "${cmd_conf_dir}/${cmd_path}/" "$skills_src"
             fi
 
             if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]]; then
@@ -778,12 +776,69 @@ strip_frontmatter() {
 # --------|--------------------------------------|-------------------------------
 # claude  | .claude/commands/<skill>.md          | Copied as-is (YAML frontmatter preserved)
 # codex   | ~/.codex/prompts/<skill>.md          | YAML frontmatter block stripped; body only
-# gemini  | .gemini/commands/<skill>.toml        | TOML transform NOT YET IMPLEMENTED; warn + skip
+# gemini  | .gemini/commands/<skill>.toml        | TOML transform: name+description from frontmatter,
+#         |                                      |   body in prompt key as multiline string,
+#         |                                      |   $ARGUMENTS converted to {{args}} (T-092)
 # opencode| .opencode/commands/<skill>.md        | Copied as-is (YAML frontmatter preserved)
 # qwen    | .qwen/commands/<skill>.md            | Copied as-is (YAML frontmatter preserved)
-#
-# The gemini TOML transform is deferred; a warning is emitted and the skill is skipped.
 # ---------------------------------------------------------------------------
+
+# skill_to_gemini_toml — T-092: Transform a SKILL.md file into a Gemini TOML command file.
+# Writes the result to stdout.
+# Transform rules:
+#   - name: extracted from frontmatter `name:` field
+#   - description: extracted from frontmatter `description:` field
+#   - body: everything after the closing --- of frontmatter, with $ARGUMENTS -> {{args}}
+#   - unknown frontmatter keys are NOT included in the TOML (T-092 scope: format only)
+# Output format (Gemini TOML command schema):
+#   [command]
+#   name = "<skill-name>"
+#   description = "<description>"
+#   prompt = """
+#   <body content>
+#   """
+# Determinism: same input always produces same output.
+skill_to_gemini_toml() {
+    local src="$1"
+    [ -f "$src" ] || return 1
+
+    # Extract frontmatter fields using awk: parse only the first ---...--- block
+    local fm_name fm_description
+    fm_name=$(awk '
+        /^---$/ { block++; next }
+        block == 1 && /^name:/ {
+            sub(/^name:[[:space:]]*/, ""); print; exit
+        }
+        block >= 2 { exit }
+    ' "$src")
+    fm_description=$(awk '
+        /^---$/ { block++; next }
+        block == 1 && /^description:/ {
+            sub(/^description:[[:space:]]*/, ""); print; exit
+        }
+        block >= 2 { exit }
+    ' "$src")
+
+    # Extract body: everything after the closing --- of the frontmatter block
+    # then substitute $ARGUMENTS -> {{args}}
+    local body
+    body=$(awk '
+        /^---$/ { block++; next }
+        block >= 2 { print }
+    ' "$src" | sed 's/\$ARGUMENTS/{{args}}/g')
+
+    # Trim leading blank lines from body
+    body=$(printf '%s' "$body" | sed '/./,$!d')
+
+    # Escape backslashes and double-quotes in name/description for TOML inline strings
+    local safe_name safe_description
+    safe_name=$(printf '%s' "$fm_name" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    safe_description=$(printf '%s' "$fm_description" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+    # Emit TOML
+    printf '[command]\nname = "%s"\ndescription = "%s"\nprompt = """\n%s\n"""\n' \
+        "$safe_name" "$safe_description" "$body"
+}
 
 # Install skills as commands (compatibility mode): copies each SKILL.md to the
 # runtime's commands directory, applying any needed transforms per runtime.
@@ -805,13 +860,6 @@ install_runtime_commands_compat() {
         return
     fi
 
-    case "$rt" in
-        gemini)
-            log_warning "gemini: TOML transform not yet implemented; skipping commands compat install"
-            return
-            ;;
-    esac
-
     mkdir -p "$commands_dir"
 
     for skill_dir in "${PACKAGE_DIR}/skills"/*/; do
@@ -821,11 +869,38 @@ install_runtime_commands_compat() {
         local skill_md="${skill_dir}/SKILL.md"
         [ -f "$skill_md" ] || continue
 
-        local target_file="${commands_dir}/${skill_name}.md"
-
         case "$rt" in
+            gemini)
+                # T-092: Transform SKILL.md → TOML command file
+                local target_file="${commands_dir}/${skill_name}.toml"
+                local tmp_file
+                tmp_file="$(mktemp)"
+                skill_to_gemini_toml "$skill_md" > "$tmp_file"
+                if [ -f "$target_file" ]; then
+                    if diff -q "$tmp_file" "$target_file" > /dev/null 2>&1; then
+                        log_info "Unchanged: $target_file"
+                        ((++UNCHANGED))
+                    elif [ "$OVERWRITE" = true ]; then
+                        local backup_file="${backup_dir}/commands-compat-${rt}/${skill_name}.toml"
+                        mkdir -p "$(dirname "$backup_file")"
+                        cp "$target_file" "$backup_file"
+                        cp "$tmp_file" "$target_file"
+                        log_success "Overwritten: $target_file"
+                        ((++BACKUPS))
+                        ((++CREATED))
+                    else
+                        log_warning "$target_file exists and differs; use --overwrite to replace"
+                    fi
+                else
+                    cp "$tmp_file" "$target_file"
+                    log_success "Created: $target_file"
+                    ((++CREATED))
+                fi
+                rm -f "$tmp_file"
+                ;;
             codex)
                 # Strip YAML frontmatter for Codex prompts
+                local target_file="${commands_dir}/${skill_name}.md"
                 local tmp_file
                 tmp_file="$(mktemp)"
                 strip_frontmatter "$skill_md" > "$tmp_file"
@@ -853,6 +928,7 @@ install_runtime_commands_compat() {
                 ;;
             *)
                 # claude, opencode, qwen: plain copy
+                local target_file="${commands_dir}/${skill_name}.md"
                 copy_markdown "$skill_md" "$target_file" "$backup_dir" "commands-compat-${rt}/${skill_name}.md"
                 ;;
         esac
@@ -1315,7 +1391,7 @@ print_summary() {
     fi
 
     echo "Next steps:"
-    echo "  1. Verify installation with 'ls ~/.claude/'"
+    echo "  1. Run your agent of choice"
     echo "  2. Test with '/orchestrate test project'"
     echo "  3. See README.md for usage guide"
 }
