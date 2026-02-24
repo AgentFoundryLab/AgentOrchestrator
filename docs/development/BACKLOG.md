@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
 **Version**: 0.2.0
-**Updated**: 2026-02-22 (89/98 v0 tasks done; 3 in progress; 6 pending)
+**Updated**: 2026-02-24 (89/97 v0 tasks done; 3 in progress; 5 pending)
 **Scope**: v0 Milestone
 
 ---
@@ -86,7 +86,7 @@
 | T-074 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Claude profile (commands+skills+hooks+scripts) | v0.2.0 | P0 | ✅ |
 | T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
 | T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | v0.2.0 | P0 | 🔄 |
-| T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+hooks+scripts) | v0.2.0 | P0 | ✅ |
+| T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
 | T-078 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Qwen profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
 | T-079 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Emit warnings for unsupported capabilities per runtime | v0.2.0 | P1 | ✅ |
 | T-080 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Runtime-aware idempotent policy-ref injection | v0.2.0 | P1 | ✅ |
@@ -102,11 +102,10 @@
 | T-090 | v0 | Installer Extension | Validation & CI | Add idempotency tests for repeated installs with mixed runtime subsets | v0.2.0 | P1 | ✅ |
 | T-091 | v0 | Installer Extension | Validation & CI | Add CI guardrail for runtime/path drift | v0.2.0 | P0 | ✅ |
 | T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | G-002 | P1 | 🔄 |
-| T-093 | v0 | Installer Extension | OpenCode Hooks | Implement OpenCode hook adapter (SH → JS/TS plugin wrapper) | G-001 | P2 | 🔲 |
 | T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | G-003 | P1 | 🔲 |
 | T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | G-003 | P2 | 🔲 |
 | T-096 | v0 | Installer Extension | Namespace Alignment | Align runtime namespace modes with ADR-014 D-2 | I-001 | P1 | 🔲 |
-| T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/hooks/subagents support model) | I-002 | P1 | 🔲 |
+| T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/subagents support model; hooks excluded by policy) | I-002 | P1 | 🔲 |
 | T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | I-003 | P2 | 🔲 |
 
 ---
@@ -734,8 +733,7 @@
 
 ### T-067: Define namespace grammar and validation
 **AC**:
-- Namespace grammar defined: one or more dot-separated segments, each segment matching `[a-z][a-z0-9-]*` (lowercase, alphanumeric, hyphen; no leading digit or hyphen)
-- Maximum namespace depth documented (e.g., 3 segments)
+- Namespace grammar defined: single dash-notation token matching `[a-z][a-z0-9-]*` (lowercase, alphanumeric, hyphen; no leading digit or hyphen)
 - A validation function in `install.sh` (or sourced helper) accepts a namespace string and returns 0 for valid, non-zero with error message for invalid
 - Empty namespace (omitting `--namespace`) is valid and activates flat/default mode for all runtimes
 - Grammar is treated as installer input only (not forced as runtime invocation identifier grammar)
@@ -746,8 +744,9 @@
 ### T-068: Map namespace input to runtime-native artifact paths
 **AC**:
 - Namespace translation is runtime-aware and artifact-aware (no universal identifier rewrite across all runtimes)
-- For runtimes/artifacts with path-based namespace support, namespace maps to directory segments from installer input
-- For runtimes/artifacts with flat skill/subagent naming, installer keeps generated skill/subagent identifiers flat even when `--namespace` is passed
+- For commands on runtimes/artifacts with native namespace support, namespace maps to runtime-native directory/identifier forms
+- For commands on runtimes without native command namespace support, installer applies dash fallback naming (`<namespace>-<command>`)
+- For skills/subagents on flat-naming runtimes, installer applies dash fallback naming when `--namespace` is passed (`<namespace>-<name>`)
 - Runtime-owned forms (example: `plugin:skill`) are preserved as runtime behavior, not synthesized from installer namespace input
 - Mapping logic is isolated and testable independently of install I/O
 
@@ -784,7 +783,7 @@
 
 ### T-072: Make skills the default profile when runtime supports skills
 **AC**:
-- For runtimes that support skills (`claude`, `codex`, `opencode`, `qwen`), default profile is `skills` (plus `hooks` and `scripts` where supported)
+- For runtimes that support skills (`claude`, `codex`, `opencode`, `qwen`), default profile is `skills` (plus `hooks` only where installer policy supports runtime hooks)
 - For runtimes that do not support skills (`gemini`), default profile falls back to `commands` (plus `scripts`)
 - Default profile selection is documented in `--help` and in the installer README
 - Running `install.sh --claude` with no `--profile` flag installs skills (not commands) by default
@@ -832,13 +831,13 @@
 
 ---
 
-### T-077: Implement OpenCode profile (commands+skills+hooks+scripts)
+### T-077: Implement OpenCode profile (commands+skills+scripts, no hooks)
 **AC**:
-- Default OpenCode install writes: skills to `.opencode/skills/`, commands to `.opencode/commands/`, plugin hooks to `.opencode/plugins/`, scripts within skill/plugin packages
-- Hook artifacts use the plugin event system format (not Claude-style settings JSON)
+- Default OpenCode install writes: skills to `.opencode/skills/`, commands to `.opencode/commands/`, scripts within skill packages
+- No hook artifacts are written for OpenCode under any profile (project policy decision for non-Claude hooks)
 - OpenCode cross-read compatibility (reads `.claude/skills` and `.agents/skills`) is documented but installer does not duplicate artifacts to those paths for OpenCode-only installs
 - Install summary lists each artifact type and target path
-- A smoke test enumerates all would-be writes and matches expected list
+- A smoke test enumerates all would-be writes and confirms absence of OpenCode hook artifacts
 
 ---
 
@@ -949,7 +948,7 @@
 - Claude conformance: skills + hooks + scripts artifacts present; commands artifacts absent (default profile)
 - Codex conformance: skills + scripts present; hooks absent
 - Gemini conformance: commands (TOML) present; skills + hooks absent
-- OpenCode conformance: skills + scripts present; hooks absent (until T-093 is implemented)
+- OpenCode conformance: skills + scripts present; hooks absent (policy)
 - Qwen conformance: skills + commands (MD) + scripts present; hooks absent
 - Conformance tests fail if installer produces an artifact outside the declared capability set
 
@@ -999,15 +998,6 @@
 
 ---
 
-### T-093: Implement OpenCode hook adapter (SH → JS/TS plugin wrapper)
-**AC**:
-- `install.sh --opencode` installs functional hook behavior to `.opencode/plugins/`
-- Each Claude SH hook script has a corresponding JS/TS plugin wrapper subscribing to the equivalent OpenCode plugin event and executing the SH script via `child_process.exec`
-- `RUNTIME_SUPPORTS_HOOKS[opencode]` set back to `true`; `RUNTIME_HOOKS_PATH[opencode]` set to `plugins`
-- `--check` shows opencode hooks row with status `OK`
-
----
-
 ### T-094: Strip Claude-specific frontmatter keys for non-Claude runtime installs
 **Milestone**: v0.2.0
 **See**: ADR-014 D-5 (minimal universal schema)
@@ -1046,8 +1036,9 @@
 
 ### T-097: Align Gemini capability flags + tests with validated docs baseline
 **AC**:
-- Runtime registry no longer hardcodes Gemini as commands-only when official docs indicate hooks/skills support
-- Installer behavior for Gemini capabilities (commands/skills/hooks/subagents) is explicitly modeled and validated against current docs
+- Runtime registry no longer hardcodes Gemini as commands-only when official docs indicate skills/subagents support
+- Installer behavior for Gemini capabilities (commands/skills/subagents) is explicitly modeled and validated against current docs
+- Hooks remain excluded by installer policy for non-Claude runtimes; this exclusion is explicitly documented and tested
 - Conformance tests are updated to assert the intended Gemini capability contract
 - `--check` output and runtime matrix documentation remain consistent with implemented Gemini behavior
 - If partial implementation remains, unsupported parts are surfaced as explicit open gaps in ISSUES (not silent fallback behavior)

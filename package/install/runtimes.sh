@@ -189,7 +189,7 @@ declare -A RUNTIME_SUPPORTS_HOOKS
 RUNTIME_SUPPORTS_HOOKS[claude]="true"
 RUNTIME_SUPPORTS_HOOKS[codex]="false"
 RUNTIME_SUPPORTS_HOOKS[gemini]="false"
-RUNTIME_SUPPORTS_HOOKS[opencode]="false"  # GAP G-001: SH hooks incompatible with JS/TS plugin system (T-093)
+RUNTIME_SUPPORTS_HOOKS[opencode]="false"  # GAP G-001: non-Claude hooks out of scope by decision
 RUNTIME_SUPPORTS_HOOKS[qwen]="false"
 
 declare -A RUNTIME_SUPPORTS_SKILLS

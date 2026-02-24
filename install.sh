@@ -740,7 +740,7 @@ check_drift() {
                 _drift_row "$rt" "SH" "hooks" "$hooks_src" "$hooks_target" "$hooks_src"
             fi
             # GAP G-001: OpenCode hooks incompatible with JS/TS plugin system
-            [[ "$rt" == "opencode" ]] && _drift_row "opencode" "SH" "hooks" "$hooks_src" "${conf_dir}/plugins/" "" "GAP"  # G-001: SH hooks incompatible with JS/TS plugin system (T-093)
+            [[ "$rt" == "opencode" ]] && _drift_row "opencode" "SH" "hooks" "$hooks_src" "${conf_dir}/plugins/" "" "GAP"  # G-001: non-Claude hooks out of scope by decision
         fi
 
         # Registry declarations (always shown regardless of profile)

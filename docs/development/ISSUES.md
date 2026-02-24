@@ -1,14 +1,14 @@
 # AgentOrchestrator Issues
 
-**Updated**: 2026-02-22
+**Updated**: 2026-02-24
 
 | ID | Issue | Priority | Status | Task |
 |----|-------|----------|--------|------|
-| G-001 | OpenCode hooks incompatibility: Claude SH hooks ≠ OpenCode JS/TS plugin system | P2 | 🔲 Open | T-093 |
+| G-001 | OpenCode hooks incompatibility: Claude SH hooks ≠ OpenCode JS/TS plugin system | P2 | 🔲 Open | `docs/knowledge/decisions/non-claude-hooks-policy.md` |
 | G-002 | Gemini TOML command transform invalid schema and syntax errors | P1 | 🔲 Open | T-092 |
 | G-003 | No per-runtime frontmatter schema validation or transform in skills/commands install | P1 | 🔲 Open | T-094 |
 | I-001 | ADR-014 D-2 drift: runtime namespace mapping and architecture install model not aligned with accepted decision | P1 | 🔲 Open | T-096 |
-| I-002 | Gemini capability drift: installer still enforces commands-only despite validated skills/hooks support in docs research | P1 | 🔲 Open | T-097 |
+| I-002 | Gemini capability drift: installer still enforces commands-only despite validated skills/subagents support in docs research (hooks excluded by policy) | P1 | 🔲 Open | T-097 |
 | I-003 | Legacy compatibility/workaround bloat in installer UX and docs (stale migration text, compat-first wording, fallback markers) | P2 | 🔲 Open | T-098 |
 
 ---
@@ -18,13 +18,13 @@
 **Type**: Gap
 **Discovered**: 2026-02-22
 **Affects**: `--opencode` install, `RUNTIME_SUPPORTS_HOOKS[opencode]`
-**Task**: T-093
+**Task**: `docs/knowledge/decisions/non-claude-hooks-policy.md`
 
 Claude SH hooks (`package/hooks/scripts/*.sh`) are invoked as shell commands via Claude Code's `settings.json` hooks system. OpenCode's hook mechanism is a JS/TS plugin event API — it has no facility to invoke shell scripts directly. Copying SH files to `.opencode/plugins/` produces non-functional artifacts.
 
 **Registry fix applied**: `RUNTIME_SUPPORTS_HOOKS[opencode]="false"`, `RUNTIME_HOOKS_PATH[opencode]=""`.
 
-Implementation details and AC in T-093.
+Resolution work is intentionally not scheduled as an implementation task under current policy. Keep open for visibility and periodic reassessment.
 
 ---
 
@@ -79,10 +79,10 @@ Implementation details and AC in T-096.
 
 **Type**: Defect
 **Discovered**: 2026-02-22
-**Affects**: `RUNTIME_SUPPORTS_SKILLS[gemini]`, `RUNTIME_SUPPORTS_HOOKS[gemini]`, installer profile defaults, conformance tests
+**Affects**: `RUNTIME_SUPPORTS_SKILLS[gemini]`, installer profile defaults, conformance tests
 **Task**: T-097
 
-Official docs revalidation and research reports identify Gemini hooks and skills support, but installer registry and tests still hardcode Gemini as commands-only (`no skills`, `no hooks`).
+Official docs revalidation and research reports identify Gemini skills/subagents support, but installer registry and tests still hardcode Gemini as commands-only (`no skills`). Hooks are intentionally excluded by project policy for non-Claude runtimes.
 
 This creates behavioral drift between architecture/research docs and shipped installer behavior.
 

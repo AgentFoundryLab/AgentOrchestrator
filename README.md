@@ -382,7 +382,7 @@ Milestone (v0, v1)     -> Git Tag
 
 - Codex namespace is currently disabled: `--namespace` is ignored for Codex targets and installs stay flat.
 - Gemini is currently installed in commands mode only by default (`.toml` transform path).
-- OpenCode hook artifacts are currently not installed; hook adapter work is tracked separately.
+- Non-Claude hook integration is intentionally out of scope (`docs/knowledge/decisions/non-claude-hooks-policy.md`).
 - `--profile commands` is a functional conversion mode that installs command-format artifacts for selected runtimes.
 
 ---

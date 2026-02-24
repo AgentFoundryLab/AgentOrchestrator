@@ -1,7 +1,7 @@
 # AgentOrchestrator Roadmap
 
 **Version**: 0.3.5
-**Updated**: 2026-02-21
+**Updated**: 2026-02-24
 
 ---
 
@@ -155,7 +155,7 @@ Three skill additions addressing governance bootstrapping, pre-implementation re
 
 ## v0.2.0: Multi-Agent Installer Extension
 
-**Goal**: Extend installer for multi-agent runtimes with namespaced (dot-notation) install paths.
+**Goal**: Extend installer for multi-agent runtimes with namespaced (dash/native) install paths.
 
 ---
 
@@ -165,6 +165,7 @@ Runtime expansion and namespace standardization for install/restore/cleanup work
 
 Policy details are maintained in:
 - `reports/research/2026-02-22-agent-capability-report.md` (Final capability policy, schema summary, and canonical mappings)
+- `docs/knowledge/decisions/non-claude-hooks-policy.md` (Non-Claude hooks integration intentionally out of scope)
 
 #### Epic: Runtime Matrix & Canonical Paths
 **Depends on**: v0.1.0 complete
@@ -173,17 +174,17 @@ Policy details are maintained in:
 - [x] Add installer targets for `--opencode` and `--qwen` (alongside existing runtime flags)
 - [x] Codify Claude paths (`.claude/skills` canonical, `.claude/commands` compatibility)
 - [x] Codify Codex paths (`.agents/skills` canonical, `.codex/prompts` compatibility commands)
-- [ ] Codify Gemini paths (`.gemini/commands` only, no skills/hooks; I-002 / T-097 open)
-- [x] Codify OpenCode paths (`.opencode/commands`, `.opencode/skills`, plugin hooks)
+- [ ] Codify Gemini paths (`.gemini/commands` baseline; no hooks by policy; skills/subagents alignment in I-002 / T-097)
+- [x] Codify OpenCode paths (`.opencode/commands`, `.opencode/skills`, no hooks by policy)
 - [x] Codify Qwen paths (`.qwen/commands`, `.qwen/skills`, no hooks)
 - [x] Add runtime path drift checks (installer map vs package layout)
 - [x] Define canonical frontmatter/schema transforms for `skills -> commands` conversion per runtime
 
-#### Epic: Namespace & Dot-Notation Semantics
+#### Epic: Namespace Semantics
 **Depends on**: Runtime Matrix & Canonical Paths
 
-- [x] Define namespace grammar and validation (`<segment>[.<segment>...]`)
-- [x] Map dot-notation namespace to agent paths (directory tree) and skill names (`<ns>.<skill>`)
+- [x] Define namespace grammar and validation (dash-notation token: `<namespace>`)
+- [x] Map namespace to runtime-native command namespacing where supported, and dash fallback naming where not
 - [x] Preserve flat mode as backward-compatible default when `--namespace` is omitted
 - [x] Ensure namespace-safe restore/cleanup semantics for global and project modes
 
@@ -195,15 +196,15 @@ Policy details are maintained in:
 - [x] Add `commands` compatibility profile selectable by flag
 - [x] Implement Claude profile (`commands+skills+hooks+scripts`)
 - [x] Implement Codex profile (`commands+skills+scripts`, no hooks)
-- [ ] Implement Gemini profile (`commands+scripts` only; T-097 open)
-- [x] Implement OpenCode profile (`commands+skills+hooks+scripts`)
+- [ ] Implement Gemini profile (`commands+scripts` baseline; skills/subagents alignment in T-097, hooks excluded by policy)
+- [x] Implement OpenCode profile (`commands+skills+scripts`, no hooks by policy)
 - [x] Implement Qwen profile (`commands+skills+scripts`, no hooks)
 - [x] Emit explicit warnings when user requests unsupported capabilities for selected runtime
 - [x] Make policy-ref injection runtime-aware and idempotent across selected targets
 - [x] Prevent cross-runtime collisions in context docs/files (e.g., shared root docs)
 
 #### Epic: UX & Documentation
-**Depends on**: Namespace & Dot-Notation Semantics, Capability-Scoped Installer Profiles
+**Depends on**: Namespace Semantics, Capability-Scoped Installer Profiles
 
 - [x] Update `install.sh --help` with multi-agent + namespaced examples
 - [x] Document `skills` default and `commands` compatibility mode behavior
@@ -216,7 +217,7 @@ Policy details are maintained in:
 
 - [x] Add install smoke tests for runtime matrix (`global`, `project`)
 - [x] Add capability conformance tests per runtime (commands/skills/hooks/scripts assertions)
-- [x] Add restore/cleanup regression tests for namespaced installs (dot-notation)
+- [x] Add restore/cleanup regression tests for namespaced installs
 - [x] Add idempotency tests for repeated installs with mixed runtime subsets
 - [x] Add CI guardrail to fail on runtime/path drift
 
@@ -417,7 +418,7 @@ v0 Milestone
 │
 ├── v0.2.0: Installer Extension ◄── v0.1.0
 │   ├── Runtime Matrix & Canonical Paths
-│   ├── Namespace & Dot-Notation Semantics
+│   ├── Namespace Semantics
 │   ├── Capability-Scoped Installer Profiles
 │   ├── UX & Documentation
 │   └── Validation & CI
