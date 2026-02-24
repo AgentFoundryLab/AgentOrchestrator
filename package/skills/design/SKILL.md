@@ -155,7 +155,7 @@ Document API and integration contracts at `docs/architecture/technical/contracts
 
 ## Template Reference
 
-Template source: `package/templates/` (installed to `~/.claude/templates/` or `.claude/templates/`):
+Template source: installed templates directory (`~/.claude/templates/` or `.claude/templates/`):
 - `architecture.md` — Complete ARCHITECTURE structure
 - `adr.md` — ADR template
 

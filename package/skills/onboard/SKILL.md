@@ -26,9 +26,9 @@ Analyze a brownfield project and generate concise governance docs from repositor
 - `docs/INDEX.md`
 
 Generate from templates:
-- `package/templates/standards.md`
-- `package/templates/guidelines.md`
-- `package/templates/index.md`
+- `.claude/templates/standards.md` (project) or `~/.claude/templates/standards.md` (global)
+- `.claude/templates/guidelines.md` (project) or `~/.claude/templates/guidelines.md` (global)
+- `.claude/templates/index.md` (project) or `~/.claude/templates/index.md` (global)
 
 These files are generated artifacts. Do not hand-author policy/index content outside `/onboard` output updates.
 

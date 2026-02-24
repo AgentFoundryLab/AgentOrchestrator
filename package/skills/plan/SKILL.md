@@ -95,7 +95,7 @@ Group related work:
 ```
 
 ### 5. Decompose Tasks
-For each epic, create atomic tasks:
+For each epic, create atomic tasks in BACKLOG:
 ```markdown
 | ID | Task | Priority | Status |
 |----|------|----------|--------|
@@ -139,9 +139,9 @@ For each task, define:
 **parallel**: T-006 (implement UserService), T-007 (implement TokenService)
 ```
 
-**ROADMAP output**: Include parallelization summary:
+**ROADMAP output**: Include strategic parallelization summary at epic level:
 ```
-Parallel Group A: T-005, T-006, T-007 (all blocked by T-001, T-002)
+Parallel Group A: Epic A, Epic B, Epic C (all blocked by Epic Foundation)
 ```
 
 - Ensure no circular dependencies
@@ -170,12 +170,14 @@ Parallel Group A: T-005, T-006, T-007 (all blocked by T-001, T-002)
 
 ### Initial Phase
 #### Epic: [Name]
-- T-001: [Task]
-- T-002: [Task]
+**Outcomes**:
+- [Outcome 1]
+- [Outcome 2]
 
 ### Validation Phase
 #### Epic: [Name]
-- T-XXX: [Task]
+**Outcomes**:
+- [Validation outcome]
 ```
 
 ## BACKLOG Template
@@ -215,7 +217,7 @@ Parallel Group A: T-005, T-006, T-007 (all blocked by T-001, T-002)
 
 ## Template References
 
-Template source: `package/templates/` (installed to `~/.claude/templates/` or `.claude/templates/`):
+Template source: installed templates directory (`~/.claude/templates/` or `.claude/templates/`):
 - `roadmap.md` - Complete ROADMAP structure
 - `backlog.md` - Complete BACKLOG structure
 

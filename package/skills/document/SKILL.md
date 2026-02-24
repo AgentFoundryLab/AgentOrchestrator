@@ -46,6 +46,17 @@ Maintain quality documentation by:
 
 Documentation updates organized by impact area with propagation paths.
 
+## Artifact Boundary Rules (CRITICAL)
+
+- **Strategic** (`VISION`, `BLUEPRINT`): product intent, capability scope, and success direction.
+- **Specification** (`PRD`): high-level requirements (FR/NFR), user stories, acceptance criteria; no install/runtime implementation detail.
+- **Architecture** (`ARCHITECTURE`, `ADR`): component design and decision rationale; no execution tracking/status content.
+- **Knowledge** (`docs/knowledge/*`, TDR/runbooks/research): operational patterns, runtime semantics, investigations, and learnings.
+- **Execution** (`ROADMAP`, `BACKLOG`, `ISSUES`): delivery sequencing, atomic tasks, blockers, and status.
+- **Entry Docs** (`README`, `CLAUDE`): quick entrypoint, constraints summary, and pointers to deeper docs.
+
+Placement principle: write content to the artifact that owns that decision/detail level; use cross-references instead of duplicating detail across layers.
+
 ---
 
 ## Impact Classification (Orthogonal Dimensions)
@@ -168,7 +179,7 @@ For each changed file/feature, determine BOTH dimensions:
 | **System** | hooks/MCP/install broken; agents/skills fail | `ISSUES.md`, `BACKLOG.md` |
 | **Product** | `VISION.md`, goals, OKRs, target users | `VISION.md` |
 | **Solution** | `BLUEPRINT.md`, capabilities, feature matrix | `BLUEPRINT.md` |
-| **Specification** | `PRD.md`, `package/skills/` (source) or `.claude/skills/jarvis/` (installed), user stories | `PRD.md` |
+| **Specification** | `PRD.md` high-level requirements/capability definitions, user stories, acceptance criteria | `PRD.md` |
 | **Architecture** | `ARCHITECTURE.md`, `adr/`, `DESIGN-PRINCIPLES.md`, hooks/agents structure | `ARCHITECTURE.md`, `DESIGN-PRINCIPLES.md`, `adr/NNN-*.md` |
 | **Development** | `ROADMAP.md`, `docs/development/` | `ROADMAP.md`, `BACKLOG.md` |
 | **Documentation** | `README.md`, `CLAUDE.md`, `docs/policy/`, `docs/knowledge/`, `docs/architecture/technical/` | `README.md`, `CLAUDE.md`, `docs/policy/{STANDARDS,GUIDELINES}.md`, `docs/architecture/{PRD,ARCHITECTURE,DESIGN-PRINCIPLES}.md`, `docs/architecture/{api/,technical/{data-model,contracts}.md}`, `docs/knowledge/{domain,patterns,decisions,runbooks}/`, `docs/development/{BACKLOG,ISSUES}.md` |
@@ -330,6 +341,7 @@ For each Area (process CRITICAL items first across all areas):
 1. **Update entry point document**
 2. **Propagate downstream** (skip levels with no impact)
 3. **Verify cross-references**
+4. **Enforce artifact boundaries** (place detail in the owning artifact type; keep entry docs summary-level with pointers)
 
 Always follow the propagation paths (information flows upstream → downstream). Criticality determines what to tackle first, not the order within a path.
 
@@ -343,6 +355,7 @@ Check documentation quality:
 - [ ] Cross-references valid (for touched docs)
 - [ ] No orphaned changes (all classified)
 - [ ] Skipped levels justified
+- [ ] Artifact boundaries respected (detail level matches artifact type)
 - [ ] **All detected inconsistencies resolved or logged to ISSUES**
 - [ ] **No silent overwrites (user confirmed all conflicts)**
 - [ ] **Tentative decisions documented with suggested agent**

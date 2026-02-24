@@ -54,6 +54,7 @@ Cross-check:
 - Every FR → has at least one BACKLOG task
 - Every BACKLOG task → traceable to an FR or NFR
 - ROADMAP milestones → match BACKLOG milestone groupings
+- ROADMAP captures strategic scope/sequencing while BACKLOG captures executable task detail and traceability
 
 ### 3. Correctness Check
 - Each ADR status (Accepted/Proposed) — does ARCHITECTURE reflect it?
@@ -84,6 +85,7 @@ Cross-check:
 - [ ] No ADR contradicts ARCHITECTURE
 - [ ] ADR vs TDR taxonomy is clean
 - [ ] ROADMAP and BACKLOG are aligned
+- [ ] ROADMAP and BACKLOG follow their strategic/execution roles
 - [ ] Blocking issues logged to ISSUES.md
 
 ## Gaps & Inconsistencies
@@ -112,12 +114,3 @@ If blocking issues found:
 - Return QUESTIONS block to Orchestrator if human decision needed
 
 Non-blocking issues: note in report only, do not block.
-
-## Validation Checklist
-- [ ] All FRs have ARCHITECTURE components
-- [ ] All FRs have BACKLOG tasks
-- [ ] All BACKLOG tasks traceable to FR or NFR
-- [ ] No ADR contradicts ARCHITECTURE
-- [ ] ROADMAP and BACKLOG are aligned
-- [ ] Blocking issues logged to ISSUES.md
-- [ ] Report written to `reports/analysis/review-YYYY-MM-DD.md`

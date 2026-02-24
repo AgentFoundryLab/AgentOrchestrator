@@ -6,6 +6,7 @@ Guidance for agents working with AgentOrchestrator.
 
 - Strategic: `VISION` → `BLUEPRINT`
 - Specification: `PRD` → `ARCHITECTURE` → `ADR`
+- Tactical: `KNOWLEDGE`
 - Execution: `ROADMAP` → `BACKLOG` (+ `ISSUES` for blockers/bugs)
 
 ## Artifact Definitions
@@ -17,7 +18,8 @@ Guidance for agents working with AgentOrchestrator.
 | **PRD** | Specification | Features, user stories, acceptance criteria |
 | **ARCHITECTURE** | Specification | System design, risks, dependencies |
 | **ADR** | Specification | Significant architecture decisions with alternatives and consequences (`docs/architecture/adr/`) |
-| **TDR** | Knowledge | Lightweight operational/policy decisions that do not rise to ADR scope (`docs/knowledge/decisions/`) |
+| **Knowledge Base** | Knowledge | Domain knowledge, patterns, decisions, runbooks, and session learnings (`docs/knowledge/`) |
+| **TDR** | Knowledge | One decision artifact within Knowledge: lightweight operational/policy decisions that do not rise to ADR scope (`docs/knowledge/decisions/`) |
 | **ROADMAP** | Execution | Milestones, phases, epics and dependencies |
 | **BACKLOG** | Execution | Prioritized tasks from roadmap epics |
 | **ISSUES** | Execution | Discovered bugs, blockers, tech debt |
@@ -68,6 +70,13 @@ Loading behavior:
 - Project runtime loads `docs/policy/STANDARDS.md` and `docs/policy/GUIDELINES.md` when present.
 - Sub-agents receive principles plus project standards/guidelines via injected references.
 - `RULES.md` remains orchestrator-level.
+
+### Install Context Boundary (Project-Only)
+
+- `package/` is framework source authoring context.
+- Installed/runtime execution context is project/global runtime paths (for example `.claude/`, `~/.claude/`, and project `docs/` outputs).
+- Any agent/skill instruction intended to run after install must be valid in runtime context, not source-only context.
+- Source-internal references belong in maintainer/build docs, not runtime instruction bodies.
 
 For installation and provisioning details, use `README.md` and operational runbooks.
 

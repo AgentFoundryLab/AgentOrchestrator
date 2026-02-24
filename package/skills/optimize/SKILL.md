@@ -50,11 +50,11 @@ Analyze for recurring themes:
 
 ### 3. Map to Components
 For each pattern, identify relevant Orchestrator component:
-- Agent instructions → `package/agents/*.md` or `.claude/agents/jarvis/*.md`
-- Skill workflows → `package/skills/*/SKILL.md` or `.claude/skills/jarvis/*/SKILL.md`
-- Hook prompts → `package/hooks/scripts/*.sh` or `.claude/hooks/scripts/*.sh`
-- Rules → `package/policy/RULES.md` or `~/.claude/policy/RULES.md`
-- Workflows → `package/workflows/*.md` or `~/.claude/workflows/*.md`
+- Agent instructions → `.claude/agents/*.md` (project) or `~/.claude/agents/*.md` (global)
+- Skill workflows → `.claude/skills/*/SKILL.md` (project) or `~/.claude/skills/*/SKILL.md` (global)
+- Hook prompts → `.claude/hooks/scripts/*.sh` (project) or `~/.claude/hooks/scripts/*.sh` (global)
+- Rules → `docs/policy/{STANDARDS,GUIDELINES}.md` (project) and runtime `RULES.md` (global)
+- Workflows → `.claude/workflows/*.md` (project) or `~/.claude/workflows/*.md` (global)
 
 ### 4. Draft Proposals
 For each improvement:

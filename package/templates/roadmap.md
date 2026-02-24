@@ -29,15 +29,17 @@
 ### Epic: {{EPIC_NAME}}
 **Depends on**: {{DEPENDENCIES}}
 
-- [ ] {{DELIVERABLE_1}}
-- [ ] {{DELIVERABLE_2}}
-- [ ] {{DELIVERABLE_3}}
+**Outcomes**:
+- {{DELIVERABLE_1}}
+- {{DELIVERABLE_2}}
+- {{DELIVERABLE_3}}
 
 ### Epic: {{EPIC_NAME_2}}
 **Depends on**: {{DEPENDENCIES_2}}
 
-- [ ] {{DELIVERABLE_4}}
-- [ ] {{DELIVERABLE_5}}
+**Outcomes**:
+- {{DELIVERABLE_4}}
+- {{DELIVERABLE_5}}
 
 ---
 
@@ -48,9 +50,10 @@ Integration testing and documentation.
 ### Epic: Integration Validation
 **Depends on**: All Initial Phase epics
 
-- [ ] End-to-end test: {{E2E_TEST}}
-- [ ] Dogfood: {{DOGFOOD_TASK}}
-- [ ] Update README.md
+**Outcomes**:
+- End-to-end validation complete: {{E2E_TEST}}
+- Dogfood validation complete: {{DOGFOOD_TASK}}
+- User-facing documentation updated
 
 **-> TAG: v0.1.0 **
 
@@ -71,8 +74,9 @@ Integration testing and documentation.
 ### Epic: {{V1_EPIC_1}}
 **Depends on**: v0 complete
 
-- [ ] {{V1_DELIVERABLE_1}}
-- [ ] {{V1_DELIVERABLE_2}}
+**Outcomes**:
+- {{V1_DELIVERABLE_1}}
+- {{V1_DELIVERABLE_2}}
 
 ---
 
@@ -100,11 +104,11 @@ v1 Milestone
 
 ## Progress Tracking
 
-| Milestone | Phase | Epics | Tasks | Status |
-|-----------|-------|-------|-------|--------|
-| v0 | Initial | {{EPIC_COUNT}} | {{TASK_COUNT}} | Not started |
-| v0 | Validation | 1 | {{VAL_TASKS}} | Not started |
-| v1 | MVP | {{V1_EPICS}} | {{V1_TASKS}} | Not started |
+| Milestone | Phase | Epics | Outcomes | Status |
+|-----------|-------|-------|----------|--------|
+| v0 | Initial | {{EPIC_COUNT}} | {{OUTCOME_COUNT}} | Not started |
+| v0 | Validation | 1 | {{VAL_OUTCOMES}} | Not started |
+| v1 | MVP | {{V1_EPICS}} | {{V1_OUTCOMES}} | Not started |
 
 ---
 

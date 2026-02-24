@@ -20,7 +20,7 @@ Research documentation, patterns, and best practices from external sources.
 ## Purpose
 
 Prevent hallucination by:
-- Looking up official documentation
+- Treating official documentation as ground truth
 - Researching best practices
 - Finding verified solutions
 - Gathering external knowledge
@@ -28,6 +28,13 @@ Prevent hallucination by:
 ## Inputs
 
 - `$ARGUMENTS`: Topic to research
+
+### Source Hierarchy (CRITICAL)
+
+- Official vendor/project documentation is the default ground truth.
+- Local project docs/reports/research are implementation-context inputs and may be outdated, incomplete, or workaround-biased; always verify them against official docs.
+- If local/project sources conflict with official docs, official docs win; record the mismatch as an implementation/documentation gap.
+- If no official source exists, state that explicitly instead of backfilling with secondary sources as truth.
 
 ## Outputs
 
@@ -66,6 +73,8 @@ Use WebSearch for:
 Cross-reference findings:
 - Multiple sources agree?
 - Official docs support this?
+- Any local project report/research claim validated against official docs?
+- Any discrepancy between local/project docs and official docs recorded explicitly?
 - Is information current?
 
 ### 6. Synthesize Findings
@@ -159,6 +168,7 @@ Based on research:
 3. **Cross-reference**: Multiple sources for important facts
 4. **Admit uncertainty**: If unsure, say so
 5. **Official first**: Prefer official docs over blogs
+6. **Official docs are ground truth**: project docs/reports are secondary and must be cross-validated
 
 ## Policy References
 

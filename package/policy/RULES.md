@@ -41,6 +41,13 @@
   - Upstream artifacts MUST NOT reference downstream execution docs as normative inputs.
 - Architecture-level docs (`ARCHITECTURE`, `ADR`) MUST NEVER depend on low-level execution artifacts (`BACKLOG`, `ISSUES`, task status docs) as design sources.
 
+## Strategic & Tactical Planning [CRITICAL]
+
+- ROADMAP exists to align stakeholders on release direction: milestone/phase/epic goals, outcomes, dependencies, and status.
+- BACKLOG exists to execute delivery: task IDs (`T-xxx`), acceptance criteria, priorities, statuses, and issue/version linkage.
+- "ROADMAP and BACKLOG are aligned" means strategic scope and milestone mapping are coherent while execution detail remains operationally traceable in BACKLOG.
+- Docs-only changes SHOULD be merged into an existing open task/issue when possible; create a new task only when scope adds new executable behavior, and include a one-line justification.
+
 ## Planning Efficiency [CRITICAL]
 
 - Identify concurrent operations
