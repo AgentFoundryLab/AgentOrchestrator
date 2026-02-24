@@ -146,8 +146,10 @@ Per PRD, MCP dependencies are:
 | Server | Purpose | Priority |
 |--------|---------|----------|
 | Serena | Session persistence, semantic memory, symbolic code operations | Required |
-| Context7 | Documentation lookup, prevents hallucination | Required |
-| DeepWiki | GitHub repository documentation | Required |
+| Context7 | Documentation lookup, prevents hallucination | Recommended |
+| DeepWiki | GitHub repository documentation | Recommended |
+| Parallel Search | Fast parallel web lookup | Recommended |
+| Parallel Task | Deep research and batch task execution | Recommended |
 | Playwright | Browser automation for validation | Optional |
 
 RULES.md `Tool Optimization` section includes:
@@ -204,11 +206,11 @@ Keep policies as documentation only.
 
 ## Related Decisions
 
-- **ADR-003**: Minimal MCP Footprint (Context7, DeepWiki, Serena)
+- **ADR-003**: Minimal MCP Footprint (Serena required; Context7/DeepWiki/Parallel Search/Task recommended; Playwright optional)
 - **ADR-004**: Skill-Agent Invocation Paths
 - **PRD FR1**: Agent System (7 agents)
 - **PRD FR2**: Skill Interface (14 skills)
-- **PRD MCP Dependencies**: Serena, Context7, DeepWiki (Required), Playwright (Optional)
+- **PRD MCP Dependencies**: Serena (Required), Context7/DeepWiki/Parallel Search/Task (Recommended), Playwright (Optional)
 
 ## References
 

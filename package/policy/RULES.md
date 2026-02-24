@@ -30,6 +30,17 @@
 - Validate before/after execution
 - Evidence-based, discovery-first
 
+## Artifact Propagation [CRITICAL]
+
+- Always follow upstream → downstream information flow when updating artifacts:
+  - `VISION`/`BLUEPRINT` → `PRD` → `ARCHITECTURE`/`ADR` → `ROADMAP` → `BACKLOG`/`ISSUES`
+- Any upstream change MUST trigger reconciliation of all affected downstream artifacts in the same workstream.
+  - Example: PRD update must be reflected in ARCHITECTURE, ROADMAP, and BACKLOG.
+- Reference direction is one-way by default:
+  - Downstream artifacts MAY reference upstream sources for traceability.
+  - Upstream artifacts MUST NOT reference downstream execution docs as normative inputs.
+- Architecture-level docs (`ARCHITECTURE`, `ADR`) MUST NEVER depend on low-level execution artifacts (`BACKLOG`, `ISSUES`, task status docs) as design sources.
+
 ## Planning Efficiency [CRITICAL]
 
 - Identify concurrent operations

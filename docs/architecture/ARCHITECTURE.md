@@ -2,7 +2,7 @@
 
 **Version**: 0.2.0
 **Status**: Draft
-**Date**: 2026-02-19
+**Date**: 2026-02-24
 **Source**: [PRD.md](PRD.md)
 
 ---
@@ -13,8 +13,8 @@ This document defines the technical architecture for AgentOrchestrator, a minima
 
 **Key Architectural Decisions**:
 - Pure markdown/JSON configuration (zero Python dependencies)
-- Flat package source (`package/agents/`, `package/skills/`) deployed into Claude Code structures (`.claude/agents/`, `.claude/skills/`) — optional `--namespace <name>` for namespaced installs
-- 2-3 required MCP servers plus optional Playwright
+- Flat package source transformed into runtime-native layouts across Claude/Codex/Gemini/OpenCode/Qwen (see ADR-014)
+- Required Serena MCP plus recommended Context7/DeepWiki/Parallel Search/Task and optional Playwright (see ADR-003)
 - Hook-based lifecycle management (reminder pattern, not enforcement)
 - Four-tier memory system (Session, Semantic, Reflexion, Transient)
 - Two-tier policy structure (global framework + project-specific)
@@ -46,7 +46,7 @@ This document defines the technical architecture for AgentOrchestrator, a minima
 
 ### 1. Skill System
 
-Skills are the primary user interface. Source files live in `package/skills/` and install under `.claude/skills/` (or `~/.claude/skills/`) with YAML frontmatter. Claude Code natively routes `/skill` invocations to the corresponding SKILL.md file.
+Skills are the primary user interface. Skill definitions use `SKILL.md` with YAML frontmatter and are installed to runtime-native targets. Claude Code natively routes `/skill` invocations to the corresponding skill definition.
 
 #### 1.1 Skill Categories
 
@@ -139,7 +139,7 @@ The `/hitl` skill is a non-invocable protocol definition. It enforces a single s
 - Sub-agents spawned via Task tool CANNOT call `AskUserQuestion` directly
 - When blocked, agents emit a structured `## QUESTIONS FOR USER` block
 - Orchestrator detects the block, relays via `AskUserQuestion`, re-invokes agent with answers
-- Protocol details: `package/skills/hitl/SKILL.md`
+- Protocol details: `/hitl` shared protocol definition and HITL decision record
 - Decision record: `docs/knowledge/decisions/hitl-escalation.md`
 
 > **See**: [ADR-012](adr/012-governance-rationalization.md) and [HITL Decision](../../docs/knowledge/decisions/hitl-escalation.md)
@@ -190,7 +190,7 @@ Agents are specialized workers invoked via Claude Code's Task tool with `subagen
 Agents load skill content via `skills:` frontmatter. The skill instructions are **injected** into the agent's context.
 
 ```markdown
-# Example: package/agents/business-analyst.md
+# Example: agent definition
 ---
 name: business-analyst
 description: Requirements elicitation and PRD generation
@@ -521,27 +521,51 @@ Project-specific knowledge lives in `docs/knowledge/` and is loaded into agent c
 
 #### 7.1 Knowledge Structure
 
-```
-docs/knowledge/
-├── README.md                    # Knowledge base index and instructions
-└── decisions/                   # Architectural and policy decision records
-    └── hitl-escalation.md       # HITL escalation decision (example)
-```
+Knowledge structure layout examples are maintained in `docs/knowledge/README.md`.
 
-**`decisions/`** captures decisions that don't warrant full ADRs — lightweight decision records for operational policies and design choices.
+#### 7.2 Knowledge Ontology
 
-#### 7.2 Knowledge vs ADR
+The knowledge system is modeled as typed entities with explicit relationships and governance rules.
 
-| Type | Location | Format | Use When |
-|------|----------|--------|----------|
-| **ADR** | `docs/architecture/adr/` | Full ADR template | Significant architectural decisions with alternatives |
-| **Decision** | `docs/knowledge/decisions/` | Lightweight record | Operational policies, protocol decisions |
+| Entity Type | Layer | Purpose | Canonical Location |
+|-------------|-------|---------|--------------------|
+| **Requirement** (`FR`/`NFR`/`US`) | Specification | Defines expected behavior and constraints | `docs/architecture/PRD.md` |
+| **Architecture Decision Record (ADR)** | Specification | Captures significant architecture decisions and trade-offs | `docs/architecture/adr/` |
+| **Technical Decision Record (TDR)** | Knowledge | Captures non-architectural technical/operational decisions | `docs/knowledge/decisions/` |
+| **Pattern/Convention** | Knowledge | Reusable implementation/documentation patterns | `docs/knowledge/patterns/` (or equivalent) |
+| **Runbook/Procedure** | Knowledge | Operational procedures and recovery workflows | `docs/knowledge/runbooks/` (or equivalent) |
+| **Issue/Gap** | Execution | Tracks defects, blockers, drift, debt | `docs/development/ISSUES.md` |
+| **Task** | Execution | Atomic implementation/validation work unit | `docs/development/BACKLOG.md` |
+| **Validation Evidence** | Execution | Proof that behavior/constraints are satisfied | `reports/validation/`, `reports/analysis/` |
+
+**Allowed Relationship Model**
+
+| Source | Relationship | Target | Rule |
+|--------|--------------|--------|------|
+| Requirement | `constrains` | ADR, TDR, Pattern, Task | Downstream artifacts must trace to requirements. |
+| ADR | `governs` | Architecture sections, contracts, component boundaries | ADR is authoritative for architecture-level decisions. |
+| TDR | `guides` | Runbooks, process conventions, operational behavior | TDR must not redefine architecture decisions. |
+| Issue | `triggers` | Task, TDR review, ADR review | Issues can trigger review/escalation; they do not redefine architecture by themselves. |
+| Validation Evidence | `verifies` | Requirement, ADR assumption, Task completion | Evidence confirms or refutes implemented behavior. |
+| Task | `implements` | Requirement and design intent | Tasks are execution-level realization of upstream artifacts. |
+
+**Lifecycle Semantics**
+
+- ADR lifecycle: `Proposed` -> `Accepted` -> (`Deprecated` | `Superseded`)
+- TDR lifecycle: `Draft` -> `Active` -> (`Archived` | `Superseded`)
+- Knowledge entries should include: date, owner, rationale, and links to upstream requirement/decision context.
+
+**Governance Constraints**
+
+- ADR and TDR are distinct artifact classes and must not be mixed.
+- Architecture (`ARCHITECTURE.md`, ADRs) is upstream of execution artifacts (`BACKLOG`, `ISSUES`).
+- Execution artifacts may reference architecture for traceability; architecture must not use execution artifacts as normative design input.
 
 ---
 
 ### 8. MCP Integration
 
-Minimal MCP footprint with two required servers.
+Minimal MCP footprint with one required server, recommended support servers, and optional add-ons.
 
 #### 8.1 MCP Architecture
 
@@ -550,8 +574,10 @@ Minimal MCP footprint with two required servers.
 | Server | Status | Purpose |
 |--------|--------|---------|
 | **Serena** | Required | Session persistence, semantic memory, symbolic code operations |
-| **Context7** | Required | Documentation lookup, hallucination prevention |
-| **DeepWiki** | Required | GitHub repository documentation |
+| **Context7** | Recommended | Documentation lookup, hallucination prevention |
+| **DeepWiki** | Recommended | GitHub repository documentation |
+| **Parallel Search** | Recommended | Fast parallel web lookups for research workflows |
+| **Parallel Task** | Recommended | Deep research and batch enrichment task execution |
 | **Playwright** | Optional | Browser automation for validation |
 
 #### 8.2 MCP Usage Patterns
@@ -560,10 +586,12 @@ Minimal MCP footprint with two required servers.
 |----------|------------|------|-------|
 | Store reflexion | Serena | write_memory | /reflexion |
 | Query past errors | Serena | read_memory | Agent init |
+| Code navigation | Serena | find_symbol | /analyse |
 | Look up docs | Context7 | query-docs | /research, /design |
 | Look up repo | DeepWiki | query | /research, /design |
+| Parallel web search | Parallel Search | web_search_preview / web_fetch | /research, /design |
+| Deep research runs | Parallel Task | createDeepResearch / createTaskGroup | /research |
 | Visual validation | Playwright | screenshot | /validate |
-| Code navigation | Serena | find_symbol | /analyse |
 
 ---
 
@@ -601,7 +629,9 @@ orchestrator/
 │   │   │   ├── 009-orchestration-framework-selection.md
 │   │   │   ├── 010-observability-architecture.md
 │   │   │   ├── 011-coordination-level-strategy.md
-│   │   │   └── 012-governance-rationalization.md
+│   │   │   ├── 012-governance-rationalization.md
+│   │   │   ├── 013-extended-skills.md
+│   │   │   └── 014-multi-agent-installer.md
 │   │   └── diagrams/
 │   ├── development/
 │   │   ├── BACKLOG.md
@@ -615,11 +645,11 @@ orchestrator/
 │       └── decisions/                  # Lightweight decision records
 │           └── hitl-escalation.md
 │
-├── package/                            # Source layout (deployed into Claude Code structures)
+├── package/                            # Source layout (deployed into runtime-native structures)
 │   ├── settings.json                   # Global settings template
 │   ├── mcp.json                        # Global MCP servers template
 │   │
-│   ├── agents/                         # → ~/.claude/agents/ (global) or <target>/.claude/agents/
+│   ├── agents/                         # → Runtime-native agents path (see §9.2)
 │   │   ├── business-analyst.md
 │   │   ├── architect.md
 │   │   ├── project-manager.md
@@ -628,7 +658,7 @@ orchestrator/
 │   │   ├── deployer.md
 │   │   └── tech-writer.md
 │   │
-│   ├── skills/                         # → ~/.claude/skills/ (global) or <target>/.claude/skills/
+│   ├── skills/                         # → Runtime-native skills path (see §9.2)
 │   │   ├── orchestrate/SKILL.md
 │   │   ├── spec/SKILL.md
 │   │   ├── design/SKILL.md
@@ -666,7 +696,7 @@ orchestrator/
 │   │   ├── SWE.md
 │   │   └── meta-learning.md
 │   │
-│   └── templates/                      # → ~/.claude/templates/ (and project-local)
+│   ├── templates/                      # → ~/.claude/templates/ (and project-local)
 │       ├── vision.md
 │       ├── blueprint.md
 │       ├── prd.md
@@ -679,20 +709,21 @@ orchestrator/
 │       ├── guidelines.md
 │       └── knowledge.md
 │
+│   └── install/
+│       └── runtimes.sh                 # Canonical runtime registry (ADR-014 D-4)
+│
 └── .serena/                            # Serena MCP local storage
     └── README.md
 ```
 
 #### 9.2 Installation Targets
 
-| Source | Flag | Target | Purpose |
-|--------|------|--------|---------|
-| `package/agents`, `package/skills` | `--global` | `~/.claude/agents/`, `~/.claude/skills/` | Claude-native agent/skill installation |
-| `package/{hooks,settings,mcp,policy,workflows,templates}` | `--global` | `~/.claude/`, `~/.claude.json` | Shared runtime/global config |
-| `package/*` + scaffold dirs | `--project <path>` | `<path>/.claude/*`, `<path>/docs/*`, `<path>/reports/*` | Project-local install / dogfooding |
-| `docs/` | — | Not deployed | Orchestrator's own documentation |
+Installer writes runtime-native artifacts for each supported runtime. Canonical capability and namespace behavior is defined in [ADR-014](adr/014-multi-agent-installer.md).
 
-**Namespace support**: `--namespace <name>` installs agents/skills under `~/.claude/agents/<name>/` and `~/.claude/skills/<name>/`. Default is flat (no namespace subdirectory). See [decision record](../../docs/knowledge/decisions/flat-skill-paths.md).
+**Namespace support (ADR-014 D-2)**:
+- Flat mode is the default installation mode.
+- Optional namespace input is translated per runtime/artifact semantics.
+- Runtime-owned namespace forms are preserved rather than normalized into a synthetic universal format.
 
 #### 9.3 Installation Behavior
 
@@ -765,7 +796,7 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 |-----|-------|---------|
 | [ADR-001](adr/001-hook-reminder-pattern.md) | Hook Behavior Pattern | Blocking hooks (SubagentStop, Stop) for reminders; SessionEnd for cleanup |
 | [ADR-002](adr/002-four-tier-memory.md) | Four-Tier Memory | Session, Semantic, Reflexion, Transient tiers with different lifecycles |
-| [ADR-003](adr/003-minimal-mcp-footprint.md) | Minimal MCP Footprint | 2 required (Serena, Context7), 1 optional (Playwright) |
+| [ADR-003](adr/003-minimal-mcp-footprint.md) | Minimal MCP Footprint | Serena required; Context7/DeepWiki/Parallel Search/Task recommended; Playwright optional |
 | [ADR-004](adr/004-skill-agent-invocation-paths.md) | Skill-Agent Invocation | Skill-driven injection via `context: fork` + agent's `skills:` list |
 | [ADR-005](adr/005-task-decomposition-hierarchy.md) | Task Decomposition | Milestone → Phase → Epic → Task hierarchy for agent workflows |
 | [ADR-006](adr/006-policy-modularization.md) | Policy Modularization | Reference-based policy loading with two-tier structure |
@@ -776,6 +807,7 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 | [ADR-011](adr/011-coordination-level-strategy.md) | Coordination Levels | L1/L2/L3 coordination strategy |
 | [ADR-012](adr/012-governance-rationalization.md) | Governance Rationalization | Two-tier policy, /onboard skill, eliminated duplicate RULES.md |
 | [ADR-013](adr/013-extended-skills.md) | Extended Skill Additions | /onboard, /review, /hitl skills — rationale and agent assignments |
+| [ADR-014](adr/014-multi-agent-installer.md) | Multi-Agent Installer v0.2 | Runtime registry, namespace translation, and capability-aware install model |
 
 **Key Design Principles**:
 
@@ -844,14 +876,16 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 
 ### Dependencies
 
-| Dependency | Type | Required |
-|------------|------|----------|
-| Claude Code | Runtime | Yes |
-| Serena MCP | MCP Server | Yes |
-| Context7 MCP | MCP Server | Yes |
-| DeepWiki MCP | MCP Server | Yes |
-| Playwright MCP | MCP Server | No |
-| Bash | Shell | Yes (hooks) |
+| Dependency | Type | Classification |
+|------------|------|----------------|
+| Claude Code | Runtime | Required |
+| Serena MCP | MCP Server | Required |
+| Bash | Shell | Required (hooks) |
+| Context7 MCP | MCP Server | Recommended |
+| DeepWiki MCP | MCP Server | Recommended |
+| Parallel Search MCP | MCP Server | Recommended |
+| Parallel Task MCP | MCP Server | Recommended |
+| Playwright MCP | MCP Server | Optional |
 
 ---
 

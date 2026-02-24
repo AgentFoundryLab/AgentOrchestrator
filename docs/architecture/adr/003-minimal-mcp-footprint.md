@@ -31,15 +31,15 @@ AgentOrchestrator aims for minimalism: "What's the smallest MCP set that enables
 
 ## Decision
 
-**Three required MCP servers, two optional**:
+**One required MCP server, recommended support servers, and optional add-ons**:
 
 | Server | Status | Purpose |
 |--------|--------|---------|
 | **Serena** | Required | Session persistence, semantic memory, symbolic code operations |
-| **Context7** | Required | Documentation lookup, hallucination prevention |
-| **DeepWiki** | Required | AI-powered GitHub repository documentation and Q&A |
+| **Context7** | Recommended | Documentation lookup, hallucination prevention |
+| **DeepWiki** | Recommended | AI-powered GitHub repository documentation and Q&A |
+| **Parallel Search/Task** | Recommended | Parallel web search and deep research tasks |
 | **Playwright** | Optional | Browser automation for validation |
-| **Parallel Search/Task** | Optional | Parallel web search and deep research tasks |
 
 ### Explicitly Dropped
 
@@ -73,7 +73,7 @@ Serena provides three critical capabilities:
    - Provides project-aware operations
    - Essential for multi-file understanding
 
-### Context7: Why Required
+### Context7: Why Recommended
 
 Context7 provides hallucination prevention:
 
@@ -87,7 +87,7 @@ Context7 provides hallucination prevention:
    - "Never guess - always verify"
    - Context7 enables verification
 
-### DeepWiki: Why Required
+### DeepWiki: Why Recommended
 
 DeepWiki provides AI-powered documentation for GitHub repositories:
 
@@ -125,7 +125,7 @@ Browser automation is valuable but not core:
 
 ### Positive
 
-1. **Simple Installation**: 3 required servers instead of 10+
+1. **Simple Installation**: 1 required server + recommended add-ons instead of 10+
 2. **No Docker Required**: Serena, Context7, and DeepWiki run natively
 3. **Reduced Token Overhead**: Fewer tool descriptions in context
 4. **Lower Maintenance**: Fewer dependencies to update
@@ -144,7 +144,7 @@ Browser automation is valuable but not core:
 
 ## Installation Configuration
 
-### Required Setup
+### Minimal Required Setup
 
 ```json
 // settings.json
@@ -153,23 +153,22 @@ Browser automation is valuable but not core:
     "serena": {
       "command": "uvx",
       "args": ["serena", "--project", "."]
-    },
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@context7/mcp-server"]
     }
   }
 }
 ```
 
-### Optional Addition
+### Recommended Additions
 
 ```json
-// settings.json (with Playwright)
+// settings.json (with recommended support MCPs and optional Playwright)
 {
   "mcpServers": {
     "serena": { ... },
     "context7": { ... },
+    "deepwiki": { ... },
+    "parallel-search": { ... },
+    "parallel-task": { ... },
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp-server"]
@@ -227,9 +226,9 @@ Single gateway providing all tools.
 - Token overhead from 60+ tool descriptions
 - Most tools unused in core workflows
 
-### Alternative 3: Three Required (including Playwright)
+### Alternative 3: Make all support MCPs required (including Playwright)
 
-Make Playwright required for validation.
+Treat recommended/optional support MCPs as mandatory for every project.
 
 **Rejected**:
 - Many projects don't need browser testing

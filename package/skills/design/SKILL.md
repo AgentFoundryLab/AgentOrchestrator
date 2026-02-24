@@ -42,6 +42,14 @@ Transform PRD requirements into:
 - Data Model: `docs/architecture/technical/data-model.md` (entities, attributes, relationships)
 - Contracts: `docs/architecture/technical/contracts.md` (API signatures, events, interfaces)
 
+## Decision Artifact Taxonomy [CRITICAL]
+
+- **ADR** (`docs/architecture/adr/`) is for significant architectural decisions.
+- **Technical Decision Record (TDR)** (`docs/knowledge/decisions/`) is for technical/operational decisions that do not change system architecture.
+- Never place architecture decisions in `docs/knowledge/decisions/`.
+- Architecture outputs (`ARCHITECTURE.md`, ADRs) must use upstream inputs (PRD, standards, constraints), not downstream execution artifacts (`ROADMAP`, `BACKLOG`, `ISSUES`) as normative sources.
+- If PRD changes during design, reconcile architecture artifacts in the same run and explicitly flag downstream replanning requirement for `/plan`.
+
 ## Workflow
 
 ### 0. Check Project Standards
@@ -195,6 +203,7 @@ Template source: `package/templates/` (installed to `~/.claude/templates/` or `.
 ## Validation Checklist
 - [ ] Project standards checked (if `docs/policy/STANDARDS.md` exists)
 - [ ] HITL gap check completed (step 1b) — no blocking questions pending
+- [ ] Decision taxonomy enforced (ADR vs TDR)
 - [ ] All FRs have corresponding components
 - [ ] All components have clear responsibilities
 - [ ] Interfaces are defined between components

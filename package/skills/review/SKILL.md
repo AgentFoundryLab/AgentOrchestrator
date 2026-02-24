@@ -23,6 +23,7 @@ After `/plan` and before `/implement`, ensure:
 - Every FR has architecture components and BACKLOG tasks
 - Every user story traces to acceptance criteria and tasks
 - No ADR contradicts ARCHITECTURE
+- ADRs and TDRs are not mixed
 - ROADMAP and BACKLOG are aligned
 - Blocking gaps are surfaced before implementation begins
 
@@ -58,6 +59,10 @@ Cross-check:
 - Each ADR status (Accepted/Proposed) — does ARCHITECTURE reflect it?
 - No ADR contradicts the final design in ARCHITECTURE.md
 - Task acceptance criteria match the FR they trace to
+- Taxonomy check:
+  - ADRs (`docs/architecture/adr/`) contain only architecture decisions
+  - Technical Decision Records (TDRs) (`docs/knowledge/decisions/`) contain only non-architectural technical/operational decisions
+  - ARCHITECTURE/ADR do not use BACKLOG/ISSUES as normative design sources
 
 ### 4. Coverage Check
 - Every user story → has AC → has at least one task covering it
@@ -77,6 +82,7 @@ Cross-check:
 - [ ] All FRs have BACKLOG tasks
 - [ ] All BACKLOG tasks traceable to FR or NFR
 - [ ] No ADR contradicts ARCHITECTURE
+- [ ] ADR vs TDR taxonomy is clean
 - [ ] ROADMAP and BACKLOG are aligned
 - [ ] Blocking issues logged to ISSUES.md
 

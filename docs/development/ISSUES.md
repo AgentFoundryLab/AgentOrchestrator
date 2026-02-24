@@ -11,6 +11,11 @@
 | I-002 | Gemini capability drift: installer still enforces commands-only despite validated skills/subagents support in docs research (hooks excluded by policy) | P1 | 🔲 Open | T-097 |
 | I-003 | Legacy compatibility/workaround bloat in installer UX and docs (stale migration text, compat-first wording, fallback markers) | P2 | 🔲 Open | T-098 |
 | I-004 | Codex default profile still dual-writes deprecated `/prompts:*` artifacts despite skills-first baseline | P1 | 🔲 Open | T-098 |
+| I-005 | MCP baseline drift across PRD/ARCHITECTURE/ADR (required/optional server set inconsistent) | P1 | 🔲 Open | TBD (`/design` + `/spec` sync) |
+| I-006 | US5 acceptance criteria have no explicit backlog task trace | P1 | 🔲 Open | TBD (`/plan`) |
+| I-007 | NFR coverage gap: NFR1, NFR2, NFR4, NFR5, NFR6 not explicitly traced in backlog | P1 | 🔲 Open | TBD (`/plan`) |
+| I-008 | ROADMAP vs BACKLOG drift on v0 scope and task counts (skills count, phase totals) | P1 | 🔲 Open | TBD (`/plan`) |
+| I-009 | BACKLOG traceability schema drift: \"User Story\" column contains mixed FR/PRD/ADR/issue/version refs | P1 | 🔲 Open | TBD (`/plan`) |
 
 ---
 
@@ -120,5 +125,75 @@ Expected end state:
 - `/prompts:*` artifacts are emitted only in explicit command-mode compatibility flow
 
 Implementation details and AC in T-098.
+
+---
+
+## I-005: MCP baseline drift across PRD/ARCHITECTURE/ADR
+
+**Type**: Defect
+**Discovered**: 2026-02-24
+**Affects**: `docs/architecture/PRD.md`, `docs/architecture/ARCHITECTURE.md`, ADR summary consistency
+**Task**: TBD (`/design` + `/spec` sync)
+
+Current artifact set disagrees on MCP baseline:
+- ADR-003 defines 3 required + 2 optional MCP servers.
+- ARCHITECTURE text claims 2 required while table marks DeepWiki as required.
+- PRD MCP dependency table lists only Serena/Context7 as required.
+
+This creates requirement ambiguity for validation and installer behavior expectations.
+
+---
+
+## I-006: US5 acceptance criteria missing backlog trace
+
+**Type**: Coverage gap
+**Discovered**: 2026-02-24
+**Affects**: `docs/architecture/PRD.md` user story coverage, `docs/development/BACKLOG.md` traceability
+**Task**: TBD (`/plan`)
+
+US5 (Session Reflection) has defined acceptance criteria in PRD but no task row in BACKLOG explicitly references `US5`.
+
+This breaks story-to-task traceability and weakens validation of session reflection behavior.
+
+---
+
+## I-007: NFR traceability gap in backlog
+
+**Type**: Coverage gap
+**Discovered**: 2026-02-24
+**Affects**: NFR validation planning for v0
+**Task**: TBD (`/plan`)
+
+PRD defines NFR1..NFR6, but backlog trace currently references only `NFR3` explicitly.
+
+No explicit task-level trace exists for NFR1, NFR2, NFR4, NFR5, NFR6, making non-functional validation incomplete by artifact evidence.
+
+---
+
+## I-008: ROADMAP vs BACKLOG scope/count drift
+
+**Type**: Defect
+**Discovered**: 2026-02-24
+**Affects**: `docs/objectives/ROADMAP.md` progress integrity, release reporting
+**Task**: TBD (`/plan`)
+
+ROADMAP progress and scope lines no longer match BACKLOG reality:
+- v0 scope line still states 14 skills.
+- Progress table counts do not match current backlog phase totals.
+
+This causes reporting drift and makes milestone completion status ambiguous.
+
+---
+
+## I-009: BACKLOG traceability schema drift
+
+**Type**: Design gap
+**Discovered**: 2026-02-24
+**Affects**: `docs/development/BACKLOG.md` reviewability and automated checks
+**Task**: TBD (`/plan`)
+
+BACKLOG column header is `User Story`, but values include mixed references (`FR*`, `PRD`, `ADR-*`, issue IDs, version labels).
+
+As a result, many tasks are not explicitly traceable to FR/NFR in a machine-checkable way.
 
 ---

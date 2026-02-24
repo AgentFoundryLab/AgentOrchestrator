@@ -3,7 +3,7 @@
 **Version**: 0.1.1
 **Status**: Accepted
 **Scope**: v0 Milestone
-**Date**: 2026-02-20
+**Date**: 2026-02-24
 
 ---
 
@@ -17,7 +17,7 @@ AgentOrchestrator is a lean, self-contained multi-agent orchestration framework 
 - **17 Skills** (9 agent-backed + 1 orchestration + 6 utility + 1 shared protocol)
 - **5 Hook Events** (lifecycle events with 5 scripts)
 - **2 Workflow Templates** (agent chains producing artifacts)
-- **2-3 MCP servers** (minimal external dependencies)
+- **Minimal MCP baseline with optional add-ons**
 
 ---
 
@@ -29,7 +29,7 @@ Create a minimalist orchestration layer where the **main Claude agent** coordina
 ### Secondary Goals
 1. Enable SWE pipeline via workflow: Spec → PRD → Architecture → Plan → Backlog
 2. Build in self-validation (agent end hooks) and meta-learning (session end hooks)
-3. Maintain cross-session memory via Serena MCP
+3. Maintain cross-session memory via episodic/semantic memory capability
 4. Keep installation trivial (copy files, done)
 
 ### Non-Goals
@@ -77,14 +77,14 @@ Seven agents, each with clear responsibilities:
 | Agent | Responsibility | Artifacts Produced |
 | --------- | -------------- | ------------------ |
 | **Business Analyst** | Requirements elicitation, acceptance criteria | PRD, User Stories |
-| **Architect** | System design, constraints, trade-offs | Architecture doc, ADR |
+| **Architect** | System design, constraints, trade-offs | Architecture doc, ADRs |
 | **Project Manager** | Planning, sequencing, decomposition | ROADMAP, BACKLOG |
 | **Developer** | Implementation, code changes | Code, tests |
 | **Validator** | Testing, acceptance criteria checking | Validation report |
 | **Deployer** | Build, deploy, release | Deployment artifacts |
 | **Tech Writer** | Documentation, runbooks | Docs, README |
 
-**FR1.1**: Agent source files live in `package/agents/<name>.md` and install to `~/.claude/agents/jarvis/<name>.md` (global) or `<project>/.claude/agents/jarvis/<name>.md` (project-local)
+**FR1.1**: Agents are defined as source artifacts and are installable across supported runtimes.
 **FR1.2**: Agents invoked via Claude Code's Task tool with `subagent_type` parameter
 **FR1.3**: Agents have explicit boundaries (will do / won't do)
 **FR1.4**: Agents produce typed artifacts
@@ -116,8 +116,6 @@ You are [agent role]. Your task is to invoke the [skill-name] skill and...
 
 ### FR2: Skill Interface
 
-> **Note**: AgentOrchestrator skill source lives in `package/skills/` and installs to `~/.claude/skills/jarvis/` (global) or `<project>/.claude/skills/jarvis/` (project-local). Skills support additional features over legacy commands: context forking, agent delegation, and lifecycle hooks.
-
 Seventeen skills (16 user-facing + 1 shared protocol):
 
 > **Note**: Agent-backed skills have 1:1 mapping with Agents. Agents can invoke other skills internally.
@@ -127,12 +125,12 @@ Seventeen skills (16 user-facing + 1 shared protocol):
 | Skill | Purpose | Agent | Output | Storage |
 | ----- | ------- | ----- | ------ | ------- |
 | `/spec` | Idea → requirements, acceptance criteria | BA | PRD | File |
-| `/design` | PRD → architecture, constraints, risks, ADR | Architect | Architecture doc | File |
+| `/design` | PRD → architecture, constraints, risks, ADRs | Architect | Architecture doc, ADRs | File |
 | `/onboard` | Analyze codebase → generate project-specific STANDARDS.md, GUIDELINES.md | Architect | docs/policy/ | File |
 | `/plan` | Architecture → sequencing, decomposition | PM | ROADMAP, BACKLOG | File |
 | `/review` | Cross-artifact consistency/coverage gate (pre-implement) | Tech Writer | reports/analysis/, ISSUES.md | File |
 | `/implement` | Code implementation, tests, build | Developer | Code, tests | File |
-| `/validate` | Quality assessment, acceptance criteria validation | Validator | Validation record | Serena |
+| `/validate` | Quality assessment, acceptance criteria validation | Validator | Validation record | Project memory store |
 | `/deploy` | Build, deploy, release | Deployer | Deployment artifacts | File |
 | `/document` | Documentation, runbooks | Tech Writer | Docs, README | File |
 
@@ -152,14 +150,14 @@ Seventeen skills (16 user-facing + 1 shared protocol):
 
 | Skill | Purpose | Output | Storage |
 | ----- | ------- | ------ | ------- |
-| `/reflexion` | Tactical: capture known_issues/solutions after agent task | Reflexion record | Serena (project) |
-| `/reflect` | Session meta-learning | Reflection record | Serena |
+| `/reflexion` | Tactical: capture known_issues/solutions after agent task | Reflexion record | Project memory store |
+| `/reflect` | Session meta-learning | Reflection record | Project memory store |
 | `/optimize` | Fine-tune orchestrator/agent/policy instructions (requires approval) | Meta-Opt Plan | File |
 | `/analyse` | Investigation, troubleshooting | Analysis report | File |
-| `/research` | Parallel MCP search, documentation | Research summary | File |
-| `/distill` | Content distillation with 5-level granularity (files/policy/knowledge/memory) | Distilled content | Replace original (git-versioned) or Serena (archive old) |
+| `/research` | Concurrent external research and documentation lookup | Research summary | File |
+| `/distill` | Content distillation with 5-level granularity (files/policy/knowledge/memory) | Distilled content | Replace original (git-versioned) or project memory archive |
 
-> **FR7 Reflexion**: Agent reminded to invoke `/reflexion` at SubagentStop → Serena project memory
+> **FR7 Reflexion**: Agent reminded to invoke `/reflexion` at SubagentStop → project memory store
 > **FR8 Meta-Learning**: `/reflect` → `/optimize` → fine-tune instructions; prevention items → rules/guidelines
 
 #### /distill Skill Specification
@@ -170,7 +168,7 @@ Seventeen skills (16 user-facing + 1 shared protocol):
 - Files (source code, configs)
 - Policy (PRINCIPLES.md, RULES.md, GUIDELINES.md)
 - Knowledge (project knowledge base)
-- Memory (Serena memories)
+- Memory (project memory store)
 - Artifacts (PRD, Architecture docs)
 - Session logs (JSONL transcripts)
 
@@ -198,19 +196,19 @@ Artifacts: Requirements > Criteria > Rationale > Background > Examples
 3. Present table: Tokens before/after, Reduction %, Critical Loss %
 4. User confirms level
 5. Execute distillation
-6. Output: Replace original (git-versioned files) or create new version (Serena memory, archive old)
+6. Output: Replace original (git-versioned files) or create new version (project memory store, archive old)
 
 **Invocation**:
 ```
 /distill <path|type> [level]           # Specific item or all of type
 /distill package/policy/RULES.md       # Single file (repo source)
 /distill --all policy                  # All policy files
-/distill --all memory                  # All Serena memories
+/distill --all memory                  # All project memory records
 ```
 
 **Out of scope**: Conversation context (use built-in `/compact`)
 
-**FR2.1**: Skills installed from `package/skills/` to `~/.claude/skills/jarvis/` (and optionally `<project>/.claude/skills/jarvis/`)
+**FR2.1**: Skills are installable across supported runtimes.
 **FR2.2**: Skills with `disable-model-invocation: false` (default) can be auto-invoked by Claude
 **FR2.3**: Agents are slim wrappers that invoke corresponding skills
 **FR2.4**: `/orchestrate` calls agents per defined workflows; agents invoke skills
@@ -246,14 +244,11 @@ Skill instructions with:
 #### Skill Directory Structure
 
 ```text
-package/skills/
-└── my-skill/
-    ├── SKILL.md           # Main instructions (required)
-    ├── template.md        # Template for Claude to fill in
-    ├── examples/
-    │   └── sample.md      # Example output
-    └── scripts/
-        └── validate.sh    # Script Claude can execute
+<skill>/
+├── SKILL.md           # Main instructions (required)
+├── template.md        # Optional template
+├── examples/          # Optional examples
+└── scripts/           # Optional helper scripts
 ```
 
 ### FR3: Hooks System
@@ -319,11 +314,11 @@ Four-tier memory:
 | Layer | Storage | Purpose | Trigger |
 | ----- | ------- | ------- | ------- |
 | **Session** | Claude logs (JSONL) | Transcript history | Automatic |
-| **Semantic** | Serena memories | Project knowledge, patterns | Manual |
-| **Reflexion** | Serena memories (project) | Error patterns, known issues, solutions learned (tactical) | SubagentStop |
-| **Transient** | Serena memories (project) | Validation records | /validate |
+| **Semantic** | Project memory store | Project knowledge, patterns | Manual |
+| **Reflexion** | Project memory store (project-scoped) | Error patterns, known issues, solutions learned (tactical) | SubagentStop |
+| **Transient** | Project memory store (project-scoped) | Validation records | /validate |
 
-**FR5.1**: `/reflect` writes to Serena memories
+**FR5.1**: `/reflect` writes to project memory store
 **FR5.2**: SessionStart hook loads relevant memories at session start
 **FR5.3**: Stop hook invokes `/reflect` for session meta-learning (blocking, can invoke skills)
 **FR5.3.1**: SessionEnd hook captures session state for external analysis (non-blocking, cleanup only)
@@ -355,7 +350,7 @@ Reminded via SubagentStop hook to prompt Agent for final validation:
 ### FR7: Reflexion (Tactical)
 
 **FR7.1**: SubagentStop hook reminds agent to invoke `/reflexion`
-**FR7.2**: `/reflexion` captures to Serena project memory (high signal/noise):
+**FR7.2**: `/reflexion` captures to project memory store (high signal/noise):
   - `known_issues` - Significant issues encountered
   - `cause` - Root cause analysis
   - `solution` - What fixed it
@@ -367,7 +362,7 @@ Reminded via SubagentStop hook to prompt Agent for final validation:
 
 Adhoc improvement cycle via `/reflect` + `/optimize`:
 
-**FR8.1**: `/reflect` analyzes session, captures lessons learned → Serena
+**FR8.1**: `/reflect` analyzes session, captures lessons learned → project memory store
 **FR8.2**: `/optimize` proposes fine-tuned orchestrator/agent/skill instructions
 **FR8.3**: User approval required before rollout
 
@@ -378,7 +373,7 @@ Adhoc improvement cycle via `/reflect` + `/optimize`:
 | ID | Requirement | Target |
 | -- | ----------- | ------ |
 | NFR1 | Zero Python dependencies | Pure markdown/JSON config |
-| NFR2 | MCP footprint | 2-3 servers |
+| NFR2 | MCP footprint | Minimal required baseline with recommended add-ons |
 | NFR3 | Installation time | <30 seconds |
 | NFR4 | Claude Code compatibility | Works with vanilla Claude Code |
 | NFR5 | Self-contained | No external services beyond MCPs |
@@ -388,18 +383,27 @@ Adhoc improvement cycle via `/reflect` + `/optimize`:
 
 ## MCP Dependencies
 
-Minimal set:
+MCP baseline is defined by functional capability types, with requirement levels applied to capability classes (not concrete providers/servers).
 
-| Server | Purpose | Priority |
-| ------ | ------- | -------- |
-| **Serena** | Session persistence, semantic memory, symbolic code operations | Required |
-| **Context7** | Documentation lookup, prevents hallucination | Required |
-| **Playwright** | Browser automation for validation | Optional |
+### Required Capability Types (Minimal Set)
 
-### Explicitly Dropped (from SuperClaude v4)
-- Morphllm, Kazuki, Agiletec, Airis Gateway
-- Tavily (use Claude's native WebSearch)
-- Sequential-thinking (use native reasoning)
+| Capability Type | Why Required |
+| --------------- | ------------ |
+| Episodic/Semantic project memory and retrieval | Persist and query cross-session knowledge (semantic/reflexion/transient context). |
+
+### Recommended Capability Types
+
+| Capability Type | Purpose |
+| --------------- | ------- |
+| Authoritative technical reference lookup | Ground implementation and design decisions in up-to-date docs. |
+| Repository intelligence and documentation Q&A | Retrieve and reason over repository-level structure/content for design and research tasks. |
+| Concurrent external research execution | Faster multi-source lookup and deep research/task runs when needed. |
+
+### Optional Capability Types (Add-ons)
+
+| Capability Type | Purpose |
+| --------------- | ------- |
+| Visual/browser automation | UI and workflow validation requiring rendered-state checks. |
 
 ---
 
@@ -422,11 +426,12 @@ orchestrator/
 │   │   └── ROADMAP.md           # Managed by User
 │   ├── architecture/            # Design docs
 │   │   ├── PRD.md               # This document
-│   │   └── adr/                 # Architecture Decision Records
+│   │   └── adr/                 # Architecture Decision Records (ADRs)
 │   ├── development/             # Current work
 │   │   └── BACKLOG.md
 │   └── knowledge/               # Orchestrator knowledge base
-│       └── README.md
+│       ├── README.md
+│       └── decisions/           # Technical/operational decision records (non-ADR)
 │
 │   # ════════════════════════════════════════════════════════════════
 │   # package/ - SOURCE LAYOUT (deployed into Claude Code structures)
@@ -516,38 +521,15 @@ orchestrator/
 │   # <target>/reports/{analysis,research}
 │   # <target>/.serena/project.yml
 │
-└── .serena/                     # Local storage for Serena MCP (transient artifacts)
+└── .serena/                     # Local project memory store (transient artifacts)
     └── README.md                # /validate, /reflect, /reflexion → stored here
 ```
 
-**Installation targets:**
-
-```bash
-install.sh --global                    # package/ → ~/.claude/ (agents/skills under jarvis namespace)
-install.sh --project <path>            # package/ → <path>/ (project-local .claude/ + docs/reports scaffolding)
-install.sh --global --project <path>   # Both targets
-```
-
-**Abstraction layers:**
-
-| Layer | Contents | Install Flag | Target |
-| ----- | -------- | ------------ | ------ |
-| `package/agents`, `package/skills` | agent/skill source | `--global` | `~/.claude/agents/jarvis/`, `~/.claude/skills/jarvis/` |
-| `package/{hooks,settings,mcp,policy,workflows,templates}` | runtime/shared assets | `--global` | `~/.claude/`, `~/.claude.json` |
-| `package/*` + docs/reports scaffolding | project-local installation | `--project <path>` | `<path>/.claude/*`, `<path>/docs/*`, `<path>/reports/*`, `<path>/.serena/` |
-| `docs/` | Orchestrator's own project docs (dogfooding) | - | Not deployed |
-
-**Data Foundation mapping:**
-
-| Data Category | Orchestrator Location | Deployed via | Target |
-| --------------- | ------------ | ------------ | ------ |
-| Policy | `package/policy/` | `--global`, `--project` | `~/.claude/policy/`, `<path>/.claude/policy/` |
-| Procedures (workflows) | `package/workflows/` | `--global`, `--project` | `~/.claude/workflows/`, `<path>/.claude/workflows/` |
-| Procedures (skills) | `package/skills/` | `--global`, `--project` | `~/.claude/skills/jarvis/`, `<path>/.claude/skills/jarvis/` |
-| Actors | `package/agents/` | `--global`, `--project` | `~/.claude/agents/jarvis/`, `<path>/.claude/agents/jarvis/` |
-| Knowledge docs | `package/templates/{knowledge,standards,guidelines}.md` | `--project <path>` | `<path>/docs/knowledge/README.md`, `<path>/docs/policy/*` |
-| Reports (file) | scaffolded directories | `--project <path>` | `<path>/reports/{analysis,research}/` |
-| Transient | Serena memories (project) | - | Serena (validation, reflection, reflexion) |
+**Installation model (high-level):**
+- Supports global and project-local installation modes.
+- Deploys runtime-native artifacts for supported runtimes.
+- Creates docs/reports scaffolding for project workflows.
+- Detailed runtime/path/profile semantics are defined during architecture design.
 
 **Total: ~40 files**
 
@@ -564,7 +546,9 @@ my-app/
 │   ├── architecture/
 │   │   ├── PRD.md           # Generated by /spec
 │   │   ├── ARCHITECTURE.md  # Generated by /design
-│   │   └── adr/             # ADR files from /design
+│   │   └── adr/             # ADRs from /design
+│   ├── knowledge/
+│   │   └── decisions/       # Technical/operational decision records (non-ADR)
 │   └── development/
 │       └── BACKLOG.md       # Generated by /plan
 ├── reports/                 # Git-versioned skill outputs
@@ -572,7 +556,7 @@ my-app/
 │   │   └── 2026-01-23-auth-issue.md
 │   └── research/            # /research output
 │       └── 2026-01-23-oauth-providers.md
-└── .serena/                 # Transient artifacts (Serena memories)
+└── .serena/                 # Transient artifacts (project memory store)
     # /validate → validation records
     # /reflect → reflection records
     # /reflexion → reflexion records
@@ -605,7 +589,7 @@ orchestrator/
 
 **Acceptance Criteria:**
 - [ ] `/design` reads recent PRD from context
-- [ ] Output contains: high-level design, components, constraints, risks, trade-offs, ADR
+- [ ] Output contains: high-level design, components, constraints, risks, trade-offs, and ADRs
 - [ ] Design references requirements traceability
 
 ### US3: Architecture to Tasks
@@ -615,7 +599,7 @@ orchestrator/
 
 **Acceptance Criteria:**
 - [ ] `/plan` reads recent architecture from context
-- [ ] Output is Milestone → Phase → Epic → Task hierarchy (see [ADR-005](adr/005-task-decomposition-hierarchy.md))
+- [ ] Output is Milestone → Phase → Epic → Task hierarchy
 - [ ] Dependencies between tasks are marked
 
 ### US4: End-to-End Orchestration
@@ -636,7 +620,7 @@ orchestrator/
 **Acceptance Criteria:**
 - [ ] `/reflect` analyzes current session
 - [ ] Errors/blockers captured with solutions
-- [ ] Patterns stored in Serena memory
+- [ ] Patterns stored in project memory store
 
 ### US6: Code Analysis
 **As a** developer
@@ -725,7 +709,7 @@ AgentOrchestrator [v0] implements a **lean subset** focused on:
 - Skills and Agents (Actors)
 - Two core Workflows
 - Embedded Hooks (SessionStart, SubagentStop, Stop, SessionEnd)
-- Serena-based Memory
+- Episodic/Semantic memory capability
 
 Orchestrator [v1] features below are out of scope for this PRD:
 - **Data Foundation**: Ontology, Policy, Procedures, Incentives, Knowledge Base, Knowledge Graph, Observability
