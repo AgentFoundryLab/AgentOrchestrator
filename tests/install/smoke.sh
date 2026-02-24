@@ -385,7 +385,7 @@ test_restore_namespace() {
 }
 run_test "restore-namespace-myorg-skills-removed" test_restore_namespace
 
-# Install --namespace myorg then --cleanup — namespaced skills removed
+# Install --namespace myorg then --uninstall — namespaced skills removed
 test_cleanup_namespace() {
     local tmp
     tmp=$(mktemp -d)
@@ -394,7 +394,7 @@ test_cleanup_namespace() {
     before_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     [ "$before_count" -gt 0 ] || { echo "  [setup] no namespaced skills installed" >&2; rm -rf "$tmp"; return 1; }
 
-    HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg --cleanup >/dev/null 2>&1
+    HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg --uninstall >/dev/null 2>&1
     local after_count
     after_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     rm -rf "$tmp"
@@ -453,7 +453,7 @@ test_codex_cleanup_namespace_targets_dash() {
     before_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     [ "$before_count" -gt 0 ] || { echo "  [setup] no codex skill files installed" >&2; rm -rf "$tmp"; return 1; }
 
-    HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg --cleanup >/dev/null 2>&1
+    HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg --uninstall >/dev/null 2>&1
     local after_count agents_after
     after_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     agents_after=$(find "${tmp}/.agents/agents" -maxdepth 1 -name "myorg-*.md" -type f 2>/dev/null | wc -l)
@@ -522,7 +522,7 @@ test_two_namespace_isolation() {
     [ "$otherorg_before" -gt 0 ] || { echo "  [setup] otherorg skills missing" >&2; rm -rf "$tmp"; return 1; }
 
     # Cleanup only myorg namespace
-    HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg --cleanup >/dev/null 2>&1
+    HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg --uninstall >/dev/null 2>&1
 
     local myorg_after otherorg_after
     myorg_after=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)

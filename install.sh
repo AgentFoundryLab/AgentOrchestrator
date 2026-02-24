@@ -10,7 +10,7 @@
 #   ./install.sh [--no-namespace]      Use flat agents/skills/commands paths (no namespace)
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
 #   ./install.sh --restore             Remove installed artifacts, restore settings
-#   ./install.sh --cleanup             Remove installed artifacts, unpatch files (no backup restore)
+#   ./install.sh --uninstall           Remove installed artifacts, unpatch files (no backup restore)
 #   ./install.sh --check               Check registry paths against package layout (no writes)
 
 set -e
@@ -90,7 +90,7 @@ Namespace flags:
 Other flags:
     --overwrite                        Overwrite existing markdown files (backup to .backup/)
     --restore                          Remove installed artifacts, restore settings from backup
-    --cleanup                          Remove installed artifacts, strip injected refs (no backup restore)
+    --uninstall                        Remove installed artifacts, strip injected refs (no backup restore)
     --check                            Validate registry paths vs package layout; exits non-zero on drift
     --help                             Show this help
 
@@ -2065,7 +2065,7 @@ cleanup_project() {
     local target="$1"
 
     if [ -z "$target" ]; then
-        log_error "Project path required for --cleanup with --project"
+        log_error "Project path required for --uninstall with --project"
         usage
         exit 1
     fi
@@ -2200,7 +2200,7 @@ main() {
                 do_restore=true
                 shift
                 ;;
-            --cleanup)
+            --uninstall)
                 do_cleanup=true
                 shift
                 ;;
@@ -2250,7 +2250,7 @@ main() {
     register_runtime_defaults || exit 1
 
     if [ "$do_restore" = true ] && [ "$do_cleanup" = true ]; then
-        log_error "--restore and --cleanup are mutually exclusive"
+        log_error "--restore and --uninstall are mutually exclusive"
         usage
         exit 1
     fi

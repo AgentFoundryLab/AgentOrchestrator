@@ -765,7 +765,7 @@
 
 ### T-070: Namespace-safe restore/cleanup semantics
 **AC**:
-- `install.sh --restore` and `install.sh --cleanup` (or equivalent) accept an optional `--namespace` argument
+- `install.sh --restore` and `install.sh --uninstall` (or equivalent) accept an optional `--namespace` argument
 - Restore/cleanup with a namespace targets only namespaced artifacts for runtime/profile combinations that support namespace mapping; unsupported combinations remain untouched
 - Restore/cleanup without a namespace targets only the flat (non-namespaced) install
 - A cross-namespace collision scenario (two namespaces sharing a runtime root) is tested and does not produce data loss
