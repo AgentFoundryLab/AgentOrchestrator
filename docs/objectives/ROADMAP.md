@@ -1,6 +1,6 @@
 # AgentOrchestrator Roadmap
 
-**Version**: 0.3.6
+**Version**: 0.4.0
 **Updated**: 2026-02-24
 
 ---
@@ -227,6 +227,74 @@ Policy details are maintained in:
 
 ---
 
+## v0.3: Subagents & Installer Modularization
+
+**Goal**: (1) Decompose the monolithic `install.sh` into cohesive, single-responsibility runtime modules. (2) Extend installer with subagent artifacts for Claude Agent Teams (experimental), Codex multi-agent roles, and Gemini subagents.
+
+**Sources**:
+- `reports/research/2026-02-22-agent-capability-report.md` (updated 2026-02-24)
+- `docs/knowledge/decisions/installer-modularity.md` (TDR, T-117)
+
+---
+
+### Installer Modularization Phase
+
+Decompose `install.sh` (2300+ lines) before adding subagent features to prevent growth into an unmanageable monolith.
+
+#### Epic: Installer Decomposition
+**Depends on**: v0.2.0 complete
+
+- [ ] Split `install.sh` into runtime-scoped modules (`claude`, `codex`, `gemini`, `opencode`, `qwen`) + main dispatcher (T-115)
+- [ ] Extract shared installer library (`transforms`, `validation`, `utils`) (T-116)
+- [ ] Write TDR: installer modularity principles — single-responsibility per module, no cross-runtime coupling (T-117)
+
+---
+
+### Subagents Extension Phase
+
+Three runtime-specific subagent install epics run in parallel. Starts after Installer Modularization to avoid adding features into the monolith.
+
+#### Epic: Claude Agent Teams (Experimental)
+**Depends on**: Installer Decomposition complete
+**Parallel**: Codex Multi-agent Roles, Gemini Subagents
+
+- [ ] Add `--subagents` and `--experimental` flags to installer (T-101)
+- [ ] Install Claude subagent `.md` files to `.claude/agents/` (project + global) (T-102)
+- [ ] Inject `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` into `settings.json` `env` block when `--experimental` passed (T-103)
+
+#### Epic: Codex Multi-agent Roles
+**Depends on**: Installer Decomposition complete
+**Parallel**: Claude Agent Teams, Gemini Subagents
+
+- [ ] Install Codex multi-agent role config to `~/.codex/config.toml` `[agents]` section (T-104)
+- [ ] Install per-role TOML files to `~/.codex/agents/<name>.toml` (T-105)
+- [ ] Enable `features.multi_agent = true` in Codex config when `--experimental` passed (T-106)
+
+#### Epic: Gemini Subagents
+**Depends on**: Installer Decomposition complete
+**Parallel**: Claude Agent Teams, Codex Multi-agent Roles
+
+- [ ] Install Gemini subagent `.md` files to `.gemini/agents/` (project + global) (T-107)
+- [ ] Inject `experimental.enableAgents: true` into Gemini `settings.json` when `--experimental` passed (T-108)
+- [ ] Validate Gemini subagent frontmatter schema on install (T-109)
+
+#### Epic: Subagents Validation & CI
+**Depends on**: Claude Agent Teams, Codex Multi-agent Roles, Gemini Subagents
+
+- [ ] Update `tests/install/smoke.sh` for subagent artifact paths (all 3 runtimes) (T-110)
+- [ ] Add conformance tests for `--subagents`: correct paths + schema per runtime (T-111)
+- [ ] Add `--experimental` flag guard tests (T-112)
+- [ ] Update CI capability baseline checks to include `subagents` dimension (T-113)
+
+#### Epic: Subagents UX & Documentation
+**Depends on**: Subagents Validation & CI
+
+- [ ] Document `--subagents`/`--experimental` flags; update README capability matrix with `subagents` column (T-114)
+
+**→ TAG: v0.3.0**
+
+---
+
 # v1 Milestone (Orchestrator)
 
 **Goal**: Full Orchestrator vision with observability, execution engine, and advanced workflows.
@@ -426,6 +494,16 @@ v0 Milestone
 │   └── Validation & CI
 │       → TAG: v0.2.0 (complete)
 │
+├── v0.3: Subagents & Installer Modularization ◄── v0.2.0
+│   ├── Installer Decomposition (T-115–T-117)
+│   │   └── Split install.sh → runtime modules + lib + TDR
+│   ├── Claude Agent Teams ──────────────────────────────────┐
+│   ├── Codex Multi-agent Roles ─────────────────────────────┤ (parallel, after T-115)
+│   ├── Gemini Subagents ────────────────────────────────────┘
+│   ├── Subagents Validation & CI ◄── all three above
+│   └── Subagents UX & Documentation ◄── Validation & CI
+│       → TAG: v0.3.0
+│
 └── v0.1.1: Governance & Quality ◄── v0.1.0
     └── Governance and Quality Controls (onboard, review, hitl + agent/workflow updates)
         → TAG: v0.1.1
@@ -464,6 +542,8 @@ v1 Milestone
 | v0 | Validation | 1 | 3 | ✅ Complete |
 | v0 | Installer Extension (v0.2.0) | 10 | 40 | ✅ Complete |
 | v0 | Governance & Quality (v0.1.1) | 1 | 7 | ✅ Complete |
+| v0 | Installer Modularization (v0.3) | 1 | 3 | 🔲 Not started |
+| v0 | Subagents Extension (v0.3) | 5 | 14 | 🔲 Not started |
 | v1 | POC | 3 | 8 | 🔲 Not started |
 | v1 | MVP | 3 | 9 | 🔲 Not started |
 | v1 | Foundation | 4 | 16 | 🔲 Not started |

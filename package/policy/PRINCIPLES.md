@@ -22,6 +22,10 @@
 - **KISS**: Prefer simplicity over complexity in design decisions
 - **YAGNI**: Implement current requirements only, avoid speculation
 
+### Structural Design
+- **Modular Composition**: Build from small, single-responsibility units. Each module owns one concern; shared logic lives in explicit libraries, never duplicated across siblings. A module that is hard to name has more than one responsibility.
+- **High Cohesion / Low Coupling**: Keep related behaviour together; minimize dependencies between modules.
+
 ### Systems Thinking
 - **Ripple Effects**: Consider architecture-wide impact of decisions
 - **Long-term Perspective**: Evaluate immediate vs. future trade-offs
