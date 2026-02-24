@@ -1,6 +1,6 @@
 # AgentOrchestrator Roadmap
 
-**Version**: 0.3.5
+**Version**: 0.3.6
 **Updated**: 2026-02-24
 
 ---
@@ -18,7 +18,7 @@
 
 **Goal**: Minimal viable multi-agent orchestration framework for Claude Code.
 
-**Scope**: 7 agents, 14 skills, 5 hooks, 2 workflows, 8 templates, 2 policies
+**Scope**: 7 agents, 17 skills, 5 hooks, 2 workflows, 8 templates, 2 policies
 
 ---
 
@@ -460,9 +460,9 @@ v1 Milestone
 
 | Milestone | Phase | Epics | Tasks | Status |
 |-----------|-------|-------|-------|--------|
-| v0 | Initial | 10 | 40 | ✅ Complete |
+| v0 | Initial | 14 | 47 | ✅ Complete |
 | v0 | Validation | 1 | 3 | ✅ Complete |
-| v0 | Installer Extension (v0.2.0) | 5 | 34 | 🔄 In progress |
+| v0 | Installer Extension (v0.2.0) | 10 | 40 | 🔄 In progress |
 | v0 | Governance & Quality (v0.1.1) | 1 | 7 | ✅ Complete |
 | v1 | POC | 3 | 8 | 🔲 Not started |
 | v1 | MVP | 3 | 9 | 🔲 Not started |

@@ -245,11 +245,13 @@ Execution (changes frequently)
 
 ## MCP Requirements
 
-| Server | Purpose | Required |
-|--------|---------|----------|
-| **Serena** | Memory persistence, symbolic code ops | Yes |
-| **Context7** | Documentation lookup | Yes |
-| **DeepWiki** | GitHub repository documentation | Yes |
+| Server | Purpose | Status |
+|--------|---------|--------|
+| **Serena** | Memory persistence, symbolic code ops | Required |
+| **Context7** | Documentation lookup | Recommended |
+| **DeepWiki** | GitHub repository documentation | Recommended |
+| **Parallel Search** | Fast parallel web lookup for research workflows | Recommended |
+| **Parallel Task** | Deep research and batch enrichment task execution | Recommended |
 | **Playwright** | Browser automation | Optional |
 
 MCP servers are pre-configured in `settings.json`. Serena requires `uvx` for dynamic project initialization.
@@ -293,7 +295,7 @@ Hooks provide **reminders**, not enforcement. Agents decide whether to act (ADR-
 
 Installed by `--global` flag. Contains:
 - Hook configurations (command-based)
-- MCP server definitions (Serena, Context7, DeepWiki)
+- MCP server definitions (Serena, Context7, DeepWiki, Parallel Search, Parallel Task, Playwright)
 - Default permissions
 
 ### Project Settings (`.claude/settings.json`)

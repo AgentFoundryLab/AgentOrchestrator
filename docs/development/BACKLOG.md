@@ -8,105 +8,105 @@
 
 ## Tasks
 
-| ID | Milestone | Phase | Epic | Task | User Story | Priority | Status |
-|----|-----------|-------|------|------|------------|----------|:------:|
-| T-001 | v0 | Initial | Hook System | inject-context.sh | FR5.4, FR5.6 | P0 | ✅ |
-| T-002 | v0 | Initial | Hook System | remind-validate.sh | FR3.1, FR6 | P0 | ✅ |
-| T-003 | v0 | Initial | Hook System | remind-reflexion.sh | FR3.1, FR7.1 | P0 | ✅ |
-| T-004 | v0 | Initial | Hook System | remind-reflect.sh | FR3.2, FR8.1 | P0 | ✅ |
-| T-005 | v0 | Initial | Hook System | checkpoint-session.sh | FR3.3, FR5.3.1 | P1 | ✅ |
-| T-006 | v0 | Initial | Core Agents | business-analyst.md | FR1, US1 | P0 | ✅ |
-| T-007 | v0 | Initial | Core Agents | architect.md | FR1, US2 | P0 | ✅ |
-| T-008 | v0 | Initial | Core Agents | project-manager.md | FR1, US3 | P0 | ✅ |
-| T-009 | v0 | Initial | Core Agents | developer.md | FR1 | P0 | ✅ |
-| T-010 | v0 | Initial | Support Agents | validator.md | FR1 | P1 | ✅ |
-| T-011 | v0 | Initial | Support Agents | deployer.md | FR1 | P1 | ✅ |
-| T-012 | v0 | Initial | Support Agents | tech-writer.md | FR1 | P1 | ✅ |
-| T-013 | v0 | Initial | Agent-Backed Skills | spec/SKILL.md | FR2, US1 | P0 | ✅ |
-| T-014 | v0 | Initial | Agent-Backed Skills | design/SKILL.md | FR2, US2 | P0 | ✅ |
-| T-015 | v0 | Initial | Agent-Backed Skills | plan/SKILL.md | FR2, US3 | P0 | ✅ |
-| T-016 | v0 | Initial | Agent-Backed Skills | implement/SKILL.md | FR2 | P0 | ✅ |
-| T-017 | v0 | Initial | Agent-Backed Skills | validate/SKILL.md | FR2, FR6 | P1 | ✅ |
-| T-018 | v0 | Initial | Agent-Backed Skills | deploy/SKILL.md | FR2 | P1 | ✅ |
-| T-019 | v0 | Initial | Agent-Backed Skills | document/SKILL.md | FR2 | P1 | ✅ |
-| T-020 | v0 | Initial | Utility Skills | reflexion/SKILL.md | FR2, FR7 | P0 | ✅ |
-| T-021 | v0 | Initial | Utility Skills | reflect/SKILL.md | FR2, FR8.1 | P0 | ✅ |
-| T-022 | v0 | Initial | Utility Skills | optimize/SKILL.md | FR2, FR8.2 | P2 | ✅ |
-| T-023 | v0 | Initial | Utility Skills | analyse/SKILL.md | FR2, US6 | P1 | ✅ |
-| T-024 | v0 | Initial | Utility Skills | research/SKILL.md | FR2 | P1 | ✅ |
-| T-025 | v0 | Initial | Utility Skills | distill/SKILL.md | FR2 | P2 | ✅ |
-| T-026 | v0 | Initial | Orchestration | orchestrate/SKILL.md | FR2, FR4, US4 | P0 | ✅ |
-| T-027 | v0 | Initial | Policy | RULES.md | PRD | P1 | ✅ |
-| T-028 | v0 | Initial | Policy | PRINCIPLES.md | PRD | P1 | ✅ |
-| T-029 | v0 | Initial | Workflows | SWE.md | FR4 | P0 | ✅ |
-| T-030 | v0 | Initial | Workflows | meta-learning.md | FR4, FR8 | P1 | ✅ |
-| T-031 | v0 | Initial | Templates | prd.md | FR4.4 | P1 | ✅ |
-| T-032 | v0 | Initial | Templates | architecture.md | FR4.4 | P1 | ✅ |
-| T-033 | v0 | Initial | Templates | adr.md | FR4.4 | P1 | ✅ |
-| T-034 | v0 | Initial | Templates | roadmap.md | FR4.4 | P1 | ✅ |
-| T-047 | v0 | Initial | Templates | backlog.md | FR4.4 | P1 | ✅ |
-| T-048 | v0 | Initial | Templates | issues.md | FR4.4 | P2 | ✅ |
-| T-049 | v0 | Initial | Templates | vision.md | FR4.4 | P2 | ✅ |
-| T-050 | v0 | Initial | Templates | blueprint.md | FR4.4 | P2 | ✅ |
-| T-035 | v0 | Initial | Settings & Installer | package/settings.json | FR3 | P0 | ✅ |
-| T-036 | v0 | Initial | Settings & Installer | project-local install scaffolding | PRD | P1 | ✅ |
-| T-037 | v0 | Initial | Settings & Installer | .claude/settings.json | PRD | P0 | ✅ |
-| T-038 | v0 | Initial | Settings & Installer | install.sh | PRD, NFR3 | P0 | ✅ |
-| T-039 | v0 | Validation | Integration | E2E /orchestrate test | US4 | P0 | ✅ |
-| T-040 | v0 | Validation | Integration | Dogfood Orchestrator docs | PRD | P1 | ✅ |
-| T-041 | v0 | Validation | Integration | Update README.md | PRD | P0 | ✅ |
-| T-042 | v0 | Initial | Policy | DESIGN-PRINCIPLES.md | PRD | P1 | ✅ |
-| T-043 | v0 | Initial | Hooks | package/hooks/README.md | PRD | P2 | ✅ |
-| T-044 | v0 | Initial | Project Templates | package-driven project scaffolding | PRD | P1 | ✅ |
-| T-045 | v0 | Initial | Memory | .serena/README.md | PRD | P2 | ✅ |
-| T-046 | v0 | Initial | Settings | Fix $schema in settings.json | PRD | P0 | ✅ |
-| T-051 | v0 | Governance & Quality | Governance and Quality Controls | onboard/SKILL.md | ADR-013 | P0 | ✅ |
-| T-052 | v0 | Governance & Quality | Governance and Quality Controls | review/SKILL.md | ADR-013 | P0 | ✅ |
-| T-053 | v0 | Governance & Quality | Governance and Quality Controls | hitl/SKILL.md | ADR-013 | P0 | ✅ |
-| T-054 | v0 | Governance & Quality | Governance and Quality Controls | Update architect.md (add onboard skill) | ADR-013 | P0 | ✅ |
-| T-055 | v0 | Governance & Quality | Governance and Quality Controls | Update tech-writer.md (add review skill) | ADR-013 | P0 | ✅ |
-| T-056 | v0 | Governance & Quality | Governance and Quality Controls | Update SWE.md (/review gate in full workflow) | ADR-013, T-029 | P0 | ✅ |
-| T-057 | v0 | Governance & Quality | Governance and Quality Controls | Update PRD.md FR2 (17 skills) | R-001 | P0 | ✅ |
-| T-058 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Define canonical runtime registry | v0.2.0 | P0 | ✅ |
-| T-059 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add installer targets for --opencode and --qwen | v0.2.0 | P0 | ✅ |
-| T-060 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Claude paths | v0.2.0 | P0 | ✅ |
-| T-061 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Codex paths | v0.2.0 | P0 | ✅ |
-| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths | v0.2.0 | P0 | 🔄 |
-| T-063 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify OpenCode paths | v0.2.0 | P0 | ✅ |
-| T-064 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Qwen paths | v0.2.0 | P0 | ✅ |
-| T-065 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add runtime path drift checks | v0.2.0 | P1 | ✅ |
-| T-066 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Define frontmatter/schema transforms (skills->commands) | v0.2.0 | P1 | ✅ |
-| T-067 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Define namespace grammar and validation | v0.2.0 | P0 | ✅ |
-| T-068 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Map namespace input to runtime-native artifact paths | v0.2.0 | P0 | ✅ |
-| T-069 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Preserve flat mode as backward-compatible default | v0.2.0 | P0 | ✅ |
-| T-070 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Namespace-safe restore/cleanup semantics | v0.2.0 | P0 | ✅ |
-| T-071 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Split install profiles by capability | v0.2.0 | P0 | ✅ |
-| T-072 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Make skills the default profile when runtime supports skills | v0.2.0 | P0 | ✅ |
-| T-073 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Add commands compatibility profile selectable by flag | v0.2.0 | P1 | ✅ |
-| T-074 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Claude profile (commands+skills+hooks+scripts) | v0.2.0 | P0 | ✅ |
-| T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (skills+scripts baseline, no hooks) | v0.2.0 | P0 | ✅ |
-| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | v0.2.0 | P0 | 🔄 |
-| T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
-| T-078 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Qwen profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
-| T-079 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Emit warnings for unsupported capabilities per runtime | v0.2.0 | P1 | ✅ |
-| T-080 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Runtime-aware idempotent policy-ref injection | v0.2.0 | P1 | ✅ |
-| T-081 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Prevent cross-runtime collisions in shared context docs | v0.2.0 | P1 | ✅ |
-| T-082 | v0 | Installer Extension | UX & Documentation | Update install.sh --help with multi-agent + namespaced examples | v0.2.0 | P1 | ✅ |
-| T-083 | v0 | Installer Extension | UX & Documentation | Document skills default and commands compatibility mode | v0.2.0 | P1 | ✅ |
-| T-084 | v0 | Installer Extension | UX & Documentation | Document per-agent schema/frontmatter differences in commands mode | v0.2.0 | P1 | ✅ |
-| T-085 | v0 | Installer Extension | UX & Documentation | Update README.md install matrix for all 5 runtimes | v0.2.0 | P1 | ✅ |
-| T-086 | v0 | Installer Extension | UX & Documentation | Document migration notes for legacy namespace and runtime paths | v0.2.0 | P2 | ✅ |
-| T-087 | v0 | Installer Extension | Validation & CI | Add install smoke tests for runtime matrix (global + project) | v0.2.0 | P0 | ✅ |
-| T-088 | v0 | Installer Extension | Validation & CI | Add capability conformance tests per runtime | v0.2.0 | P0 | ✅ |
-| T-089 | v0 | Installer Extension | Validation & CI | Add restore/cleanup regression tests for namespaced installs | v0.2.0 | P1 | ✅ |
-| T-090 | v0 | Installer Extension | Validation & CI | Add idempotency tests for repeated installs with mixed runtime subsets | v0.2.0 | P1 | ✅ |
-| T-091 | v0 | Installer Extension | Validation & CI | Add CI guardrail for runtime/path drift | v0.2.0 | P0 | ✅ |
-| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | G-002 | P1 | 🔄 |
-| T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | G-003 | P1 | 🔲 |
-| T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | G-003 | P2 | 🔲 |
-| T-096 | v0 | Installer Extension | Namespace Alignment | Align runtime namespace modes with ADR-014 D-2 | I-001 | P1 | 🔲 |
-| T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/subagents support model; hooks excluded by policy) | I-002 | P1 | 🔲 |
-| T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | I-003 | P2 | 🔲 |
+| ID | Milestone | Phase | Epic | Task | Requirement Trace | Linkage | Priority | Status |
+|----|-----------|-------|------|------|-------------------|---------|----------|:------:|
+| T-001 | v0 | Initial | Hook System | inject-context.sh | FR5.4, FR5.6 | — | P0 | ✅ |
+| T-002 | v0 | Initial | Hook System | remind-validate.sh | FR3.1, FR6 | — | P0 | ✅ |
+| T-003 | v0 | Initial | Hook System | remind-reflexion.sh | FR3.1, FR7.1 | — | P0 | ✅ |
+| T-004 | v0 | Initial | Hook System | remind-reflect.sh | FR3.2, FR8.1, US5 | — | P0 | ✅ |
+| T-005 | v0 | Initial | Hook System | checkpoint-session.sh | FR3.3 | FR5.3.1 | P1 | ✅ |
+| T-006 | v0 | Initial | Core Agents | business-analyst.md | FR1, US1 | — | P0 | ✅ |
+| T-007 | v0 | Initial | Core Agents | architect.md | FR1, US2 | — | P0 | ✅ |
+| T-008 | v0 | Initial | Core Agents | project-manager.md | FR1, US3 | — | P0 | ✅ |
+| T-009 | v0 | Initial | Core Agents | developer.md | FR1 | — | P0 | ✅ |
+| T-010 | v0 | Initial | Support Agents | validator.md | FR1 | — | P1 | ✅ |
+| T-011 | v0 | Initial | Support Agents | deployer.md | FR1 | — | P1 | ✅ |
+| T-012 | v0 | Initial | Support Agents | tech-writer.md | FR1 | — | P1 | ✅ |
+| T-013 | v0 | Initial | Agent-Backed Skills | spec/SKILL.md | FR2, US1 | — | P0 | ✅ |
+| T-014 | v0 | Initial | Agent-Backed Skills | design/SKILL.md | FR2, US2 | — | P0 | ✅ |
+| T-015 | v0 | Initial | Agent-Backed Skills | plan/SKILL.md | FR2, US3 | — | P0 | ✅ |
+| T-016 | v0 | Initial | Agent-Backed Skills | implement/SKILL.md | FR2 | — | P0 | ✅ |
+| T-017 | v0 | Initial | Agent-Backed Skills | validate/SKILL.md | FR2, FR6 | — | P1 | ✅ |
+| T-018 | v0 | Initial | Agent-Backed Skills | deploy/SKILL.md | FR2 | — | P1 | ✅ |
+| T-019 | v0 | Initial | Agent-Backed Skills | document/SKILL.md | FR2 | — | P1 | ✅ |
+| T-020 | v0 | Initial | Utility Skills | reflexion/SKILL.md | FR2, FR7 | — | P0 | ✅ |
+| T-021 | v0 | Initial | Utility Skills | reflect/SKILL.md | FR2, FR8.1, US5 | — | P0 | ✅ |
+| T-022 | v0 | Initial | Utility Skills | optimize/SKILL.md | FR2, FR8.2 | — | P2 | ✅ |
+| T-023 | v0 | Initial | Utility Skills | analyse/SKILL.md | FR2, US6 | — | P1 | ✅ |
+| T-024 | v0 | Initial | Utility Skills | research/SKILL.md | FR2 | — | P1 | ✅ |
+| T-025 | v0 | Initial | Utility Skills | distill/SKILL.md | FR2 | — | P2 | ✅ |
+| T-026 | v0 | Initial | Orchestration | orchestrate/SKILL.md | FR2, FR4, US4 | — | P0 | ✅ |
+| T-027 | v0 | Initial | Policy | RULES.md | NFR5 | PRD | P1 | ✅ |
+| T-028 | v0 | Initial | Policy | PRINCIPLES.md | NFR5 | PRD | P1 | ✅ |
+| T-029 | v0 | Initial | Workflows | SWE.md | FR4 | — | P0 | ✅ |
+| T-030 | v0 | Initial | Workflows | meta-learning.md | FR4, FR8 | — | P1 | ✅ |
+| T-031 | v0 | Initial | Templates | prd.md | FR4.4 | — | P1 | ✅ |
+| T-032 | v0 | Initial | Templates | architecture.md | FR4.4 | — | P1 | ✅ |
+| T-033 | v0 | Initial | Templates | adr.md | FR4.4 | — | P1 | ✅ |
+| T-034 | v0 | Initial | Templates | roadmap.md | FR4.4 | — | P1 | ✅ |
+| T-047 | v0 | Initial | Templates | backlog.md | FR4.4 | — | P1 | ✅ |
+| T-048 | v0 | Initial | Templates | issues.md | FR4.4 | — | P2 | ✅ |
+| T-049 | v0 | Initial | Templates | vision.md | FR4.4 | — | P2 | ✅ |
+| T-050 | v0 | Initial | Templates | blueprint.md | FR4.4 | — | P2 | ✅ |
+| T-035 | v0 | Initial | Settings & Installer | package/settings.json | FR3, NFR2 | — | P0 | ✅ |
+| T-036 | v0 | Initial | Settings & Installer | project-local install scaffolding | FR1.1, FR2.1, NFR3 | PRD | P1 | ✅ |
+| T-037 | v0 | Initial | Settings & Installer | .claude/settings.json | FR3, NFR4 | — | P0 | ✅ |
+| T-038 | v0 | Initial | Settings & Installer | install.sh | FR3, NFR1, NFR3 | — | P0 | ✅ |
+| T-039 | v0 | Validation | Integration | E2E /orchestrate test | US4 | — | P0 | ✅ |
+| T-040 | v0 | Validation | Integration | Dogfood Orchestrator docs | FR4.2 | PRD | P1 | ✅ |
+| T-041 | v0 | Validation | Integration | Update README.md | FR1.1, FR2.1, NFR4 | PRD | P0 | ✅ |
+| T-042 | v0 | Initial | Policy | DESIGN-PRINCIPLES.md | NFR5 | PRD | P1 | ✅ |
+| T-043 | v0 | Initial | Hooks | package/hooks/README.md | FR3 | PRD | P2 | ✅ |
+| T-044 | v0 | Initial | Project Templates | package-driven project scaffolding | FR4.4, NFR6 | — | P1 | ✅ |
+| T-045 | v0 | Initial | Memory | .serena/README.md | FR5, NFR5 | — | P2 | ✅ |
+| T-046 | v0 | Initial | Settings | Fix $schema in settings.json | NFR4 | PRD | P0 | ✅ |
+| T-051 | v0 | Governance & Quality | Governance and Quality Controls | onboard/SKILL.md | FR2.1, FR2.3 | ADR-013 | P0 | ✅ |
+| T-052 | v0 | Governance & Quality | Governance and Quality Controls | review/SKILL.md | FR2.1, FR2.3 | ADR-013 | P0 | ✅ |
+| T-053 | v0 | Governance & Quality | Governance and Quality Controls | hitl/SKILL.md | FR2.1, FR2.3 | ADR-013 | P0 | ✅ |
+| T-054 | v0 | Governance & Quality | Governance and Quality Controls | Update architect.md (add onboard skill) | FR1.5, FR2.3 | ADR-013 | P0 | ✅ |
+| T-055 | v0 | Governance & Quality | Governance and Quality Controls | Update tech-writer.md (add review skill) | FR1.5, FR2.3 | ADR-013 | P0 | ✅ |
+| T-056 | v0 | Governance & Quality | Governance and Quality Controls | Update SWE.md (/review gate in full workflow) | FR4.1 | ADR-013, T-029 | P0 | ✅ |
+| T-057 | v0 | Governance & Quality | Governance and Quality Controls | Update PRD.md FR2 (17 skills) | FR2 | ADR-013 | P0 | ✅ |
+| T-058 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Define canonical runtime registry | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-059 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add installer targets for --opencode and --qwen | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-060 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Claude paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-061 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Codex paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | 🔄 |
+| T-063 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify OpenCode paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-064 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Qwen paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-065 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add runtime path drift checks | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-066 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Define frontmatter/schema transforms (skills->commands) | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-067 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Define namespace grammar and validation | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-068 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Map namespace input to runtime-native artifact paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-069 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Preserve flat mode as backward-compatible default | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-070 | v0 | Installer Extension | Per-Runtime Namespace Semantics | Namespace-safe restore/cleanup semantics | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-071 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Split install profiles by capability | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-072 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Make skills the default profile when runtime supports skills | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-073 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Add commands compatibility profile selectable by flag | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-074 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Claude profile (commands+skills+hooks+scripts) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (skills+scripts baseline, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | 🔄 |
+| T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+scripts, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-078 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Qwen profile (commands+skills+scripts, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-079 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Emit warnings for unsupported capabilities per runtime | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-080 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Runtime-aware idempotent policy-ref injection | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-081 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Prevent cross-runtime collisions in shared context docs | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-082 | v0 | Installer Extension | UX & Documentation | Update install.sh --help with multi-agent + namespaced examples | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-083 | v0 | Installer Extension | UX & Documentation | Document skills default and commands compatibility mode | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-084 | v0 | Installer Extension | UX & Documentation | Document per-agent schema/frontmatter differences in commands mode | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-085 | v0 | Installer Extension | UX & Documentation | Update README.md install matrix for all 5 runtimes | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-086 | v0 | Installer Extension | UX & Documentation | Document migration notes for legacy namespace and runtime paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P2 | ✅ |
+| T-087 | v0 | Installer Extension | Validation & CI | Add install smoke tests for runtime matrix (global + project) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-088 | v0 | Installer Extension | Validation & CI | Add capability conformance tests per runtime | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-089 | v0 | Installer Extension | Validation & CI | Add restore/cleanup regression tests for namespaced installs | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-090 | v0 | Installer Extension | Validation & CI | Add idempotency tests for repeated installs with mixed runtime subsets | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
+| T-091 | v0 | Installer Extension | Validation & CI | Add CI guardrail for runtime/path drift | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
+| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | FR1.1, FR2.1, NFR4 | G-002 | P1 | 🔄 |
+| T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | FR1.1, FR2.1, NFR4 | G-003 | P1 | 🔲 |
+| T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | FR1.1, FR2.1, NFR4 | G-003 | P2 | 🔲 |
+| T-096 | v0 | Installer Extension | Namespace Alignment | Align runtime namespace modes with ADR-014 D-2 | FR1.1, FR2.1, NFR4 | I-001 | P1 | 🔲 |
+| T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/subagents support model; hooks excluded by policy) | FR1.1, FR2.1, NFR4 | I-002 | P1 | 🔲 |
+| T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | FR1.1, FR2.1, NFR4 | I-003, I-004 | P2 | 🔲 |
 
 ---
 
@@ -1070,7 +1070,7 @@
 | Icon | Meaning |
 |:----:|---------|
 | ✅ | Done - implemented and committed |
-| ⏳ | Pending - not yet started |
+| 🔲 | Pending - not yet started |
 | 🔄 | In Progress - actively being worked on |
 | 🚫 | Blocked - waiting on dependency |
 
