@@ -136,6 +136,7 @@ Task details were decomposed per milestone.
 - Active task details index: [docs/development/tasks/INDEX.md](tasks/INDEX.md)
 - Active v0 details: [docs/development/tasks/v0.md](tasks/v0.md)
 - Active v0.3 details: [docs/development/tasks/v0.3.md](tasks/v0.3.md)
+- Planned v1 tactical details (preserved): [docs/development/tasks/v1.md](tasks/v1.md)
 - Completed v0 archive: [docs/development/archive/tasks-v0-completed.md](archive/tasks-v0-completed.md)
 
 ## Legends
