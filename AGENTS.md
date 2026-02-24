@@ -16,7 +16,8 @@ Guidance for agents working with AgentOrchestrator.
 | **BLUEPRINT** | Strategic | Technical scope, capabilities, feature matrix |
 | **PRD** | Specification | Features, user stories, acceptance criteria |
 | **ARCHITECTURE** | Specification | System design, risks, dependencies |
-| **ADR** | Specification | Decision rationale, alternatives, consequences |
+| **ADR** | Specification | Significant architecture decisions with alternatives and consequences (`docs/architecture/adr/`) |
+| **TDR** | Knowledge | Lightweight operational/policy decisions that do not rise to ADR scope (`docs/knowledge/decisions/`) |
 | **ROADMAP** | Execution | Milestones, phases, epics and dependencies |
 | **BACKLOG** | Execution | Prioritized tasks from roadmap epics |
 | **ISSUES** | Execution | Discovered bugs, blockers, tech debt |

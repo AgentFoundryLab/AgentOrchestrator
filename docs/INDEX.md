@@ -1,6 +1,6 @@
 # Documentation Index
 
-**Version**: 1.0.0 | **Updated**: 2026-02-20
+**Version**: 1.0.1 | **Updated**: 2026-02-24
 > Amend with rationale. Bump: MAJOR (breaking), MINOR (additions), PATCH (clarifications).
 
 ## Top-Level Layout
@@ -39,7 +39,7 @@ orchestrator/
 | ISSUES.md | `docs/development/ISSUES.md` | `/review`, `/validate` |
 | STANDARDS.md, GUIDELINES.md | `docs/policy/` | `/onboard` |
 | INDEX.md | `docs/INDEX.md` | `/onboard` |
-| Decision records | `docs/knowledge/decisions/` | `/design` |
+| TDRs (operational/policy decisions) | `docs/knowledge/decisions/` | `/design` |
 | Review / analysis reports | `reports/analysis/` | `/review`, `/analyse` |
 | Research reports | `reports/research/` | `/research` |
 

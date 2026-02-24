@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
-**Version**: 0.2.0
-**Updated**: 2026-02-24 (89/98 v0 tasks done; 3 in progress; 6 pending)
+**Version**: 0.2.1
+**Updated**: 2026-02-24 (89/99 v0 tasks done; 1 in progress; 9 pending)
 **Scope**: v0 Milestone
 
 ---
@@ -71,7 +71,7 @@
 | T-059 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add installer targets for --opencode and --qwen | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-060 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Claude paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-061 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Codex paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
-| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | 🔄 |
+| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | 🔲 |
 | T-063 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify OpenCode paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-064 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Qwen paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-065 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add runtime path drift checks | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
@@ -85,7 +85,7 @@
 | T-073 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Add commands compatibility profile selectable by flag | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
 | T-074 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Claude profile (commands+skills+hooks+scripts) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (skills+scripts baseline, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
-| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | 🔄 |
+| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | 🔲 |
 | T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+scripts, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-078 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Qwen profile (commands+skills+scripts, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-079 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Emit warnings for unsupported capabilities per runtime | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
@@ -106,7 +106,8 @@
 | T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | FR1.1, FR2.1, NFR4 | G-003 | P2 | 🔲 |
 | T-096 | v0 | Installer Extension | Namespace Alignment | Align runtime namespace modes with ADR-014 D-2 | FR1.1, FR2.1, NFR4 | I-001 | P1 | 🔲 |
 | T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/subagents support model; hooks excluded by policy) | FR1.1, FR2.1, NFR4 | I-002 | P1 | 🔲 |
-| T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | FR1.1, FR2.1, NFR4 | I-003, I-004 | P2 | 🔲 |
+| T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | FR1.1, FR2.1, NFR4 | I-003 | P2 | 🔲 |
+| T-100 | v0 | Installer Extension | Codex Skills-First Baseline | Remove Codex default prompts dual-write; skills-only default; prompts emitted only in explicit command-mode compat flow | FR1.1, FR2.1, NFR4 | I-004 | P1 | 🔲 |
 | T-099 | v0 | Installer Extension | Codex Agent Invocation Alignment | Align Codex runtime planning/install model with official role-config + thread workflow | FR1.1, FR1.2, FR2.1, NFR4 | I-005 | P1 | 🔲 |
 
 ---

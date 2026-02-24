@@ -10,7 +10,7 @@
 | I-001 | ADR-014 D-2 implementation drift: runtime namespace mapping not aligned with accepted decision | P1 | 🔲 Open | T-096 |
 | I-002 | Gemini capability drift: installer still enforces commands-only despite validated skills/subagents support in docs research (hooks excluded by policy) | P1 | 🔲 Open | T-097 |
 | I-003 | Legacy compatibility/workaround bloat in installer UX and docs (stale migration text, compat-first wording, fallback markers) | P2 | 🔲 Open | T-098 |
-| I-004 | Codex default profile still dual-writes deprecated `/prompts:*` artifacts despite skills-first baseline | P1 | 🔲 Open | T-098 |
+| I-004 | Codex default profile still dual-writes deprecated `/prompts:*` artifacts despite skills-first baseline | P1 | 🔲 Open | T-100 |
 | I-005 | Codex agent invocation alignment pending: installer/runtime model still needs role-config + `/agent` conformity | P1 | 🔲 Open | T-099 |
 
 ---
@@ -110,7 +110,7 @@ Implementation details and AC in T-098.
 **Type**: Defect
 **Discovered**: 2026-02-24
 **Affects**: Codex default install flow (`PROFILE=auto`), docs consistency with latest-native policy
-**Task**: T-098
+**Task**: T-100
 
 Current installer behavior keeps Codex skills as canonical but also writes legacy prompt artifacts by default (`~/.codex/prompts/*.md`) via auto-profile expansion.
 
@@ -120,7 +120,7 @@ Expected end state:
 - Codex default writes native skills only
 - `/prompts:*` artifacts are emitted only in explicit command-mode compatibility flow
 
-Implementation details and AC in T-098.
+Implementation details and AC in T-100.
 
 ---
 
