@@ -68,6 +68,17 @@ Conflict policy:
   - `config.toml` role tables (`[agents.<name>]`) with `config_file`
   - Optional project `.codex/config.toml`; user `~/.codex/config.toml`
   - Experimental multi-agent feature
+- Invocation semantics (official):
+  - Enable multi-agent via `/experimental` (toggle **Multi-agents**) or:
+    ```toml
+    [features]
+    multi_agent = true
+    ```
+  - Configure roles via `[agents.<role>]` in Codex config.
+  - Trigger role usage via prompt instruction; Codex orchestrates spawn/routing.
+  - Use `/agent` to inspect/switch active agent threads.
+  - Skills are invoked via `/skills` or `$skill-name`.
+  - `@agent` mention syntax is not an official Codex spawn mechanism.
 - Commands:
   - Custom prompts path: `~/.codex/prompts/*.md`
   - Invoked as `/prompts:<name>` (deprecated path)

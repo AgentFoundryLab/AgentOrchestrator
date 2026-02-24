@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
 **Version**: 0.2.0
-**Updated**: 2026-02-24 (89/97 v0 tasks done; 3 in progress; 5 pending)
+**Updated**: 2026-02-24 (89/98 v0 tasks done; 3 in progress; 6 pending)
 **Scope**: v0 Milestone
 
 ---
@@ -107,6 +107,7 @@
 | T-096 | v0 | Installer Extension | Namespace Alignment | Align runtime namespace modes with ADR-014 D-2 | FR1.1, FR2.1, NFR4 | I-001 | P1 | 🔲 |
 | T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/subagents support model; hooks excluded by policy) | FR1.1, FR2.1, NFR4 | I-002 | P1 | 🔲 |
 | T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | FR1.1, FR2.1, NFR4 | I-003, I-004 | P2 | 🔲 |
+| T-099 | v0 | Installer Extension | Codex Agent Invocation Alignment | Align Codex runtime planning/install model with official role-config + thread workflow | FR1.1, FR1.2, FR2.1, NFR4 | I-005 | P1 | 🔲 |
 
 ---
 
@@ -1052,6 +1053,16 @@
 - Compatibility mode text is reduced to functional semantics (what it does), without timeline/historical framing
 - Legacy fallback paths/markers that are no longer required are removed or isolated behind clearly documented migration-only code paths
 - Tests/docs remain consistent after cleanup
+
+---
+
+### T-099: Align Codex runtime model with official role-config invocation flow
+**AC**:
+- Codex planning/runtime docs explicitly model multi-agent roles as config entries (`[agents.<name>]`) rather than markdown subagent invocation assumptions
+- Codex invocation contract in docs/plans includes: experimental enablement (`/experimental` or `features.multi_agent = true`), prompt-driven spawn, and `/agent` thread switching
+- Any legacy/non-official invocation language (for example `@agent` trigger patterns) is removed from Codex-specific guidance
+- Installer/runtime backlog references are consistent with official Codex docs for agent roles and thread management
+- Open gaps between current installer behavior and official Codex model are linked to tracked issue(s) (I-005)
 
 ---
 

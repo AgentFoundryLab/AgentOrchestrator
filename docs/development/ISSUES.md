@@ -11,6 +11,7 @@
 | I-002 | Gemini capability drift: installer still enforces commands-only despite validated skills/subagents support in docs research (hooks excluded by policy) | P1 | 🔲 Open | T-097 |
 | I-003 | Legacy compatibility/workaround bloat in installer UX and docs (stale migration text, compat-first wording, fallback markers) | P2 | 🔲 Open | T-098 |
 | I-004 | Codex default profile still dual-writes deprecated `/prompts:*` artifacts despite skills-first baseline | P1 | 🔲 Open | T-098 |
+| I-005 | Codex agent invocation alignment pending: installer/runtime model still needs role-config + `/agent` conformity | P1 | 🔲 Open | T-099 |
 
 ---
 
@@ -120,5 +121,24 @@ Expected end state:
 - `/prompts:*` artifacts are emitted only in explicit command-mode compatibility flow
 
 Implementation details and AC in T-098.
+
+---
+
+## I-005: Codex agent invocation alignment pending vs official docs
+
+**Type**: Defect
+**Discovered**: 2026-02-24
+**Affects**: `reports/research/2026-02-22-agent-capability-report.md`, install/runtime planning artifacts, Codex runtime assumptions
+**Task**: T-099
+
+Official Codex docs define multi-agent invocation via experimental enablement + role config in `config.toml` (`[agents.<role>]`) and thread management via `/agent`.
+
+Documentation updates are in progress, but installer/runtime planning still needs explicit conformity with the official Codex role-config model and thread workflow.
+
+Expected end state:
+- Codex invocation docs consistently state: `/experimental` (or `multi_agent = true`), role config, prompt-based spawn, `/agent` thread switching.
+- Installer/runtime plan and behavior track Codex role-config alignment as explicit work.
+
+Implementation details and AC in T-099.
 
 ---

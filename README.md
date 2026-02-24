@@ -28,15 +28,15 @@ AgentOrchestrator transforms Claude Code from a single-turn assistant into an or
 
 ### Runtime Support Matrix
 
-| Runtime     | Install flag  | Skills | Hooks | Commands       |
-|-------------|---------------|--------|-------|----------------|
-| Claude Code | `--claude`    | Yes    | Yes   | Yes            |
-| Codex CLI   | `--codex`     | Yes    | No    | Yes            |
-| Gemini CLI  | `--gemini`    | No     | No    | Yes (default)  |
-| OpenCode    | `--opencode`  | Yes    | No    | Yes            |
-| Qwen Code   | `--qwen`      | Yes    | No    | Yes            |
+| Runtime     | Install flag  | SubAgents         | Skills | Hooks | Commands       |
+|-------------|---------------|-------------------|--------|-------|----------------|
+| Claude Code | `--claude`    | Yes               | Yes    | Yes   | Yes            |
+| Codex CLI   | `--codex`     | Yes (experimental)| Yes    | No    | Yes (compat)   |
+| Gemini CLI  | `--gemini`    | Partial (exp)     | No     | No    | Yes (default)  |
+| OpenCode    | `--opencode`  | Yes               | Yes    | No    | Yes            |
+| Qwen Code   | `--qwen`      | Yes               | Yes    | No    | Yes            |
 
-"Skills" is the default profile for runtimes that support it. "Commands" is the default for Gemini and remains available on all runtimes via `--profile commands`.
+"Skills" is the default profile for runtimes that support it. "Commands" is the default for Gemini and remains available on all runtimes via `--profile commands` as compatibility mode.
 
 ### Installation
 
@@ -383,6 +383,7 @@ Milestone (v0, v1)     -> Git Tag
 ## Current Constraints
 
 - Codex namespace is currently disabled: `--namespace` is ignored for Codex targets and installs stay flat.
+- Codex invocation semantics are documented in `reports/research/2026-02-22-agent-capability-report.md` (official-docs aligned).
 - Gemini is currently installed in commands mode only by default (`.toml` transform path).
 - Non-Claude hook integration is intentionally out of scope (`docs/knowledge/decisions/non-claude-hooks-policy.md`).
 - `--profile commands` is a functional conversion mode that installs command-format artifacts for selected runtimes.
