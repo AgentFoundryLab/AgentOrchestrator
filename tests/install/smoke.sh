@@ -96,6 +96,26 @@ for rt in claude codex gemini opencode qwen; do
     rm -rf "${TMP}"
 done
 
+# No runtime flags defaults to claude-only install target
+test_smoke_global_default_target_claude_only() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.claude/skills" || ok=1
+    if [ -d "${tmp}/.agents" ]; then
+        echo "  [assert] unexpected default codex install at ${tmp}/.agents" >&2
+        ok=1
+    fi
+    if [ -d "${tmp}/.gemini" ]; then
+        echo "  [assert] unexpected default gemini install at ${tmp}/.gemini" >&2
+        ok=1
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "smoke-install-global-default-claude-only" test_smoke_global_default_target_claude_only
+
 # ---------------------------------------------------------------------------
 # T-088: Conformance tests — expected capabilities present/absent per runtime
 # ---------------------------------------------------------------------------
@@ -132,6 +152,25 @@ test_conformance_codex() {
     return $ok
 }
 run_test "conformance-codex-skills-present-hooks-absent" test_conformance_codex
+
+# Codex target still installs shared global policy files under ~/.claude
+test_conformance_codex_shared_policy_present() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --codex >/dev/null 2>&1
+    local ok=0
+    if [ ! -f "${tmp}/.claude/policy/PRINCIPLES.md" ]; then
+        echo "  [assert] missing shared policy file: ${tmp}/.claude/policy/PRINCIPLES.md" >&2
+        ok=1
+    fi
+    if [ ! -f "${tmp}/.claude/policy/RULES.md" ]; then
+        echo "  [assert] missing shared policy file: ${tmp}/.claude/policy/RULES.md" >&2
+        ok=1
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-codex-shared-policy-present" test_conformance_codex_shared_policy_present
 
 # Gemini: no skills dir, no hooks dir; .toml commands present (T-092)
 test_conformance_gemini() {

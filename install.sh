@@ -41,8 +41,8 @@ BACKUPS=0
 # Options
 OVERWRITE=false
 REF_CLAUDE=true
-REF_GEMINI=true
-REF_CODEX=true
+REF_GEMINI=false
+REF_CODEX=false
 REF_OPENCODE=false
 REF_QWEN=false
 REF_TARGETS_EXPLICIT=false
@@ -1259,23 +1259,25 @@ install_global() {
         log_info "Using flat paths (no namespace prefix)"
     fi
 
-    # Claude is the primary runtime for shared assets (policy, workflows, templates, settings, mcp)
+    # Shared global assets always live under ~/.claude/.
     local backup_dir
     backup_dir=$(create_backup_dir "$claude_target")
 
-    # Install shared assets to ~/.claude/ when claude runtime is active
-    if [ "$REF_CLAUDE" = true ] && [ -d "${PACKAGE_DIR}" ]; then
+    # Install shared global assets to ~/.claude/ for all global installs.
+    # Runtime docs inject refs to ~/.claude/policy/*, so these must exist
+    # even when claude runtime is not explicitly selected.
+    if [ -d "${PACKAGE_DIR}" ]; then
         copy_directory "${PACKAGE_DIR}/policy" "${claude_target}/policy" "$backup_dir"
         copy_directory "${PACKAGE_DIR}/workflows" "${claude_target}/workflows" "$backup_dir"
         copy_directory "${PACKAGE_DIR}/templates" "${claude_target}/templates" "$backup_dir"
 
-        # Handle global settings.json
-        if [ -f "${PACKAGE_DIR}/settings.json" ]; then
+        # Claude-specific settings are only merged when claude runtime is active.
+        if [ "$REF_CLAUDE" = true ] && [ -f "${PACKAGE_DIR}/settings.json" ]; then
             merge_json "${PACKAGE_DIR}/settings.json" "${claude_target}/settings.json" "$backup_dir"
         fi
 
-        # Install global MCP servers to ~/.claude.json (user-scope)
-        if [ -f "${PACKAGE_DIR}/mcp.json" ]; then
+        # Claude-specific user-scope MCP config is only merged when claude runtime is active.
+        if [ "$REF_CLAUDE" = true ] && [ -f "${PACKAGE_DIR}/mcp.json" ]; then
             merge_json "${PACKAGE_DIR}/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
         fi
     fi
@@ -1615,17 +1617,24 @@ restore_global() {
         restore_runtime_global "$rt" "$backup_dir"
     done
 
-    # Remove managed shared directories from ~/.claude/ (only when claude runtime active)
-    if [ "$REF_CLAUDE" = true ]; then
-        local dirs_to_remove=("policy" "workflows" "templates")
-        for dir in "${dirs_to_remove[@]}"; do
-            if [ -d "${claude_target:?}/${dir}" ]; then
-                rm -rf "${claude_target:?}/${dir}"
-                log_success "Removed: ${claude_target}/${dir}"
-                ((++CREATED))
-            fi
-        done
+    # Restore/remove shared trees under ~/.claude/ (surgical file-level behavior).
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/policy" \
+        "${claude_target}/policy" \
+        "$backup_dir" \
+        "policy"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/workflows" \
+        "${claude_target}/workflows" \
+        "$backup_dir" \
+        "workflows"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/templates" \
+        "${claude_target}/templates" \
+        "$backup_dir" \
+        "templates"
 
+    if [ "$REF_CLAUDE" = true ]; then
         # Restore settings.json from backup
         restore_settings "$claude_target" "$backup_dir"
 
@@ -1816,17 +1825,15 @@ cleanup_global() {
         fi
     done
 
-    # Remove managed shared directories from ~/.claude/ (only when claude runtime active)
-    if [ "$REF_CLAUDE" = true ]; then
-        local dirs_to_remove=("policy" "workflows" "templates")
-        for dir in "${dirs_to_remove[@]}"; do
-            if [ -d "${claude_target:?}/${dir}" ]; then
-                rm -rf "${claude_target:?}/${dir}"
-                log_success "Removed: ${claude_target}/${dir}"
-                ((++CREATED))
-            fi
-        done
+    # Remove shared trees under ~/.claude/ (surgical file-level behavior).
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/policy" "${claude_target}/policy" "" "policy"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/workflows" "${claude_target}/workflows" "" "workflows"
+    restore_or_remove_installed_tree \
+        "${PACKAGE_DIR}/templates" "${claude_target}/templates" "" "templates"
 
+    if [ "$REF_CLAUDE" = true ]; then
         # Unpatch settings.json by removing installer-contributed keys (no backup restore).
         unpatch_settings_json "${claude_target}/settings.json"
 
