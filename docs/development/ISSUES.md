@@ -19,7 +19,7 @@
 
 **Type**: Gap
 **Discovered**: 2026-02-22
-**Affects**: `--opencode` install, `RUNTIME_SUPPORTS_HOOKS[opencode]`
+**Affects**: `--opencode` install, `RUNTIME_SUPPORTS_HOOKS[opencode]`, BACKLOG T-063 acceptance criteria wording
 **Task**: `docs/knowledge/decisions/non-claude-hooks-policy.md`
 
 Claude SH hooks (`package/hooks/scripts/*.sh`) are invoked as shell commands via Claude Code's `settings.json` hooks system. OpenCode's hook mechanism is a JS/TS plugin event API — it has no facility to invoke shell scripts directly. Copying SH files to `.opencode/plugins/` produces non-functional artifacts.
@@ -140,5 +140,3 @@ Expected end state:
 - Installer/runtime plan and behavior track Codex role-config alignment as explicit work.
 
 Implementation details and AC in T-099.
-
----

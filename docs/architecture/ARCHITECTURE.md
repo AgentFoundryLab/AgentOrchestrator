@@ -159,8 +159,8 @@ The `/document` skill includes conflict detection to prevent silent overwrites:
 
 **Conflict Resolution Flow:**
 1. Detect inconsistency during documentation update
-2. Present conflict to user via `AskUserQuestion`
-3. User chooses: update old, keep old, document tentatively, or pause
+2. Emit a structured `## QUESTIONS FOR USER` block per `/hitl` protocol
+3. Orchestrator relays via `AskUserQuestion`; user chooses: update old, keep old, document tentatively, or pause
 4. If tentative/rejected: log to ISSUES.md with suggested agent for resolution
 
 ---
@@ -183,7 +183,7 @@ Agents are specialized workers invoked via Claude Code's Task tool with `subagen
 | **Developer** | Implementation, code changes | Read, Write, Edit, Bash, Task | - | default | Code, tests |
 | **Validator** | Testing, acceptance criteria checking | Read, Grep, Glob, Bash | Write, Edit | default | Validation report |
 | **Deployer** | Build, deploy, release | Read, Write, Bash | Edit | **plan** | Deployment artifacts |
-| **Tech Writer** | Documentation, runbooks, cross-artifact review | Read, Write, Grep, Glob, AskUserQuestion | Edit | default | Docs, README, Review report |
+| **Tech Writer** | Documentation, runbooks, cross-artifact review | Read, Write, Grep, Glob | Edit | default | Docs, README, Review report |
 
 #### 2.3 Agent with Skill Injection
 

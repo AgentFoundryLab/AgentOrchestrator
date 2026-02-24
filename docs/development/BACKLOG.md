@@ -11,10 +11,10 @@
 | ID | Milestone | Phase | Epic | Task | Requirement Trace | Linkage | Priority | Status |
 |----|-----------|-------|------|------|-------------------|---------|----------|:------:|
 | T-001 | v0 | Initial | Hook System | inject-context.sh | FR5.4, FR5.6 | — | P0 | ✅ |
-| T-002 | v0 | Initial | Hook System | remind-validate.sh | FR3.1, FR6 | — | P0 | ✅ |
-| T-003 | v0 | Initial | Hook System | remind-reflexion.sh | FR3.1, FR7.1 | — | P0 | ✅ |
-| T-004 | v0 | Initial | Hook System | remind-reflect.sh | FR3.2, FR8.1, US5 | — | P0 | ✅ |
-| T-005 | v0 | Initial | Hook System | checkpoint-session.sh | FR3.3 | FR5.3.1 | P1 | ✅ |
+| T-002 | v0 | Initial | Hook System | remind-validate.sh | FR3.2, FR6 | — | P0 | ✅ |
+| T-003 | v0 | Initial | Hook System | remind-reflexion.sh | FR3.2, FR7.1 | — | P0 | ✅ |
+| T-004 | v0 | Initial | Hook System | remind-reflect.sh | FR3.3, FR8.1, US5 | — | P0 | ✅ |
+| T-005 | v0 | Initial | Hook System | checkpoint-session.sh | FR3.4 | FR5.3.1 | P1 | ✅ |
 | T-006 | v0 | Initial | Core Agents | business-analyst.md | FR1, US1 | — | P0 | ✅ |
 | T-007 | v0 | Initial | Core Agents | architect.md | FR1, US2 | — | P0 | ✅ |
 | T-008 | v0 | Initial | Core Agents | project-manager.md | FR1, US3 | — | P0 | ✅ |
