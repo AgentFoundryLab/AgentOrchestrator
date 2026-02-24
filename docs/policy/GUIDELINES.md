@@ -1,6 +1,6 @@
 # Project Guidelines
 
-**Version**: 1.0.0 | **Updated**: 2026-02-20
+**Version**: 1.1.0 | **Updated**: 2026-02-24
 > Amend with rationale. Bump: MAJOR (breaking), MINOR (additions), PATCH (clarifications).
 
 ## Workflow
@@ -31,3 +31,4 @@
 - HITL escalation MUST use the `## QUESTIONS FOR USER` block pattern defined in `package/skills/hitl/SKILL.md` — sub-agents MUST NOT call `AskUserQuestion` directly
 - Install changes SHOULD be tested with both `--global` and `--project` flags before merge
 - Namespace behavior (`--namespace`, `--no-namespace`) SHOULD be verified when modifying `install.sh` path logic
+- Runtime capability checks SHOULD validate both layers: native runtime capability baseline and installer support scope
