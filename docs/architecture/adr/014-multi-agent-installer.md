@@ -65,7 +65,7 @@ Per-runtime namespace semantics (official docs baseline, 2026-02-22):
 | Runtime | Skills/Subagents naming | Commands naming | Invocation form |
 | ----------- | ----------- | ----------- | ----------- |
 | Claude Code | Flat skill and subagent names (`<name>`). Plugin skills use plugin-owned namespace `plugin-name:skill-name`. | Custom slash commands are unified with skills; flat `/name` for project/user commands. | Skills/commands: `/name`; plugins: `plugin-name:skill-name` |
-| Codex CLI | Flat skill names from `.agents/skills/<name>/SKILL.md`. | N/A for installer namespace strategy in this ADR (Codex skills are invoked via skill mention flow). | Skill mention (`$skill`) / `/skills` management UI |
+| Codex CLI | Flat skill names from `.agents/skills/<name>/SKILL.md`. | Legacy prompts path may exist at `~/.codex/prompts/<name>.md`. | Native: skill mention (`$skill`) / `/skills`; legacy: `/prompts:<name>` |
 | Gemini CLI | Agent overrides are config-scoped (`agents.overrides`), not path-name namespace. | Native namespacing via directories: `commands/<ns>/<cmd>.toml` -> `/<ns>:<cmd>` | `/<ns>:<cmd>` |
 | OpenCode | Flat skill names with strict regex (`^[a-z0-9]+(-[a-z0-9]+)*$`), and flat subagent names (from agent id/file). | No separate command namespace mechanism used by installer in this ADR. | Skills via `skill({name})`; subagents via `@agent` |
 | Qwen Code | Flat skill/subagent names (directory/file identity). | Native namespacing via directories: `commands/<ns>/<cmd>.md` -> `/<ns>:<cmd>` | `/<ns>:<cmd>` for commands; `/skills <name>` for skills |
@@ -243,5 +243,6 @@ Keep all path definitions as local variables or constants inside `install.sh` fu
 - [ADR-008](008-multi-provider-integration-strategy.md) — Multi-provider integration strategy (runtime capability matrix context)
 - [ADR-013](013-extended-skills.md) — Extended skills (governance skills whose install behavior is governed by this ADR)
 - `docs/knowledge/decisions/flat-skill-paths.md` — Flat vs dot-prefix skill paths decision record (D-2 builds on this)
+- `docs/knowledge/decisions/latest-compatible-only-policy.md` — Latest-native policy
 - `docs/knowledge/decisions/non-claude-hooks-policy.md` — Installer policy: non-Claude hooks integration out of scope in v0.x
 - `reports/research/2026-02-22-agent-capability-report.md` — Consolidated capability matrix + schema deep research (official docs + Context7 + DeepWiki)

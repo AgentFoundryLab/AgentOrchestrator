@@ -84,7 +84,7 @@
 | T-072 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Make skills the default profile when runtime supports skills | v0.2.0 | P0 | ✅ |
 | T-073 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Add commands compatibility profile selectable by flag | v0.2.0 | P1 | ✅ |
 | T-074 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Claude profile (commands+skills+hooks+scripts) | v0.2.0 | P0 | ✅ |
-| T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
+| T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (skills+scripts baseline, no hooks) | v0.2.0 | P0 | ✅ |
 | T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | v0.2.0 | P0 | 🔄 |
 | T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
 | T-078 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Qwen profile (commands+skills+scripts, no hooks) | v0.2.0 | P0 | ✅ |
@@ -674,7 +674,7 @@
 ### T-061: Codify Codex paths
 **AC**:
 - Canonical install path for Codex skills: `.agents/skills/<name>/SKILL.md` (project), `~/.agents/skills/<name>/SKILL.md` (global)
-- Compatibility install path for Codex commands (prompts): `~/.codex/prompts/<name>.md` — only written when `--commands` compatibility flag is passed
+- Legacy compatibility path for Codex prompts: `~/.codex/prompts/<name>.md`
 - No hook installation for Codex (hooks not supported; installer must not create hook artifacts for Codex target)
 - Scripts install via skills package under `.agents/skills/` tree
 - Registry entry for `codex` reflects these paths verbatim
@@ -811,10 +811,10 @@
 
 ---
 
-### T-075: Implement Codex profile (commands+skills+scripts, no hooks)
+### T-075: Implement Codex profile (skills+scripts baseline, no hooks)
 **AC**:
 - Default Codex install writes: skills to `.agents/skills/`; scripts included within skill packages
-- With `--profile commands` additionally writes: prompts to `~/.codex/prompts/`
+- Current implementation also writes prompts to `~/.codex/prompts/`; cleanup tracked in T-098
 - No hook artifacts written for Codex under any profile
 - Installer emits a clear warning if `--profile hooks` is explicitly requested for Codex runtime
 - A smoke test enumerates all would-be writes and confirms absence of hook artifacts

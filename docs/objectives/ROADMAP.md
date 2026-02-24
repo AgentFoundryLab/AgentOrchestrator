@@ -166,6 +166,7 @@ Runtime expansion and namespace standardization for install/restore/cleanup work
 Policy details are maintained in:
 - `reports/research/2026-02-22-agent-capability-report.md` (Final capability policy, schema summary, and canonical mappings)
 - `docs/knowledge/decisions/non-claude-hooks-policy.md` (Non-Claude hooks integration intentionally out of scope)
+- `docs/knowledge/decisions/latest-compatible-only-policy.md` (Latest-native baseline; command-mode exception policy)
 
 #### Epic: Runtime Matrix & Canonical Paths
 **Depends on**: v0.1.0 complete
@@ -173,7 +174,7 @@ Policy details are maintained in:
 - [x] Define canonical runtime registry for `claude`, `gemini`, `codex`, `opencode`, `qwen`
 - [x] Add installer targets for `--opencode` and `--qwen` (alongside existing runtime flags)
 - [x] Codify Claude paths (`.claude/skills` canonical, `.claude/commands` compatibility)
-- [x] Codify Codex paths (`.agents/skills` canonical, `.codex/prompts` compatibility commands)
+- [x] Codify Codex paths (`.agents/skills` canonical; `.codex/prompts` legacy compatibility path)
 - [ ] Codify Gemini paths (`.gemini/commands` baseline; no hooks by policy; skills/subagents alignment in I-002 / T-097)
 - [x] Codify OpenCode paths (`.opencode/commands`, `.opencode/skills`, no hooks by policy)
 - [x] Codify Qwen paths (`.qwen/commands`, `.qwen/skills`, no hooks)
@@ -195,7 +196,8 @@ Policy details are maintained in:
 - [x] Make `skills` the default profile when runtime supports skills
 - [x] Add `commands` compatibility profile selectable by flag
 - [x] Implement Claude profile (`commands+skills+hooks+scripts`)
-- [x] Implement Codex profile (`commands+skills+scripts`, no hooks)
+- [x] Implement Codex profile (`skills+scripts` baseline, no hooks)
+- [ ] Remove Codex default prompts dual-write; keep prompts only in command-mode compatibility (tracked under compatibility cleanup)
 - [ ] Implement Gemini profile (`commands+scripts` baseline; skills/subagents alignment in T-097, hooks excluded by policy)
 - [x] Implement OpenCode profile (`commands+skills+scripts`, no hooks by policy)
 - [x] Implement Qwen profile (`commands+skills+scripts`, no hooks)

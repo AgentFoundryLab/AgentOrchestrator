@@ -10,6 +10,7 @@
 | I-001 | ADR-014 D-2 drift: runtime namespace mapping and architecture install model not aligned with accepted decision | P1 | 🔲 Open | T-096 |
 | I-002 | Gemini capability drift: installer still enforces commands-only despite validated skills/subagents support in docs research (hooks excluded by policy) | P1 | 🔲 Open | T-097 |
 | I-003 | Legacy compatibility/workaround bloat in installer UX and docs (stale migration text, compat-first wording, fallback markers) | P2 | 🔲 Open | T-098 |
+| I-004 | Codex default profile still dual-writes deprecated `/prompts:*` artifacts despite skills-first baseline | P1 | 🔲 Open | T-098 |
 
 ---
 
@@ -98,6 +99,25 @@ Implementation details and AC in T-097.
 **Task**: T-098
 
 Installer UX/docs still contain legacy-first compatibility wording and version-history narration that is not needed for current behavior specification. This increases ambiguity and hides current runtime constraints behind migration prose.
+
+Implementation details and AC in T-098.
+
+---
+
+## I-004: Codex skills-first baseline drift (default prompts dual-write)
+
+**Type**: Defect
+**Discovered**: 2026-02-24
+**Affects**: Codex default install flow (`PROFILE=auto`), docs consistency with latest-native policy
+**Task**: T-098
+
+Current installer behavior keeps Codex skills as canonical but also writes legacy prompt artifacts by default (`~/.codex/prompts/*.md`) via auto-profile expansion.
+
+This conflicts with the latest-compatible-only baseline (`docs/knowledge/decisions/latest-compatible-only-policy.md`) where deprecated surfaces should remain transient compatibility, not default behavior.
+
+Expected end state:
+- Codex default writes native skills only
+- `/prompts:*` artifacts are emitted only in explicit command-mode compatibility flow
 
 Implementation details and AC in T-098.
 
