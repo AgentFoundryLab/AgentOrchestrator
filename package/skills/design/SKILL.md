@@ -33,7 +33,6 @@ Transform PRD requirements into:
 - `$ARGUMENTS`: PRD path or specific focus area (optional)
 - Default PRD location: `docs/architecture/PRD.md`
 - Existing architecture: `docs/architecture/ARCHITECTURE.md`
-- `${PROJECT_NAME}`: Current project context
 
 ## Outputs
 

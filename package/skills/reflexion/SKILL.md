@@ -24,7 +24,6 @@ Document errors and their resolutions to:
 ## Inputs
 
 - `$ARGUMENTS`: Description of the issue (optional, can be inferred from context)
-- `${PROJECT_NAME}`: Current project context
 - `${CLAUDE_SESSION_ID}`: Session identifier for linking
 - Current conversation context (errors, debugging, resolutions)
 

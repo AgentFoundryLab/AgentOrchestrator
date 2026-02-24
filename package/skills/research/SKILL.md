@@ -28,7 +28,6 @@ Prevent hallucination by:
 ## Inputs
 
 - `$ARGUMENTS`: Topic to research
-- `${PROJECT_NAME}`: Current project context
 
 ## Outputs
 

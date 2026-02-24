@@ -34,7 +34,6 @@ Transform architecture into:
 - Default architecture: `docs/architecture/ARCHITECTURE.md`
 - PRD for requirements: `docs/architecture/PRD.md`
 - ADRs for decisions: `docs/architecture/adr/`
-- `${PROJECT_NAME}`: Current project context
 
 ## Outputs
 

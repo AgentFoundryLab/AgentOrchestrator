@@ -26,7 +26,6 @@ Provide deep analysis by:
 ## Inputs
 
 - `$ARGUMENTS`: Issue description or area to investigate
-- `${PROJECT_NAME}`: Current project context
 - Error messages or symptoms if debugging
 
 ## Outputs

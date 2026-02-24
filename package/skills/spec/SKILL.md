@@ -30,7 +30,6 @@ Transform a rough idea into a structured Product Requirements Document with:
 ## Inputs
 
 - `$ARGUMENTS`: The idea or feature description to specify
-- `${PROJECT_NAME}`: Current project context
 - Existing docs (if any): `docs/architecture/PRD.md`, `docs/objectives/VISION.md`
 
 ## Outputs

@@ -29,7 +29,6 @@ Ensure quality by:
 - `$ARGUMENTS`: Task ID or artifact path to validate
 - BACKLOG for acceptance criteria: `docs/development/BACKLOG.md`
 - PRD for requirements: `docs/architecture/PRD.md`
-- `${PROJECT_NAME}`: Current project context
 
 ## Outputs
 

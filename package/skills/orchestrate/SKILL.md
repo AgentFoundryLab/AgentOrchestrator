@@ -62,7 +62,6 @@ Cluttered context causes:
 ## Inputs
 
 - `$ARGUMENTS`: Project idea, goal, or feature description
-- `${PROJECT_NAME}`: Current project context
 - Existing docs in `docs/` (if resuming)
 
 ## Outputs
@@ -210,7 +209,6 @@ Task(
     Create a Product Requirements Document for:
     {$ARGUMENTS}
 
-    Project context: {$PROJECT_NAME}
     Output to: docs/architecture/PRD.md
 
     Follow the /spec skill workflow.

@@ -33,7 +33,6 @@ Execute a task by:
 - `$ARGUMENTS`: Task ID (e.g., "T-001") or task description
 - BACKLOG: `docs/development/BACKLOG.md` for task details
 - Architecture: `docs/architecture/ARCHITECTURE.md` for patterns
-- `${PROJECT_NAME}`: Current project context
 
 ## Outputs
 

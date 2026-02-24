@@ -41,7 +41,6 @@ Maintain quality documentation by:
   - Use `--full` to trigger full consistency review across all documentation
 - Source code for reference
 - Existing docs in `docs/`
-- `${PROJECT_NAME}`: Current project context
 
 ## Outputs
 

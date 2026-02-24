@@ -28,7 +28,6 @@ Analyze session patterns and propose:
 - Reflection records from Serena memory
 - Reflexion records from Serena memory
 - Current agent/skill/hook definitions
-- `${PROJECT_NAME}`: Current project context
 
 ## Outputs
 

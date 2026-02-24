@@ -27,7 +27,6 @@ Manage releases by:
 
 - `$ARGUMENTS`: Target environment or --dry-run flag
 - Validated code (prerequisite: /validate passed)
-- `${PROJECT_NAME}`: Current project context
 
 ## Outputs
 

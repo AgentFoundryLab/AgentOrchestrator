@@ -40,7 +40,6 @@ To act on learnings, use `/optimize` which:
 ## Inputs
 
 - `$ARGUMENTS`: Optional focus area for reflection
-- `${PROJECT_NAME}`: Current project context
 - `${CLAUDE_SESSION_ID}`: Session identifier
 - Current conversation history and outcomes
 
