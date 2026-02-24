@@ -1,7 +1,7 @@
 ---
 name: validate
 description: Verify implementation against acceptance criteria and run tests
-argument-hint: <task ID or artifact path>
+argument-hint: task ID or artifact path
 user-invocable: true
 allowed-tools:
   - Read

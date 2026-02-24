@@ -1,7 +1,7 @@
 ---
 name: document
 description: Create or update documentation for features, APIs, or components
-argument-hint: <component or feature to document>
+argument-hint: component or feature to document
 user-invocable: true
 allowed-tools:
   - Read

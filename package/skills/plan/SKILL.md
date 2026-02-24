@@ -1,7 +1,7 @@
 ---
 name: plan
 description: Decompose architecture into milestones, epics, and tasks for the backlog
-argument-hint: [architecture path or planning focus]
+argument-hint: architecture path or planning focus
 user-invocable: true
 allowed-tools:
   - Read

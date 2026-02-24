@@ -1,7 +1,7 @@
 ---
 name: spec
 description: Generate a Product Requirements Document from an idea or feature request
-argument-hint: <idea or feature description>
+argument-hint: idea or feature description
 user-invocable: true
 allowed-tools:
   - Read

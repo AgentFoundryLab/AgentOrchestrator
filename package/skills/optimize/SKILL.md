@@ -1,7 +1,7 @@
 ---
 name: optimize
 description: Propose improvements to Orchestrator agents, skills, and workflows based on session learnings
-argument-hint: [focus area]
+argument-hint: focus area
 user-invocable: true
 allowed-tools:
   - Read

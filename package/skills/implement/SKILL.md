@@ -1,7 +1,7 @@
 ---
 name: implement
 description: Implement a task from the backlog with code and tests
-argument-hint: <task ID or description>
+argument-hint: task ID or description
 user-invocable: true
 allowed-tools:
   - Read

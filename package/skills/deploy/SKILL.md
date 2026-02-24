@@ -1,7 +1,7 @@
 ---
 name: deploy
 description: Build and deploy project artifacts to target environment
-argument-hint: [environment] [--dry-run]
+argument-hint: environment [--dry-run]
 user-invocable: true
 allowed-tools:
   - Read

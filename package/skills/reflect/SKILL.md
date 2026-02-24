@@ -1,7 +1,7 @@
 ---
 name: reflect
 description: Capture session-level learnings, patterns, and insights for meta-improvement
-argument-hint: [optional focus area]
+argument-hint: optional focus area
 user-invocable: true
 allowed-tools:
   - Read

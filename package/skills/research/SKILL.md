@@ -1,7 +1,7 @@
 ---
 name: research
 description: Research external documentation, patterns, and best practices
-argument-hint: <topic to research>
+argument-hint: topic to research
 user-invocable: true
 allowed-tools:
   - Read

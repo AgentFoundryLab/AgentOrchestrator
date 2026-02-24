@@ -1,7 +1,7 @@
 ---
 name: reflexion
 description: Capture significant errors, root causes, and prevention strategies for future reference
-argument-hint: [issue description]
+argument-hint: issue description
 user-invocable: true
 allowed-tools:
   - Read

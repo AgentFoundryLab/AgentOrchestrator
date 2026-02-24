@@ -1,7 +1,7 @@
 ---
 name: analyse
 description: Investigate codebase, debug issues, or analyze patterns
-argument-hint: <issue or area to investigate>
+argument-hint: issue or area to investigate
 user-invocable: true
 allowed-tools:
   - Read
