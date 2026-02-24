@@ -1,8 +1,9 @@
 # Agent Capability Report
 
-Date: 2026-02-22  
-Scope: Claude Code, Codex CLI, Gemini CLI, OpenCode, Qwen Code  
+Date: 2026-02-22 (updated 2026-02-24)
+Scope: Claude Code, Codex CLI, Gemini CLI, OpenCode, Qwen Code
 Status: Canonical consolidated report (replaces two prior research drafts)
+Update: Added sub-agent file format schemas and config settings for Claude agent teams, Codex multi-agent roles, and Gemini sub-agents (all sourced from official primary docs)
 
 ## Purpose
 
@@ -36,9 +37,9 @@ Conflict policy:
 
 | Runtime | Subagents | Commands | Skills | Hooks | Scripts |
 |---|---|---|---|---|---|
-| Claude Code | Yes | Yes | Yes | Yes | Yes |
-| Codex CLI | Yes (experimental) | Yes (deprecated custom path) | Yes | Limited (`notify` callback) | Yes |
-| Gemini CLI | Partial/experimental agent-file pathing; official agent lifecycle support | Yes | Yes | Yes | Yes |
+| Claude Code | Yes + Agent Teams (experimental) | Yes | Yes | Yes | Yes |
+| Codex CLI | Yes (experimental, `multi_agent = true`) | Yes (deprecated custom path) | Yes | Limited (`notify` callback) | Yes |
+| Gemini CLI | Yes (experimental, `experimental.enableAgents: true`; `~/.gemini/agents/*.md` confirmed primary source) | Yes | Yes | Yes | Yes |
 | OpenCode | Yes | Yes | Yes | Yes (plugin events) | Yes |
 | Qwen Code | Yes | Yes | Yes (experimental) | No documented user-facing lifecycle hook schema | Yes |
 
@@ -50,6 +51,12 @@ Conflict policy:
   - `.claude/agents/*.md`, `~/.claude/agents/*.md`
   - Markdown + YAML frontmatter
   - Common fields: `name`, `description`, `tools`, `model`, `hooks`, `skills`
+- Agent Teams (experimental, separate from subagents):
+  - Enable: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `settings.json` `env` block
+  - Lead session uses `TeamCreate` + `Task(team_name=...)` to spawn teammates
+  - Teammates communicate peer-to-peer via `SendMessage`; shared task list via `TaskCreate`/`TaskList`
+  - Config: `~/.claude/teams/{name}/config.json` (auto-created), `~/.claude/tasks/{name}/`
+  - Cleanup: `TeamDelete` after all teammates shut down
 - Commands:
   - Preferred via skills (`.claude/skills/<name>/SKILL.md`)
   - Legacy compatibility: `.claude/commands/*.md`
@@ -94,8 +101,10 @@ Conflict policy:
 ### Gemini CLI
 
 - Subagents:
-  - Official baseline: agent lifecycle plus `agents.overrides` in settings
-  - `.gemini/agents/*.md` pathing remains inferred/secondary-source-backed
+  - **Confirmed primary source**: `~/.gemini/agents/*.md` (user) or `.gemini/agents/*.md` (project)
+  - Enable: `"experimental": { "enableAgents": true }` in `settings.json`
+  - Agents exposed as tools to main agent; invoked automatically by description match
+  - `agents.overrides` in settings for disabling/reconfiguring built-in agents
 - Commands:
   - `.gemini/commands/**/*.toml`, `~/.gemini/commands/**/*.toml`
   - Directory nesting maps to command namespaces
@@ -139,6 +148,194 @@ Conflict policy:
 - Tools:
   - `settings.json` with `tools.*`, approval, sandbox, and shell controls
 
+## Sub-agent File Formats & Config Schemas
+
+### Claude Code — Agent Teams
+
+**Enable** (in `~/.claude/settings.json`):
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+**Team lead tools** (available when teams enabled): `TeamCreate`, `SendMessage`, `TaskCreate`, `TaskList`, `TaskUpdate`
+
+**Agent `.md` frontmatter** (same as subagents, unchanged):
+```yaml
+---
+name: developer
+description: Code implementation, testing, and technical execution
+tools: ["*"]
+skills:
+  - implement
+hooks:
+  SubagentStop:
+    - type: command
+      command: "..."
+---
+```
+
+**Team lifecycle**:
+- `TeamCreate(team_name, description)` → creates shared task list + team config
+- `Task(subagent_type, team_name, prompt)` → spawns teammate in team context
+- `SendMessage(type="message", recipient, content)` → peer-to-peer messaging
+- `SendMessage(type="shutdown_request", recipient)` → graceful shutdown
+- `TeamDelete()` → cleanup after all teammates shut down
+
+**Best practices** (from official docs):
+- 3–5 teammates; 5–6 tasks per teammate
+- Each teammate owns distinct files (no shared-file edits)
+- Provide task-specific context in spawn prompt (teammates don't inherit lead's history)
+- Require plan approval for risky tasks: `Task(..., mode="plan")`
+- Source: https://code.claude.com/docs/en/agent-teams.md
+
+---
+
+### Codex CLI — Multi-agent Roles
+
+**Enable** (`~/.codex/config.toml`):
+```toml
+[features]
+multi_agent = true
+```
+Or via `/experimental` → toggle **Multi-agents** → restart.
+
+**Role definition** (`~/.codex/config.toml`):
+```toml
+[agents.jarvis-developer]
+description = "Code implementation, testing, and technical execution"
+config_file = "agents/jarvis-developer.toml"
+
+[agents.jarvis-architect]
+description = "System design, architecture documentation, and ADR creation"
+config_file = "agents/jarvis-architect.toml"
+```
+
+**Per-role config file** (e.g. `~/.codex/agents/jarvis-developer.toml`):
+```toml
+model = "gpt-5.3-codex"
+model_reasoning_effort = "high"
+sandbox_mode = "untrusted"
+developer_instructions = """
+You are a Developer responsible for code implementation and testing.
+[... full system prompt ...]
+"""
+```
+
+**Role config schema**:
+
+| Field | Type | Description |
+|---|---|---|
+| `model` | string | Model override for this role |
+| `model_reasoning_effort` | string | `low`, `medium`, `high` |
+| `sandbox_mode` | string | `untrusted`, `read-only` |
+| `developer_instructions` | string | System prompt / role instructions |
+
+**Built-in roles** (overridable by custom definition with same name):
+- `default` — general-purpose fallback
+- `worker` — execution-focused (implementation, fixes)
+- `explorer` — read-heavy codebase exploration
+- `monitor` — long-running commands / polling (supports `wait` tool, up to 1h)
+
+**Schema constraints** (`[agents]` section):
+
+| Field | Type | Description |
+|---|---|---|
+| `agents.max_threads` | number | Max concurrent agent threads |
+| `agents.max_depth` | number | Max nesting depth (default: 1) |
+| `agents.<name>.description` | string | Shown to Codex when selecting role |
+| `agents.<name>.config_file` | string | Path to per-role TOML (relative to config.toml) |
+
+**Invocation**: natural language prompt; Codex decides spawn/routing. Use `/agent` CLI to inspect threads.
+Sub-agents inherit parent sandbox policy; run non-interactive. No peer-to-peer messaging.
+- Source: https://developers.openai.com/codex/multi-agent.md
+
+---
+
+### Gemini CLI — Sub-agents
+
+**Enable** (`~/.gemini/settings.json`):
+```json
+{
+  "experimental": {
+    "enableAgents": true
+  }
+}
+```
+
+**Agent definition file** (`~/.gemini/agents/<name>.md` or `.gemini/agents/<name>.md`):
+```yaml
+---
+name: jarvis-developer
+description: Code implementation, testing, and technical execution. Use for writing code, fixing bugs, and implementing features.
+kind: local
+tools:
+  - read_file
+  - write_file
+  - replace_in_file
+  - run_shell_command
+  - grep_search
+  - glob_files
+max_turns: 20
+---
+You are a Developer responsible for code implementation and testing.
+
+[... full system prompt / body ...]
+```
+
+**Frontmatter schema**:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | Yes | Slug: `[a-z0-9_-]` only. Used as tool name. |
+| `description` | string | Yes | Shown to main agent for delegation decisions. Be specific about when to use. |
+| `kind` | string | No | `local` (default) or `remote` (A2A protocol) |
+| `tools` | array | No | Gemini tool names. Omit = all tools available. |
+| `model` | string | No | e.g. `gemini-2.5-pro`. Default: `inherit` |
+| `temperature` | number | No | 0.0–2.0 |
+| `max_turns` | number | No | Max conversation turns (default: 15) |
+| `timeout_mins` | number | No | Max execution time in minutes (default: 5) |
+
+**Gemini tool names** (reference mapping from Claude tool names):
+
+| Claude | Gemini |
+|---|---|
+| `Read` | `read_file` |
+| `Write` | `write_file` |
+| `Edit` | `replace_in_file` |
+| `Bash` | `run_shell_command` |
+| `Glob` | `glob_files` |
+| `Grep` | `grep_search` |
+| `["*"]` / all | omit `tools` field |
+
+**Built-in sub-agents** (enabled by default, configurable via `agents.overrides`):
+- `codebase_investigator` — deep codebase analysis, reverse engineering
+- `cli_help` — expert knowledge about Gemini CLI itself
+- `generalist_agent` — routes tasks to appropriate sub-agent
+- `browser_agent` — browser automation (disabled by default)
+
+**Override built-in** (e.g. force model):
+```json
+{
+  "agents": {
+    "overrides": {
+      "codebase_investigator": {
+        "model": "gemini-2.5-pro"
+      }
+    }
+  }
+}
+```
+
+**Invocation**: sub-agents are exposed as tools; main agent calls them automatically based on description.
+No peer-to-peer messaging. Results report back to parent context only.
+- Source: https://geminicli.com/docs/core/subagents/, https://geminicli.com/docs/reference/configuration/
+
+---
+
 ## Installer v0.2 Policy Mapping
 
 1. Add `subagents` as a first-class capability dimension in runtime registry and reporting.
@@ -163,7 +360,9 @@ Conflict policy:
   - https://docs.anthropic.com/en/docs/claude-code/skills
   - https://docs.anthropic.com/en/docs/claude-code/hooks
   - https://docs.anthropic.com/en/docs/claude-code/settings
+  - https://code.claude.com/docs/en/agent-teams.md *(agent teams, added 2026-02-24)*
 - Codex CLI:
+  - https://developers.openai.com/codex/multi-agent.md *(multi-agent roles schema, added 2026-02-24)*
   - https://developers.openai.com/codex/multi-agent
   - https://developers.openai.com/codex/config-basic
   - https://developers.openai.com/codex/config-reference
@@ -171,7 +370,8 @@ Conflict policy:
   - https://developers.openai.com/codex/skills
   - https://developers.openai.com/codex/cli/slash-commands
 - Gemini CLI:
-  - https://geminicli.com/docs/reference/configuration/
+  - https://geminicli.com/docs/core/subagents/ *(sub-agent file format confirmed primary, added 2026-02-24)*
+  - https://geminicli.com/docs/reference/configuration/ *(settings.json schema, added 2026-02-24)*
   - https://geminicli.com/docs/hooks/
   - https://geminicli.com/docs/reference/commands/
   - https://geminicli.com/docs/cli/custom-commands/
