@@ -1,7 +1,7 @@
 # AgentOrchestrator Backlog
 
 **Version**: 0.2.1
-**Updated**: 2026-02-24 (89/99 v0 tasks done; 1 in progress; 9 pending)
+**Updated**: 2026-02-24 (99/99 v0 tasks done; 0 in progress; 0 pending)
 **Scope**: v0 Milestone
 
 ---
@@ -71,7 +71,7 @@
 | T-059 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add installer targets for --opencode and --qwen | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-060 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Claude paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-061 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Codex paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
-| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | 🔲 |
+| T-062 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Gemini paths (reconciled to skills-first baseline) | FR1.1, FR2.1, NFR4 | v0.2.0, T-097 | P0 | ✅ |
 | T-063 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify OpenCode paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-064 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Codify Qwen paths | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-065 | v0 | Installer Extension | Runtime Matrix & Canonical Paths | Add runtime path drift checks | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
@@ -85,7 +85,7 @@
 | T-073 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Add commands compatibility profile selectable by flag | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
 | T-074 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Claude profile (commands+skills+hooks+scripts) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-075 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Codex profile (skills+scripts baseline, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
-| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (commands+scripts only) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | 🔲 |
+| T-076 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Gemini profile (skills+scripts baseline, commands compat) | FR1.1, FR2.1, NFR4 | v0.2.0, T-097 | P0 | ✅ |
 | T-077 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement OpenCode profile (commands+skills+scripts, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-078 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Implement Qwen profile (commands+skills+scripts, no hooks) | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
 | T-079 | v0 | Installer Extension | Capability-Scoped Installer Profiles | Emit warnings for unsupported capabilities per runtime | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
@@ -101,14 +101,14 @@
 | T-089 | v0 | Installer Extension | Validation & CI | Add restore/cleanup regression tests for namespaced installs | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
 | T-090 | v0 | Installer Extension | Validation & CI | Add idempotency tests for repeated installs with mixed runtime subsets | FR1.1, FR2.1, NFR4 | v0.2.0 | P1 | ✅ |
 | T-091 | v0 | Installer Extension | Validation & CI | Add CI guardrail for runtime/path drift | FR1.1, FR2.1, NFR4 | v0.2.0 | P0 | ✅ |
-| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | FR1.1, FR2.1, NFR4 | G-002 | P1 | 🔄 |
-| T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | FR1.1, FR2.1, NFR4 | G-003 | P1 | 🔲 |
-| T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | FR1.1, FR2.1, NFR4 | G-003 | P2 | 🔲 |
-| T-096 | v0 | Installer Extension | Namespace Alignment | Align runtime namespace modes with ADR-014 D-2 | FR1.1, FR2.1, NFR4 | I-001 | P1 | 🔲 |
-| T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/subagents support model; hooks excluded by policy) | FR1.1, FR2.1, NFR4 | I-002 | P1 | 🔲 |
-| T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | FR1.1, FR2.1, NFR4 | I-003 | P2 | 🔲 |
-| T-100 | v0 | Installer Extension | Codex Skills-First Baseline | Remove Codex default prompts dual-write; skills-only default; prompts emitted only in explicit command-mode compat flow | FR1.1, FR2.1, NFR4 | I-004 | P1 | 🔲 |
-| T-099 | v0 | Installer Extension | Codex Agent Invocation Alignment | Align Codex runtime planning/install model with official role-config + thread workflow | FR1.1, FR1.2, FR2.1, NFR4 | I-005 | P1 | 🔲 |
+| T-092 | v0 | Installer Extension | Gemini Commands | Implement SKILL.md → Gemini TOML command transform | FR1.1, FR2.1, NFR4 | G-002 | P1 | ✅ |
+| T-094 | v0 | Installer Extension | Frontmatter Transforms | Strip Claude-specific frontmatter keys for non-Claude runtime installs (minimal schema) | FR1.1, FR2.1, NFR4 | G-003 | P1 | ✅ |
+| T-095 | v0 | Installer Extension | Frontmatter Transforms | Per-runtime key map + TOML transform pipeline (extend minimal schema) | FR1.1, FR2.1, NFR4 | G-003 | P2 | ✅ |
+| T-096 | v0 | Installer Extension | Namespace Alignment | Align runtime namespace modes with ADR-014 D-2 | FR1.1, FR2.1, NFR4 | I-001 | P1 | ✅ |
+| T-097 | v0 | Installer Extension | Gemini Capability Alignment | Align Gemini capability flags + install paths/tests with validated docs baseline (skills/subagents support model; hooks excluded by policy) | FR1.1, FR2.1, NFR4 | I-002 | P1 | ✅ |
+| T-098 | v0 | Installer Extension | Compatibility Debt Cleanup | Remove legacy compatibility/workaround bloat from installer UX/docs and normalize to current behavior spec | FR1.1, FR2.1, NFR4 | I-003 | P2 | ✅ |
+| T-100 | v0 | Installer Extension | Codex Skills-First Baseline | Remove Codex default prompts dual-write; skills-only default; prompts emitted only in explicit command-mode compat flow | FR1.1, FR2.1, NFR4 | I-004 | P1 | ✅ |
+| T-099 | v0 | Installer Extension | Codex Agent Invocation Alignment | Align Codex runtime planning/install model with official role-config + thread workflow | FR1.1, FR1.2, FR2.1, NFR4 | I-005 | P1 | ✅ |
 
 ---
 
@@ -685,11 +685,11 @@
 
 ### T-062: Codify Gemini paths
 **AC**:
-- Install path for Gemini commands: `.gemini/commands/` (project), `~/.gemini/commands/` (global); format is `.toml` (not `.md`)
-- No skills installation for Gemini (not supported; installer must not create skills artifacts for Gemini target)
-- No hook installation for Gemini (not supported)
+- Canonical skills path for Gemini: `.gemini/skills/<name>/SKILL.md` (project), `~/.gemini/skills/<name>/SKILL.md` (global)
+- Commands compatibility path for Gemini: `.gemini/commands/*.toml` (project), `~/.gemini/commands/*.toml` (global)
+- No hook installation for Gemini (excluded by installer policy for non-Claude runtimes)
 - Shell script execution support via `!{...}` in command bodies is noted in registry but requires no separate installer step
-- Registry entry for `gemini` reflects these paths verbatim
+- Registry entry for `gemini` reflects these paths verbatim (reconciled by T-097)
 
 ---
 
@@ -785,8 +785,7 @@
 
 ### T-072: Make skills the default profile when runtime supports skills
 **AC**:
-- For runtimes that support skills (`claude`, `codex`, `opencode`, `qwen`), default profile is `skills` (plus `hooks` only where installer policy supports runtime hooks)
-- For runtimes that do not support skills (`gemini`), default profile falls back to `commands` (plus `scripts`)
+- For runtimes that support skills (`claude`, `codex`, `gemini`, `opencode`, `qwen`), default profile is `skills` (plus `hooks` only where installer policy supports runtime hooks)
 - Default profile selection is documented in `--help` and in the installer README
 - Running `install.sh --claude` with no `--profile` flag installs skills (not commands) by default
 - A test verifies default profile selection for each of the 5 runtimes
@@ -816,20 +815,20 @@
 ### T-075: Implement Codex profile (skills+scripts baseline, no hooks)
 **AC**:
 - Default Codex install writes: skills to `.agents/skills/`; scripts included within skill packages
-- Current implementation also writes prompts to `~/.codex/prompts/`; cleanup tracked in T-098
+- Prompts at `~/.codex/prompts/` are emitted only in explicit `--profile commands` compatibility flow
 - No hook artifacts written for Codex under any profile
 - Installer emits a clear warning if `--profile hooks` is explicitly requested for Codex runtime
 - A smoke test enumerates all would-be writes and confirms absence of hook artifacts
 
 ---
 
-### T-076: Implement Gemini profile (commands+scripts only)
+### T-076: Implement Gemini profile (skills+scripts baseline, commands compatibility)
 **AC**:
-- Default Gemini install writes: commands to `.gemini/commands/` as `.toml` files; no skills, no hooks artifacts
-- SKILL.md sources are transformed to TOML command format using the transform defined in T-066
-- Installer emits a clear warning if `--profile skills` or `--profile hooks` is explicitly requested for Gemini runtime
+- Default Gemini install writes: skills to `.gemini/skills/`; no hooks artifacts
+- `--profile commands` writes `.toml` files to `.gemini/commands/` via SKILL.md transform
+- Installer emits a clear warning if `--profile hooks` is explicitly requested for Gemini runtime
 - Scripts support noted in command bodies (`!{...}`) but requires no separate file installation
-- A smoke test enumerates all would-be writes: only `.toml` command files at Gemini paths
+- Smoke tests verify both default skills profile and commands compatibility profile behavior
 
 ---
 

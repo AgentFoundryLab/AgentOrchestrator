@@ -44,28 +44,26 @@
 #        Keep body content verbatim.
 #        Filename: <skill-name>.md
 #        Unsupported frontmatter keys: all dropped (body only).
-#    - Invocation: /prompts:<name> (deprecated upstream; skills preferred)
+#    - Invocation: /prompts:<name> (compat mode only; skills are baseline)
 #
-# 3. GEMINI (target: .gemini/commands/<name>.toml)
-#    - No skills support. Commands only.
-#    - Transform SKILL.md → TOML:
-#        [command]
-#        name = "<skill-name>"
+# 3. GEMINI (target: .gemini/commands/<name>.toml in commands mode)
+#    - Native skills support exists under .gemini/skills/<name>/SKILL.md.
+#    - Commands mode transform SKILL.md → TOML:
 #        description = "<description from frontmatter>"
-#        # body content placed in `prompt` key, escaped as TOML multiline string
-#        prompt = """
+#        # body content placed in `prompt` key as TOML multiline literal string
+#        prompt = '''
 #        <body content>
-#        """
-#    - Frontmatter keys preserved: name, description.
-#    - Frontmatter keys dropped with warning: context, agent, user-invocable.
-#    - Subdirectory namespacing: commands/<ns>/<name>.toml for namespaced installs.
-#    - Scripts: !{...} inline shell — no separate file installation.
+#        '''
+#    - TOML omits `name` (Gemini derives command name from filename/path).
+#    - Frontmatter keys preserved in skills mode after normalization: name, description, tools, scripts.
+#    - Frontmatter keys dropped: argument-hint, user-invocable, context, agent.
+#    - Native command namespacing: commands/<ns>/<name>.toml for namespaced installs.
+#    - Scripts: !{...} inline shell — no separate scripts directory installation.
 #
 # 4. OPENCODE (target: .opencode/skills/<name>/SKILL.md)
 #    - SKILL.md is native format. No transform needed for skills mode.
 #    - Commands path (.opencode/commands/<name>.md):
-#        Same as skills but placed in commands/ directory.
-#        Frontmatter: all keys preserved.
+#        Markdown command content from transformed SKILL.md body/frontmatter mapping.
 #    - Cross-read: OpenCode also reads .claude/skills and .agents/skills.
 #        Installer does NOT duplicate artifacts to those paths for OpenCode-only installs.
 #    - Plugin hooks: .opencode/plugins/ (JS/TS event subscriptions, not SKILL.md files).
@@ -74,8 +72,23 @@
 #    - SKILL.md is native format. No transform needed for skills mode.
 #    - Commands path (.qwen/commands/<name>.md):
 #        Markdown format preferred. TOML path not written by default.
-#        Frontmatter: all keys preserved.
+#    - Native command namespacing: commands/<ns>/<name>.md for namespaced installs.
 #    - Scripts: !{...} inline and optional scripts/ helpers in skill packages.
+#
+# Per-runtime transform key map (runtime × mode × key → action):
+#
+# Runtime   | Mode     | name          | description   | argument-hint / user-invocable | context / agent | body $ARGUMENTS
+# ----------|----------|---------------|---------------|----------------------------------|-----------------|----------------
+# claude    | skills   | keep          | keep          | keep                             | keep            | keep
+# claude    | commands | keep          | keep          | keep                             | keep            | keep
+# codex     | skills   | keep          | keep          | drop                             | drop            | keep
+# codex     | commands | drop (strip)  | drop (strip)  | drop (strip)                     | drop (strip)    | keep
+# gemini    | skills   | keep          | keep          | drop                             | drop            | keep
+# gemini    | commands | drop (file id)| keep          | drop                             | drop            | {{args}}
+# opencode  | skills   | keep          | keep          | drop                             | drop            | keep
+# opencode  | commands | keep          | keep          | drop                             | drop            | keep
+# qwen      | skills   | keep          | keep          | drop                             | drop            | keep
+# qwen      | commands | keep          | keep          | drop                             | drop            | {{args}}
 #
 # Determinism guarantee: given the same SKILL.md input, the transform always
 # produces the same output regardless of install order or runtime context.
@@ -135,7 +148,7 @@ RUNTIME_DOC_DIR_OVERRIDE[qwen]=""
 declare -A RUNTIME_SKILLS_PATH
 RUNTIME_SKILLS_PATH[claude]="skills"
 RUNTIME_SKILLS_PATH[codex]="skills"
-RUNTIME_SKILLS_PATH[gemini]=""
+RUNTIME_SKILLS_PATH[gemini]="skills"
 RUNTIME_SKILLS_PATH[opencode]="skills"
 RUNTIME_SKILLS_PATH[qwen]="skills"
 
@@ -195,7 +208,7 @@ RUNTIME_SUPPORTS_HOOKS[qwen]="false"
 declare -A RUNTIME_SUPPORTS_SKILLS
 RUNTIME_SUPPORTS_SKILLS[claude]="true"
 RUNTIME_SUPPORTS_SKILLS[codex]="true"
-RUNTIME_SUPPORTS_SKILLS[gemini]="false"
+RUNTIME_SUPPORTS_SKILLS[gemini]="true"
 RUNTIME_SUPPORTS_SKILLS[opencode]="true"
 RUNTIME_SUPPORTS_SKILLS[qwen]="true"
 
@@ -213,26 +226,39 @@ RUNTIME_SUPPORTS_SCRIPTS[gemini]="true"
 RUNTIME_SUPPORTS_SCRIPTS[opencode]="true"
 RUNTIME_SUPPORTS_SCRIPTS[qwen]="true"
 
-# Namespace mode for this runtime.
-# "dot-prefix"   — namespace becomes a dot-prefix on artifact directory name
-#                  e.g., skills/myorg.spec/ → /myorg.spec
-# "subdirectory" — namespace becomes path segments
-#                  e.g., commands/myorg/spec.toml → /myorg:spec
-# "disabled"     — namespace is ignored for this runtime (flat install only)
-declare -A RUNTIME_NAMESPACE_MODE
-RUNTIME_NAMESPACE_MODE[claude]="dot-prefix"
-RUNTIME_NAMESPACE_MODE[codex]="disabled"
-RUNTIME_NAMESPACE_MODE[gemini]="subdirectory"
-RUNTIME_NAMESPACE_MODE[opencode]="subdirectory"
-RUNTIME_NAMESPACE_MODE[qwen]="dot-prefix"
+# Namespace translation mode by runtime + artifact (ADR-014 D-2).
+# Modes:
+#   flat          -> ignore namespace for artifact
+#   dash-prefix   -> namespace applied as "<ns>-<name>"
+#   subdirectory  -> namespace applied as "<ns>/<name>" (commands invoke as /<ns>:<name>)
+declare -A RUNTIME_NAMESPACE_SKILLS_MODE
+RUNTIME_NAMESPACE_SKILLS_MODE[claude]="dash-prefix"
+RUNTIME_NAMESPACE_SKILLS_MODE[codex]="dash-prefix"
+RUNTIME_NAMESPACE_SKILLS_MODE[gemini]="flat"
+RUNTIME_NAMESPACE_SKILLS_MODE[opencode]="dash-prefix"
+RUNTIME_NAMESPACE_SKILLS_MODE[qwen]="dash-prefix"
+
+declare -A RUNTIME_NAMESPACE_AGENTS_MODE
+RUNTIME_NAMESPACE_AGENTS_MODE[claude]="dash-prefix"
+RUNTIME_NAMESPACE_AGENTS_MODE[codex]="dash-prefix"
+RUNTIME_NAMESPACE_AGENTS_MODE[gemini]="flat"
+RUNTIME_NAMESPACE_AGENTS_MODE[opencode]="dash-prefix"
+RUNTIME_NAMESPACE_AGENTS_MODE[qwen]="dash-prefix"
+
+declare -A RUNTIME_NAMESPACE_COMMANDS_MODE
+RUNTIME_NAMESPACE_COMMANDS_MODE[claude]="dash-prefix"
+RUNTIME_NAMESPACE_COMMANDS_MODE[codex]="dash-prefix"
+RUNTIME_NAMESPACE_COMMANDS_MODE[gemini]="subdirectory"
+RUNTIME_NAMESPACE_COMMANDS_MODE[opencode]="dash-prefix"
+RUNTIME_NAMESPACE_COMMANDS_MODE[qwen]="subdirectory"
 
 # Commands artifact format.
 declare -A RUNTIME_DOC_FORMAT
 RUNTIME_DOC_FORMAT[claude]="markdown"
-RUNTIME_DOC_FORMAT[codex]="markdown"    # PARTIAL G-003: Claude-specific frontmatter keys stripped (T-094); full key map pending T-095
-RUNTIME_DOC_FORMAT[gemini]="toml"       # T-092 implemented; PARTIAL G-003 (T-094/T-095)
-RUNTIME_DOC_FORMAT[opencode]="markdown" # PARTIAL G-003: Claude-specific frontmatter keys stripped (T-094); full key map pending T-095
-RUNTIME_DOC_FORMAT[qwen]="markdown"    # PARTIAL G-003: Claude-specific frontmatter keys stripped (T-094); full key map pending T-095
+RUNTIME_DOC_FORMAT[codex]="markdown"
+RUNTIME_DOC_FORMAT[gemini]="toml"
+RUNTIME_DOC_FORMAT[opencode]="markdown"
+RUNTIME_DOC_FORMAT[qwen]="markdown"
 
 # ---------------------------------------------------------------------------
 # register_runtime_defaults — validate all arrays are populated
@@ -262,7 +288,9 @@ register_runtime_defaults() {
         RUNTIME_SUPPORTS_SKILLS
         RUNTIME_SUPPORTS_COMMANDS
         RUNTIME_SUPPORTS_SCRIPTS
-        RUNTIME_NAMESPACE_MODE
+        RUNTIME_NAMESPACE_SKILLS_MODE
+        RUNTIME_NAMESPACE_AGENTS_MODE
+        RUNTIME_NAMESPACE_COMMANDS_MODE
         RUNTIME_DOC_FORMAT
     )
 
@@ -303,9 +331,49 @@ register_runtime_defaults() {
 
     # Validate namespace mode values
     for rt in "${RUNTIMES[@]}"; do
-        local ns_mode="${RUNTIME_NAMESPACE_MODE[${rt}]:-}"
-        if [[ "$ns_mode" != "dot-prefix" && "$ns_mode" != "subdirectory" && "$ns_mode" != "disabled" ]]; then
-            echo "[ERROR] runtimes.sh: RUNTIME_NAMESPACE_MODE[${rt}] must be 'dot-prefix', 'subdirectory', or 'disabled', got: '${ns_mode}'" >&2
+        local skills_mode="${RUNTIME_NAMESPACE_SKILLS_MODE[${rt}]:-}"
+        local agents_mode="${RUNTIME_NAMESPACE_AGENTS_MODE[${rt}]:-}"
+        local commands_mode="${RUNTIME_NAMESPACE_COMMANDS_MODE[${rt}]:-}"
+        for mode in "$skills_mode" "$agents_mode" "$commands_mode"; do
+            if [[ "$mode" != "flat" && "$mode" != "dash-prefix" && "$mode" != "subdirectory" ]]; then
+                echo "[ERROR] runtimes.sh: namespace mode for ${rt} must be 'flat', 'dash-prefix', or 'subdirectory', got: '${mode}'" >&2
+                ((++errors))
+            fi
+        done
+
+        # ADR-014 D-2 guardrail: canonical per-runtime namespace modes.
+        local expected_skills expected_agents expected_commands
+        case "$rt" in
+            claude)
+                expected_skills="dash-prefix"
+                expected_agents="dash-prefix"
+                expected_commands="dash-prefix"
+                ;;
+            codex)
+                expected_skills="dash-prefix"
+                expected_agents="dash-prefix"
+                expected_commands="dash-prefix"
+                ;;
+            gemini)
+                expected_skills="flat"
+                expected_agents="flat"
+                expected_commands="subdirectory"
+                ;;
+            opencode)
+                expected_skills="dash-prefix"
+                expected_agents="dash-prefix"
+                expected_commands="dash-prefix"
+                ;;
+            qwen)
+                expected_skills="dash-prefix"
+                expected_agents="dash-prefix"
+                expected_commands="subdirectory"
+                ;;
+        esac
+
+        if [[ "$skills_mode" != "$expected_skills" || "$agents_mode" != "$expected_agents" || "$commands_mode" != "$expected_commands" ]]; then
+            echo "[ERROR] runtimes.sh: ADR-014 D-2 namespace mode drift for ${rt} (skills=${skills_mode}, agents=${agents_mode}, commands=${commands_mode})" >&2
+            echo "        expected: skills=${expected_skills}, agents=${expected_agents}, commands=${expected_commands}" >&2
             ((++errors))
         fi
     done

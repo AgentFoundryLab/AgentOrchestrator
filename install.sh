@@ -6,8 +6,8 @@
 #   ./install.sh --project <path>      Install project templates to <path>
 #   ./install.sh [--claude|--gemini|--codex|--opencode|--qwen]  Select install targets (default: --claude)
 #   ./install.sh [--profile <profile>] Capability profile: skills|commands|hooks|scripts|all (default: auto)
-#   ./install.sh [--namespace <name>]  Override agent/skill namespace (default: flat)
-#   ./install.sh [--no-namespace]      Use flat agents/skills paths (no namespace)
+#   ./install.sh [--namespace <name>]  Override agent/skill/command namespace (default: flat)
+#   ./install.sh [--no-namespace]      Use flat agents/skills/commands paths (no namespace)
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
 #   ./install.sh --restore             Remove installed artifacts, restore settings
 #   ./install.sh --cleanup             Remove installed artifacts, unpatch files (no backup restore)
@@ -80,13 +80,12 @@ Profile flags (controls which capability artifacts are installed):
                                        - scripts: embedded within skill packages (no extra step)
                                        - all: install all capabilities supported by the runtime
                                        Default when runtime supports skills: skills
-                                       Default when runtime does not support skills (gemini): commands
 
 Namespace flags:
-    --namespace <name>                 Override namespace for agents/skills (default: flat)
-                                       Grammar: dot-separated [a-z][a-z0-9-]* segments, max depth 3
+    --namespace <name>                 Override namespace for agents/skills/commands (default: flat)
+                                       Grammar: dash-notation token [a-z][a-z0-9-]*
                                        Example: --namespace orchestrator
-    --no-namespace                     Use flat agents/skills paths (no namespace prefix)
+    --no-namespace                     Use flat agents/skills/commands paths (no namespace prefix)
 
 Other flags:
     --overwrite                        Overwrite existing markdown files (backup to .backup/)
@@ -100,8 +99,8 @@ Flat install is the default when --namespace is omitted.
 What gets installed per runtime (default skills profile):
 
   claude  (~/.claude/, .claude/):
-    - agents/<ns>/         Agent definitions
-    - skills/<ns>.<skill>/ Namespaced skills (dot-prefix) [default profile]
+    - agents/*.md          Agent definitions [default profile]
+    - skills/<skill>/      Skills [default profile]
     - commands/            Commands in .md format [--profile commands only]
     - hooks/scripts/       Hook scripts [default profile]
     - settings.json        Hook and MCP configuration
@@ -110,26 +109,27 @@ What gets installed per runtime (default skills profile):
     - templates/           PRD, architecture, ADR, roadmap, backlog, issues
 
   codex  (~/.agents/, .agents/):
-    - agents/              Agent definitions (flat path)
-    - skills/<skill>/      Skills (flat path) [default profile]
-    - commands/            Commands in .md (strip frontmatter) [--profile commands only]
+    - agents/*.md          Agent definitions [default profile]
+    - skills/<skill>/      Skills [default profile]
+    - prompts/             Commands in .md (strip frontmatter) [--profile commands only]
     - [no hooks — not supported by Codex CLI]
 
   gemini  (~/.gemini/, .gemini/):
-    - commands/*.toml      Commands in TOML format (from SKILL.md transform) [default profile]
-    - [no skills, no hooks — not supported by Gemini CLI]
+    - skills/<skill>/      Skills [default profile]
+    - commands/*.toml      Commands in TOML format (from SKILL.md transform) [--profile commands]
+    - [no hooks — excluded by installer policy]
 
   opencode  (~/.config/opencode/, .opencode/):
-    - agents/<ns>/         Agent definitions
-    - skills/<name>/       Skills (subdirectory namespace) [default profile]
-    - commands/            Commands in .md format [default profile]
-    - plugins/             Plugin event hooks (placeholder) [default profile]
+    - agents/*.md          Agent definitions [default profile]
+    - skills/<name>/       Skills [default profile]
+    - commands/*.md        Commands in .md format [--profile commands only]
+    - [no hooks — excluded by installer policy]
 
   qwen  (~/.qwen/, .qwen/):
-    - agents/<ns>/         Agent definitions
-    - skills/<ns>.<skill>/ Namespaced skills (dot-prefix) [default profile]
-    - commands/            Commands in Markdown format [default profile]
-    - [no hooks — not supported by Qwen Code]
+    - agents/*.md          Agent definitions [default profile]
+    - skills/<skill>/      Skills [default profile]
+    - commands/*.md        Commands in Markdown format [--profile commands only]
+    - [no hooks — excluded by installer policy]
 
 --project installs to <path>/ (runtime-agnostic scaffolding):
     - docs/                Provisioned folder tree with .gitkeep
@@ -140,16 +140,13 @@ What gets installed per runtime (default skills profile):
     - Injects @policy refs into runtime context docs
 
 Profile defaults per runtime:
-    Runtimes with skills support (claude, codex, opencode, qwen):
+    Runtimes with skills support (claude, codex, gemini, opencode, qwen):
         Default profile: skills
-        Skills are installed to:
-          - Claude/Qwen: <runtime>/skills/<ns>.<skill>/ (dot-prefix)
-          - OpenCode: <runtime>/skills/<ns>/<skill>/ (subdirectory)
-          - Codex: <runtime>/skills/<skill>/
-        Hooks are also installed when the runtime supports them (claude, opencode).
-    Runtimes without skills support (gemini):
-        Default profile: commands
-        Commands are installed to <runtime>/commands/<skill>.toml
+        Skills are installed to <runtime>/skills/<skill>/ (flat by default).
+        Optional --namespace translation is runtime/artifact-aware:
+          - Skills/agents on flat runtimes: <namespace>-<name> fallback
+          - Commands on Gemini/Qwen: <namespace>/<name> for /<namespace>:<name>
+        Hooks are installed only where runtime support is enabled by installer policy (claude).
     Use --profile commands to install command-format artifacts for selected runtimes.
 
 Examples:
@@ -162,7 +159,7 @@ Examples:
     # Install to all five runtimes
     ./install.sh --global --claude --codex --gemini --opencode --qwen
 
-    # Namespaced install (agents/<ns>/, skills/<ns>.<skill>/)
+    # Namespaced install (dash fallback naming)
     ./install.sh --global --claude --namespace orchestrator
 
     # Install with commands profile
@@ -177,7 +174,7 @@ EOF
 # ---------------------------------------------------------------------------
 # validate_namespace — T-067: Validate namespace grammar
 # ---------------------------------------------------------------------------
-# Grammar: dot-separated segments, each matching [a-z][a-z0-9-]*, max 3 segments.
+# Grammar: single dash-notation token matching [a-z][a-z0-9-]*.
 # Empty string is valid (means no namespace / flat mode).
 # Returns 0 for valid, 1 for invalid (with error message to stderr).
 validate_namespace() {
@@ -186,45 +183,59 @@ validate_namespace() {
     # Empty namespace is valid (flat mode)
     [ -z "$ns" ] && return 0
 
-    # Check segment count (max 3)
-    local segment_count
-    segment_count=$(printf '%s' "$ns" | tr -cd '.' | wc -c)
-    segment_count=$((segment_count + 1))
-    if [ "$segment_count" -gt 3 ]; then
-        log_error "Invalid namespace '${ns}': must be dot-separated lowercase segments [a-z][a-z0-9-]*, max 3 levels"
+    if [[ ! "$ns" =~ ^[a-z][a-z0-9-]*$ ]]; then
+        log_error "Invalid namespace '${ns}': must match [a-z][a-z0-9-]* (single dash-notation token)"
         return 1
     fi
-
-    # Validate each segment against [a-z][a-z0-9-]*
-    local old_ifs="$IFS"
-    IFS='.'
-    local segment
-    for segment in $ns; do
-        if [[ ! "$segment" =~ ^[a-z][a-z0-9-]*$ ]]; then
-            IFS="$old_ifs"
-            log_error "Invalid namespace '${ns}': must be dot-separated lowercase segments [a-z][a-z0-9-]*, max 3 levels"
-            return 1
-        fi
-    done
-    IFS="$old_ifs"
 
     return 0
 }
 
-# Resolve effective namespace for a runtime.
-# Some runtimes intentionally ignore namespace and always install flat paths.
-effective_namespace_for_runtime() {
+# Resolve effective namespace for runtime + artifact.
+# Namespace is applied only when artifact mode is not "flat".
+# Artifact must be one of: skills, agents, commands.
+effective_namespace_for_runtime_artifact() {
     local rt="$1"
-    local ns="${2:-$NAMESPACE}"
+    local artifact="$2"
+    local ns="${3:-$NAMESPACE}"
 
     [ -z "$ns" ] && { echo ""; return 0; }
 
-    local ns_mode="${RUNTIME_NAMESPACE_MODE[${rt}]:-dot-prefix}"
-    if [[ "$ns_mode" == "disabled" ]]; then
+    local ns_mode="flat"
+    case "$artifact" in
+        skills)   ns_mode="${RUNTIME_NAMESPACE_SKILLS_MODE[${rt}]:-flat}" ;;
+        agents)   ns_mode="${RUNTIME_NAMESPACE_AGENTS_MODE[${rt}]:-flat}" ;;
+        commands) ns_mode="${RUNTIME_NAMESPACE_COMMANDS_MODE[${rt}]:-flat}" ;;
+        *)
+            log_warning "Unknown namespace artifact '${artifact}' for runtime '${rt}'; using flat mode"
+            ns_mode="flat"
+            ;;
+    esac
+
+    if [[ "$ns_mode" == "flat" ]]; then
         echo ""
-    else
-        echo "$ns"
+        return 0
     fi
+    echo "$ns"
+}
+
+namespace_mode_for_runtime_artifact() {
+    local rt="$1"
+    local artifact="$2"
+    case "$artifact" in
+        skills) echo "${RUNTIME_NAMESPACE_SKILLS_MODE[${rt}]:-flat}" ;;
+        agents) echo "${RUNTIME_NAMESPACE_AGENTS_MODE[${rt}]:-flat}" ;;
+        commands) echo "${RUNTIME_NAMESPACE_COMMANDS_MODE[${rt}]:-flat}" ;;
+        *) echo "flat" ;;
+    esac
+}
+
+apply_frontmatter_name_override() {
+    local file="$1"
+    local old_name="$2"
+    local new_name="$3"
+    [ -f "$file" ] || return 0
+    sed -i "s/^name: ${old_name}$/name: ${new_name}/" "$file"
 }
 
 # Log functions
@@ -394,16 +405,16 @@ copy_directory() {
 }
 
 # ---------------------------------------------------------------------------
-# Namespaced skills install/restore — T-068: dot-prefix and subdirectory modes
+# Namespaced skills/agents install/restore — ADR-014 D-2 artifact-aware modes
 # ---------------------------------------------------------------------------
 
-# Install skills with dot-prefix namespace: skills/<ns>.<skill>/ + patch name: field
-# Used by dot-prefix runtimes (claude, qwen).
-copy_namespaced_skills_dot_prefix() {
+# Install skills with dash-prefix namespace: skills/<ns>-<skill>/ + patch name: field.
+copy_namespaced_skills_dash_prefix() {
     local source_dir="$1"
     local target_parent="$2"
     local namespace="$3"
     local backup_dir="$4"
+    local rt="${5:-claude}"
 
     if [ ! -d "$source_dir" ]; then
         log_warning "Source directory not found: $source_dir"
@@ -414,19 +425,16 @@ copy_namespaced_skills_dot_prefix() {
         [ -d "$skill_dir" ] || continue
         local skill_name
         skill_name="$(basename "$skill_dir")"
-        local ns_skill="${namespace}.${skill_name}"
+        local ns_skill="${namespace}-${skill_name}"
         local target_skill_dir="${target_parent}/${ns_skill}"
 
-        # Pre-apply namespace transform to a temp copy so diff compares transformed
-        # source against the already-namespaced target (avoids false diff warnings).
         local tmp_skill_dir
         tmp_skill_dir="$(mktemp -d)"
         cp -r "${skill_dir%/}/." "$tmp_skill_dir/"
         local tmp_skill_md="${tmp_skill_dir}/SKILL.md"
         if [ -f "$tmp_skill_md" ]; then
-            sed -i "s/^name: ${skill_name}$/name: ${ns_skill}/" "$tmp_skill_md"
-            # T-094: strip Claude-specific frontmatter for non-Claude runtimes
-            [[ "${_skills_rt:-claude}" != "claude" ]] && strip_claude_frontmatter "$tmp_skill_md"
+            apply_frontmatter_name_override "$tmp_skill_md" "$skill_name" "$ns_skill"
+            normalize_skill_markdown_in_place "$tmp_skill_md" "$rt" "skills"
         fi
 
         copy_directory "$tmp_skill_dir" "$target_skill_dir" "$backup_dir"
@@ -434,57 +442,49 @@ copy_namespaced_skills_dot_prefix() {
     done
 }
 
-# Install skills with subdirectory namespace: skills/<ns_path>/<skill>/
-# Used by subdirectory runtimes (opencode, gemini).
-# Dots in namespace become path separators: orchestrator -> myorg/team/<skill>/
+# Install skills with subdirectory namespace: skills/<ns>/<skill>/
 copy_namespaced_skills_subdirectory() {
     local source_dir="$1"
     local target_parent="$2"
     local namespace="$3"
     local backup_dir="$4"
+    local rt="${5:-claude}"
 
     if [ ! -d "$source_dir" ]; then
         log_warning "Source directory not found: $source_dir"
         return
     fi
 
-    # Convert dot-separated namespace to slash-separated path
-    local ns_path="${namespace//.//}"
-
     for skill_dir in "$source_dir"/*/; do
         [ -d "$skill_dir" ] || continue
         local skill_name
         skill_name="$(basename "$skill_dir")"
-        local target_skill_dir="${target_parent}/${ns_path}/${skill_name}"
+        local target_skill_dir="${target_parent}/${namespace}/${skill_name}"
 
         copy_directory "$skill_dir" "$target_skill_dir" "$backup_dir"
-        # T-094: strip Claude-specific frontmatter for non-Claude runtimes
-        [[ "${_skills_rt:-claude}" != "claude" ]] && strip_claude_frontmatter "${target_skill_dir}/SKILL.md"
+        normalize_skill_markdown_in_place "${target_skill_dir}/SKILL.md" "$rt" "skills"
     done
 }
 
-# Install namespaced skills: dispatch to dot-prefix or subdirectory mode based on runtime.
-# Arguments: source_dir target_parent namespace backup_dir [runtime]
-# Examples (dot-prefix):    namespace=orchestrator -> skills/orchestrator.<skill>/
-# Examples (subdirectory):  namespace=orchestrator -> skills/myorg/team/<skill>/
+# Install namespaced skills: dispatch by runtime skills namespace mode.
 copy_namespaced_skills() {
     local source_dir="$1"
     local target_parent="$2"
     local namespace="$3"
     local backup_dir="$4"
     local rt="${5:-claude}"
-    local _skills_rt="$rt"  # thread runtime into sub-functions via env var
 
-    local ns_mode="${RUNTIME_NAMESPACE_MODE[${rt}]:-dot-prefix}"
+    local ns_mode
+    ns_mode="$(namespace_mode_for_runtime_artifact "$rt" "skills")"
     if [[ "$ns_mode" == "subdirectory" ]]; then
-        copy_namespaced_skills_subdirectory "$source_dir" "$target_parent" "$namespace" "$backup_dir"
+        copy_namespaced_skills_subdirectory "$source_dir" "$target_parent" "$namespace" "$backup_dir" "$rt"
     else
-        copy_namespaced_skills_dot_prefix "$source_dir" "$target_parent" "$namespace" "$backup_dir"
+        copy_namespaced_skills_dash_prefix "$source_dir" "$target_parent" "$namespace" "$backup_dir" "$rt"
     fi
 }
 
-# Remove dot-prefixed namespaced skill directories
-restore_namespaced_skills_dot_prefix() {
+# Remove dash-prefixed namespaced skill directories
+restore_namespaced_skills_dash_prefix() {
     local source_dir="$1"
     local target_parent="$2"
     local namespace="$3"
@@ -495,7 +495,7 @@ restore_namespaced_skills_dot_prefix() {
         [ -d "$skill_dir" ] || continue
         local skill_name
         skill_name="$(basename "$skill_dir")"
-        local target_skill_dir="${target_parent}/${namespace}.${skill_name}"
+        local target_skill_dir="${target_parent}/${namespace}-${skill_name}"
         if [ -d "$target_skill_dir" ]; then
             rm -rf "$target_skill_dir"
             log_success "Removed: $target_skill_dir"
@@ -505,18 +505,12 @@ restore_namespaced_skills_dot_prefix() {
 }
 
 # Remove subdirectory-namespaced skill tree.
-# Removes the top-level namespace directory: skills/<ns_top>/
-# This is safe because the ns_top subtree was created by this installer for this namespace.
 restore_namespaced_skills_subdirectory() {
-    local source_dir="$1"
+    local _source_dir="$1"
     local target_parent="$2"
     local namespace="$3"
 
-    [ -d "$source_dir" ] || return 0
-
-    # The top-level namespace dir is the first dot-segment
-    local ns_top="${namespace%%.*}"
-    local target_ns_dir="${target_parent}/${ns_top}"
+    local target_ns_dir="${target_parent}/${namespace}"
 
     if [ -d "$target_ns_dir" ]; then
         rm -rf "$target_ns_dir"
@@ -533,11 +527,112 @@ restore_namespaced_skills() {
     local namespace="$3"
     local rt="${4:-claude}"
 
-    local ns_mode="${RUNTIME_NAMESPACE_MODE[${rt}]:-dot-prefix}"
+    local ns_mode
+    ns_mode="$(namespace_mode_for_runtime_artifact "$rt" "skills")"
     if [[ "$ns_mode" == "subdirectory" ]]; then
         restore_namespaced_skills_subdirectory "$source_dir" "$target_parent" "$namespace"
     else
-        restore_namespaced_skills_dot_prefix "$source_dir" "$target_parent" "$namespace"
+        restore_namespaced_skills_dash_prefix "$source_dir" "$target_parent" "$namespace"
+    fi
+}
+
+# Install namespaced agents using dash fallback naming: agents/<ns>-<agent>.md.
+copy_namespaced_agents_dash_prefix() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+    local backup_dir="$4"
+
+    [ -d "$source_dir" ] || return 0
+    mkdir -p "$target_parent"
+
+    local tmp_agents_dir
+    tmp_agents_dir="$(mktemp -d)"
+    cp -r "${source_dir}/." "$tmp_agents_dir/"
+    for agent_file in "$tmp_agents_dir"/*.md; do
+        [ -f "$agent_file" ] || continue
+        local agent_name
+        agent_name="$(basename "${agent_file%.md}")"
+        local ns_agent="${namespace}-${agent_name}"
+        apply_frontmatter_name_override "$agent_file" "$agent_name" "$ns_agent"
+        mv "$agent_file" "${tmp_agents_dir}/${ns_agent}.md"
+    done
+
+    copy_directory "$tmp_agents_dir" "$target_parent" "$backup_dir"
+    rm -rf "$tmp_agents_dir"
+}
+
+# Install namespaced agents using subdirectory mode: agents/<ns>/<agent>.md.
+copy_namespaced_agents_subdirectory() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+    local backup_dir="$4"
+
+    copy_directory "$source_dir" "${target_parent}/${namespace}" "$backup_dir"
+}
+
+copy_namespaced_agents() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+    local backup_dir="$4"
+    local rt="$5"
+
+    local ns_mode
+    ns_mode="$(namespace_mode_for_runtime_artifact "$rt" "agents")"
+    if [[ "$ns_mode" == "subdirectory" ]]; then
+        copy_namespaced_agents_subdirectory "$source_dir" "$target_parent" "$namespace" "$backup_dir"
+    else
+        copy_namespaced_agents_dash_prefix "$source_dir" "$target_parent" "$namespace" "$backup_dir"
+    fi
+}
+
+restore_namespaced_agents_dash_prefix() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+
+    [ -d "$source_dir" ] || return 0
+    for agent_file in "$source_dir"/*.md; do
+        [ -f "$agent_file" ] || continue
+        local agent_name
+        agent_name="$(basename "${agent_file%.md}")"
+        local target_file="${target_parent}/${namespace}-${agent_name}.md"
+        if [ -f "$target_file" ]; then
+            rm -f "$target_file"
+            log_success "Removed: $target_file"
+            ((++CREATED))
+        fi
+    done
+}
+
+restore_namespaced_agents_subdirectory() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+
+    [ -d "$source_dir" ] || return 0
+    local target_dir="${target_parent}/${namespace}"
+    if [ -d "$target_dir" ]; then
+        rm -rf "$target_dir"
+        log_success "Removed: $target_dir"
+        ((++CREATED))
+    fi
+}
+
+restore_namespaced_agents() {
+    local source_dir="$1"
+    local target_parent="$2"
+    local namespace="$3"
+    local rt="$4"
+
+    local ns_mode
+    ns_mode="$(namespace_mode_for_runtime_artifact "$rt" "agents")"
+    if [[ "$ns_mode" == "subdirectory" ]]; then
+        restore_namespaced_agents_subdirectory "$source_dir" "$target_parent" "$namespace"
+    else
+        restore_namespaced_agents_dash_prefix "$source_dir" "$target_parent" "$namespace"
     fi
 }
 
@@ -711,16 +806,16 @@ check_drift() {
                 local cmd_path="${RUNTIME_COMMANDS_PATH[${rt}]:-commands}"
                 local cmd_override=""
                 _drift_row "$rt" "$cmd_type" "commands" "$skills_src" "${cmd_conf_dir}/${cmd_path}/" "$skills_src" "$cmd_override"
-                # G-003: minimal MD schema applied; full per-runtime key map pending T-095
-                [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(minimal schema)" "${cmd_conf_dir}/${cmd_path}/" "" "PARTIAL"
+                # T-095: runtime-aware frontmatter/schema transform applied
+                [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(runtime key map)" "${cmd_conf_dir}/${cmd_path}/"
             fi
         else
             # Skills profile (default): show skills / agents / hooks rows
             if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]]; then
                 local skills_target="${conf_dir}/${RUNTIME_SKILLS_PATH[${rt}]}/"
                 _drift_row "$rt" "MD" "skills" "$skills_src" "$skills_target" "$skills_src"
-                # G-003: minimal MD schema applied; full per-runtime key map pending T-095
-                [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(minimal schema)" "$skills_target" "" "PARTIAL"
+                # T-095: runtime-aware frontmatter/schema transform applied
+                [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(runtime key map)" "$skills_target"
             fi
 
             # T-092: Gemini commands TOML transform — show status row in skills profile view
@@ -771,14 +866,23 @@ check_drift() {
 # Runtime install helpers (registry-driven)
 # ---------------------------------------------------------------------------
 
-# strip_claude_frontmatter — T-094: Remove Claude-specific keys from SKILL.md in-place.
+# strip_claude_frontmatter — T-094/T-095: Remove Claude-specific keys from SKILL.md frontmatter.
 # Preserves universal keys: name, description, tools, scripts (and any unknown keys).
-# Drops Claude-only keys: argument-hint, user-invocable, context, agent.
-# No-op if file does not exist or has no frontmatter.
+# Drops Claude-only keys in YAML frontmatter only: argument-hint, user-invocable, context, agent.
+# No-op if file does not exist or has no frontmatter block.
 strip_claude_frontmatter() {
     local f="$1"
     [ -f "$f" ] || return 0
-    sed -i '/^argument-hint:/d; /^user-invocable:/d; /^context:/d; /^agent:/d' "$f"
+    local tmp
+    tmp="$(mktemp)"
+    awk '
+        BEGIN { in_fm = 0 }
+        NR == 1 && $0 == "---" { in_fm = 1; print; next }
+        in_fm && $0 == "---" { in_fm = 0; print; next }
+        in_fm && $0 ~ /^(argument-hint|user-invocable|context|agent):/ { next }
+        { print }
+    ' "$f" > "$tmp"
+    mv "$tmp" "$f"
 }
 
 # convert_args_placeholder — T-094: Replace $ARGUMENTS with {{args}} for runtimes that use it.
@@ -787,6 +891,22 @@ convert_args_placeholder() {
     local f="$1"
     [ -f "$f" ] || return 0
     sed -i 's/\$ARGUMENTS/{{args}}/g' "$f"
+}
+
+# normalize_skill_markdown_in_place — T-095: Apply per-runtime frontmatter/body normalization.
+# Runtime-agnostic rule: strip Claude-only keys for non-Claude runtimes.
+# Commands-mode runtime rule: Qwen/Gemini use {{args}} placeholder.
+normalize_skill_markdown_in_place() {
+    local f="$1"
+    local rt="$2"
+    local mode="$3"
+
+    [ -f "$f" ] || return 0
+
+    [[ "$rt" != "claude" ]] && strip_claude_frontmatter "$f"
+    if [[ "$mode" == "commands" ]] && [[ "$rt" == "qwen" || "$rt" == "gemini" ]]; then
+        convert_args_placeholder "$f"
+    fi
 }
 
 # Strip YAML frontmatter (---...---) from a file, printing remaining content to stdout.
@@ -802,30 +922,25 @@ strip_frontmatter() {
 # ---------------------------------------------------------------------------
 # Commands profile — per-runtime SKILL.md schema/transform notes
 # ---------------------------------------------------------------------------
-# When --profile commands is used (or when a runtime defaults to commands, e.g. gemini),
+# When --profile commands is used,
 # each SKILL.md is transformed for the target runtime's commands directory.
 #
 # Runtime | Target path                          | Transform applied
 # --------|--------------------------------------|-------------------------------
-# claude  | .claude/commands/<skill>.md          | Copied as-is (YAML frontmatter preserved)
-# codex   | ~/.codex/prompts/<skill>.md          | YAML frontmatter block stripped; body only
-# gemini  | .gemini/commands/<skill>.toml        | TOML transform: name+description from frontmatter,
-#         |                                      |   body in prompt key as multiline string,
-#         |                                      |   $ARGUMENTS converted to {{args}} (T-092)
-# opencode| .opencode/commands/<skill>.md        | Copied as-is (YAML frontmatter preserved)
-# qwen    | .qwen/commands/<skill>.md            | Copied as-is (YAML frontmatter preserved)
+# claude  | .claude/commands/<skill>.md          | Frontmatter preserved
+# codex   | ~/.codex/prompts/<skill>.md          | Frontmatter stripped (body only)
+# gemini  | .gemini/commands/<skill>.toml        | TOML transform (description + prompt)
+# opencode| .opencode/commands/<skill>.md        | Claude keys stripped for non-Claude schema
+# qwen    | .qwen/commands/<skill>.md            | Claude keys stripped + {{args}} conversion
 # ---------------------------------------------------------------------------
 
 # skill_to_gemini_toml — T-092: Transform a SKILL.md file into a Gemini TOML command file.
 # Writes the result to stdout.
 # Transform rules:
-#   - name: extracted from frontmatter `name:` field
 #   - description: extracted from frontmatter `description:` field
 #   - body: everything after the closing --- of frontmatter, with $ARGUMENTS -> {{args}}
-#   - unknown frontmatter keys are NOT included in the TOML (T-092 scope: format only)
+#   - unknown frontmatter keys are excluded from TOML output
 # Output format (Gemini TOML command schema):
-#   [command]
-#   name = "<skill-name>"
 #   description = "<description>"
 #   prompt = """
 #   <body content>
@@ -835,15 +950,7 @@ skill_to_gemini_toml() {
     local src="$1"
     [ -f "$src" ] || return 1
 
-    # Extract frontmatter fields using awk: parse only the first ---...--- block
-    local fm_name fm_description
-    fm_name=$(awk '
-        /^---$/ { block++; next }
-        block == 1 && /^name:/ {
-            sub(/^name:[[:space:]]*/, ""); print; exit
-        }
-        block >= 2 { exit }
-    ' "$src")
+    local fm_description
     fm_description=$(awk '
         /^---$/ { block++; next }
         block == 1 && /^description:/ {
@@ -852,40 +959,118 @@ skill_to_gemini_toml() {
         block >= 2 { exit }
     ' "$src")
 
-    # Extract body: everything after the closing --- of the frontmatter block
-    # then substitute $ARGUMENTS -> {{args}}
+    # Extract body from file after frontmatter; normalize placeholder for Gemini.
     local body
-    body=$(awk '
-        /^---$/ { block++; next }
-        block >= 2 { print }
-    ' "$src" | sed 's/\$ARGUMENTS/{{args}}/g')
+    body="$(strip_frontmatter "$src" | sed 's/\$ARGUMENTS/{{args}}/g')"
 
     # Trim leading blank lines from body
     body=$(printf '%s' "$body" | sed '/./,$!d')
 
-    # Escape backslashes and double-quotes in name/description for TOML inline strings
-    local safe_name safe_description
-    safe_name=$(printf '%s' "$fm_name" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    # Escape backslashes and double-quotes for TOML basic strings.
+    local safe_description safe_body
     safe_description=$(printf '%s' "$fm_description" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    safe_body=$(printf '%s' "$body" | sed 's/\\/\\\\/g; s/"/\\"/g')
 
-    # Emit TOML
-    printf '[command]\nname = "%s"\ndescription = "%s"\nprompt = """\n%s\n"""\n' \
-        "$safe_name" "$safe_description" "$body"
+    printf 'description = "%s"\nprompt = """\n%s\n"""\n' "$safe_description" "$safe_body"
 }
 
-# Install skills as commands profile artifacts: copies each SKILL.md to the
-# runtime's commands directory, applying any needed transforms per runtime.
-# T-073: commands profile
+# render_transformed_skill — T-095: apply per-runtime transform rules.
+# Writes transformed content to stdout.
+render_transformed_skill() {
+    local src="$1"
+    local rt="$2"
+    local mode="$3"
+    local source_name="$4"
+    local target_name="$5"
+
+    [ -f "$src" ] || return 1
+
+    local tmp_md
+    tmp_md="$(mktemp)"
+    cp "$src" "$tmp_md"
+    normalize_skill_markdown_in_place "$tmp_md" "$rt" "$mode"
+
+    # Keep name/frontmatter aligned with namespaced fallback command names.
+    if [[ "$mode" == "commands" && "$rt" != "codex" && "$rt" != "gemini" && "$source_name" != "$target_name" ]]; then
+        apply_frontmatter_name_override "$tmp_md" "$source_name" "$target_name"
+    fi
+
+    case "$mode:$rt" in
+        commands:codex)
+            strip_frontmatter "$tmp_md"
+            ;;
+        commands:gemini)
+            skill_to_gemini_toml "$tmp_md"
+            ;;
+        *)
+            cat "$tmp_md"
+            ;;
+    esac
+
+    rm -f "$tmp_md"
+}
+
+copy_generated_file() {
+    local generated_file="$1"
+    local target_file="$2"
+    local backup_dir="$3"
+    local backup_rel_path="$4"
+
+    if [ -f "$target_file" ]; then
+        if diff -q "$generated_file" "$target_file" > /dev/null 2>&1; then
+            log_info "Unchanged: $target_file"
+            ((++UNCHANGED))
+        elif [ "$OVERWRITE" = true ]; then
+            local backup_file="${backup_dir}/${backup_rel_path}"
+            mkdir -p "$(dirname "$backup_file")"
+            cp "$target_file" "$backup_file"
+            cp "$generated_file" "$target_file"
+            log_success "Overwritten: $target_file"
+            ((++BACKUPS))
+            ((++CREATED))
+        else
+            log_warning "$target_file exists and differs; use --overwrite to replace"
+        fi
+    else
+        mkdir -p "$(dirname "$target_file")"
+        cp "$generated_file" "$target_file"
+        log_success "Created: $target_file"
+        ((++CREATED))
+    fi
+}
+
+resolve_commands_target_relpath() {
+    local rt="$1"
+    local namespace="$2"
+    local skill_name="$3"
+    local ext="$4"
+
+    local command_name="$skill_name"
+    local ns_mode
+    ns_mode="$(namespace_mode_for_runtime_artifact "$rt" "commands")"
+    if [ -n "$namespace" ]; then
+        if [[ "$ns_mode" == "subdirectory" ]]; then
+            printf '%s/%s.%s\n' "$namespace" "$skill_name" "$ext"
+            return 0
+        fi
+        command_name="${namespace}-${skill_name}"
+    fi
+    printf '%s.%s\n' "$command_name" "$ext"
+}
+
+# Install skills as commands profile artifacts, applying per-runtime transforms.
 install_runtime_commands_compat() {
     local rt="$1"
     local base_dir="$2"   # RUNTIME_CONF_DIR[rt] or rt_target
     local backup_dir="$3"
+    local namespace="${4:-}"
 
     local commands_base="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-}"
+    local commands_dir
     if [ -n "$commands_base" ]; then
-        local commands_dir="${commands_base}/${RUNTIME_COMMANDS_PATH[${rt}]}"
+        commands_dir="${commands_base}/${RUNTIME_COMMANDS_PATH[${rt}]}"
     else
-        local commands_dir="${base_dir}/${RUNTIME_COMMANDS_PATH[${rt}]}"
+        commands_dir="${base_dir}/${RUNTIME_COMMANDS_PATH[${rt}]}"
     fi
 
     if [ ! -d "${PACKAGE_DIR}/skills" ]; then
@@ -902,70 +1087,83 @@ install_runtime_commands_compat() {
         local skill_md="${skill_dir}/SKILL.md"
         [ -f "$skill_md" ] || continue
 
-        case "$rt" in
-            gemini)
-                # T-092: Transform SKILL.md → TOML command file
-                local target_file="${commands_dir}/${skill_name}.toml"
-                local tmp_file
-                tmp_file="$(mktemp)"
-                skill_to_gemini_toml "$skill_md" > "$tmp_file"
-                if [ -f "$target_file" ]; then
-                    if diff -q "$tmp_file" "$target_file" > /dev/null 2>&1; then
-                        log_info "Unchanged: $target_file"
-                        ((++UNCHANGED))
-                    elif [ "$OVERWRITE" = true ]; then
-                        local backup_file="${backup_dir}/commands-compat-${rt}/${skill_name}.toml"
-                        mkdir -p "$(dirname "$backup_file")"
-                        cp "$target_file" "$backup_file"
-                        cp "$tmp_file" "$target_file"
-                        log_success "Overwritten: $target_file"
-                        ((++BACKUPS))
-                        ((++CREATED))
-                    else
-                        log_warning "$target_file exists and differs; use --overwrite to replace"
-                    fi
-                else
-                    cp "$tmp_file" "$target_file"
-                    log_success "Created: $target_file"
-                    ((++CREATED))
-                fi
-                rm -f "$tmp_file"
-                ;;
-            codex)
-                # Strip YAML frontmatter for Codex prompts
-                local target_file="${commands_dir}/${skill_name}.md"
-                local tmp_file
-                tmp_file="$(mktemp)"
-                strip_frontmatter "$skill_md" > "$tmp_file"
-                if [ -f "$target_file" ]; then
-                    if diff -q "$tmp_file" "$target_file" > /dev/null 2>&1; then
-                        log_info "Unchanged: $target_file"
-                        ((++UNCHANGED))
-                    elif [ "$OVERWRITE" = true ]; then
-                        local backup_file="${backup_dir}/commands-compat-${rt}/${skill_name}.md"
-                        mkdir -p "$(dirname "$backup_file")"
-                        cp "$target_file" "$backup_file"
-                        cp "$tmp_file" "$target_file"
-                        log_success "Overwritten: $target_file"
-                        ((++BACKUPS))
-                        ((++CREATED))
-                    else
-                        log_warning "$target_file exists and differs; use --overwrite to replace"
-                    fi
-                else
-                    cp "$tmp_file" "$target_file"
-                    log_success "Created: $target_file"
-                    ((++CREATED))
-                fi
-                rm -f "$tmp_file"
-                ;;
-            *)
-                # claude, opencode, qwen: plain copy
-                local target_file="${commands_dir}/${skill_name}.md"
-                copy_markdown "$skill_md" "$target_file" "$backup_dir" "commands-compat-${rt}/${skill_name}.md"
-                ;;
-        esac
+        local ext="md"
+        [[ "$rt" == "gemini" ]] && ext="toml"
+
+        local target_rel
+        target_rel="$(resolve_commands_target_relpath "$rt" "$namespace" "$skill_name" "$ext")"
+        local target_name="${target_rel##*/}"
+        target_name="${target_name%.*}"
+        local target_file="${commands_dir}/${target_rel}"
+
+        local tmp_file
+        tmp_file="$(mktemp)"
+        render_transformed_skill "$skill_md" "$rt" "commands" "$skill_name" "$target_name" > "$tmp_file"
+        copy_generated_file "$tmp_file" "$target_file" "$backup_dir" "commands-compat-${rt}/${target_rel}"
+        rm -f "$tmp_file"
     done
+}
+
+restore_or_remove_generated_file() {
+    local generated_file="$1"
+    local target_file="$2"
+    local backup_file="$3"
+
+    if restore_file_from_backup "$backup_file" "$target_file"; then
+        return 0
+    fi
+
+    if [ -f "$target_file" ] && diff -q "$generated_file" "$target_file" > /dev/null 2>&1; then
+        rm -f "$target_file"
+        log_success "Removed installed file: $target_file"
+        ((++CREATED))
+    fi
+    return 0
+}
+
+restore_runtime_commands_compat() {
+    local rt="$1"
+    local base_dir="$2"
+    local backup_dir="$3"
+    local namespace="${4:-}"
+
+    local commands_base="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-}"
+    local commands_dir
+    if [ -n "$commands_base" ]; then
+        commands_dir="${commands_base}/${RUNTIME_COMMANDS_PATH[${rt}]}"
+    else
+        commands_dir="${base_dir}/${RUNTIME_COMMANDS_PATH[${rt}]}"
+    fi
+
+    [ -d "${PACKAGE_DIR}/skills" ] || return 0
+    [ -d "$commands_dir" ] || return 0
+
+    for skill_dir in "${PACKAGE_DIR}/skills"/*/; do
+        [ -d "$skill_dir" ] || continue
+        local skill_name
+        skill_name="$(basename "$skill_dir")"
+        local skill_md="${skill_dir}/SKILL.md"
+        [ -f "$skill_md" ] || continue
+
+        local ext="md"
+        [[ "$rt" == "gemini" ]] && ext="toml"
+
+        local target_rel
+        target_rel="$(resolve_commands_target_relpath "$rt" "$namespace" "$skill_name" "$ext")"
+        local target_name="${target_rel##*/}"
+        target_name="${target_name%.*}"
+        local target_file="${commands_dir}/${target_rel}"
+
+        local tmp_file
+        tmp_file="$(mktemp)"
+        render_transformed_skill "$skill_md" "$rt" "commands" "$skill_name" "$target_name" > "$tmp_file"
+        local backup_file=""
+        [ -n "$backup_dir" ] && backup_file="${backup_dir}/commands-compat-${rt}/${target_rel}"
+        restore_or_remove_generated_file "$tmp_file" "$target_file" "$backup_file"
+        rm -f "$tmp_file"
+    done
+
+    find "$commands_dir" -depth -type d -empty -delete 2>/dev/null || true
 }
 
 # check_runtime_collisions — T-081: Detect shared paths between selected runtimes.
@@ -1019,18 +1217,18 @@ install_runtime_global() {
         else
             eff_profile="commands"
         fi
-        # Codex: keep native skills, and also install legacy prompt commands for /prompts:* UX.
-        [[ "$rt" == "codex" ]] && eff_profile="all"
     fi
-    local rt_namespace
-    rt_namespace="$(effective_namespace_for_runtime "$rt")"
+    local skills_namespace agents_namespace commands_namespace
+    skills_namespace="$(effective_namespace_for_runtime_artifact "$rt" "skills")"
+    agents_namespace="$(effective_namespace_for_runtime_artifact "$rt" "agents")"
+    commands_namespace="$(effective_namespace_for_runtime_artifact "$rt" "commands")"
 
     # Skills: install when profile is skills or all
     if [[ "$eff_profile" == "skills" || "$eff_profile" == "all" ]]; then
         if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
             local skills_target="${target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-            if [ -n "$rt_namespace" ]; then
-                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$backup_dir" "$rt"
+            if [ -n "$skills_namespace" ]; then
+                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$skills_namespace" "$backup_dir" "$rt"
             else
                 # Non-Claude runtimes persist transformed SKILL.md; copy transformed source to avoid repeated false diffs.
                 if [[ "$rt" != "claude" ]]; then
@@ -1038,7 +1236,7 @@ install_runtime_global() {
                     tmp_skills_dir="$(mktemp -d)"
                     cp -r "${PACKAGE_DIR}/skills/." "$tmp_skills_dir/"
                     for skill_md in "$tmp_skills_dir"/*/SKILL.md; do
-                        strip_claude_frontmatter "$skill_md"
+                        normalize_skill_markdown_in_place "$skill_md" "$rt" "skills"
                     done
                     copy_directory "$tmp_skills_dir" "$skills_target" "$backup_dir"
                     rm -rf "$tmp_skills_dir"
@@ -1051,15 +1249,17 @@ install_runtime_global() {
 
     # Commands compat: install when profile is commands or all
     if [[ "$eff_profile" == "commands" || "$eff_profile" == "all" ]]; then
-        install_runtime_commands_compat "$rt" "$target" "$backup_dir"
+        install_runtime_commands_compat "$rt" "$target" "$backup_dir" "$commands_namespace"
     fi
 
     # Agents: only if runtime has agents path (not gated by profile)
     if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
-        local ns_path=""
-        [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
-        local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-        copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+        local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}"
+        if [ -n "$agents_namespace" ]; then
+            copy_namespaced_agents "${PACKAGE_DIR}/agents" "$agents_target" "$agents_namespace" "$backup_dir" "$rt"
+        else
+            copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+        fi
     fi
 
     # Hooks: install when profile is hooks or all, and runtime supports hooks
@@ -1105,18 +1305,18 @@ install_runtime_project() {
         else
             eff_profile="commands"
         fi
-        # Codex: keep native skills, and also install legacy prompt commands for /prompts:* UX.
-        [[ "$rt" == "codex" ]] && eff_profile="all"
     fi
-    local rt_namespace
-    rt_namespace="$(effective_namespace_for_runtime "$rt")"
+    local skills_namespace agents_namespace commands_namespace
+    skills_namespace="$(effective_namespace_for_runtime_artifact "$rt" "skills")"
+    agents_namespace="$(effective_namespace_for_runtime_artifact "$rt" "agents")"
+    commands_namespace="$(effective_namespace_for_runtime_artifact "$rt" "commands")"
 
     # Skills: install when profile is skills or all
     if [[ "$eff_profile" == "skills" || "$eff_profile" == "all" ]]; then
         if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
             local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-            if [ -n "$rt_namespace" ]; then
-                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$backup_dir" "$rt"
+            if [ -n "$skills_namespace" ]; then
+                copy_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$skills_namespace" "$backup_dir" "$rt"
             else
                 # Non-Claude runtimes persist transformed SKILL.md; copy transformed source to avoid repeated false diffs.
                 if [[ "$rt" != "claude" ]]; then
@@ -1124,7 +1324,7 @@ install_runtime_project() {
                     tmp_skills_dir="$(mktemp -d)"
                     cp -r "${PACKAGE_DIR}/skills/." "$tmp_skills_dir/"
                     for skill_md in "$tmp_skills_dir"/*/SKILL.md; do
-                        strip_claude_frontmatter "$skill_md"
+                        normalize_skill_markdown_in_place "$skill_md" "$rt" "skills"
                     done
                     copy_directory "$tmp_skills_dir" "$skills_target" "$backup_dir"
                     rm -rf "$tmp_skills_dir"
@@ -1137,15 +1337,17 @@ install_runtime_project() {
 
     # Commands compat: install when profile is commands or all
     if [[ "$eff_profile" == "commands" || "$eff_profile" == "all" ]]; then
-        install_runtime_commands_compat "$rt" "$rt_target" "$backup_dir"
+        install_runtime_commands_compat "$rt" "$rt_target" "$backup_dir" "$commands_namespace"
     fi
 
     # Agents: only if runtime has agents path (not gated by profile)
     if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
-        local ns_path=""
-        [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
-        local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-        copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+        local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}"
+        if [ -n "$agents_namespace" ]; then
+            copy_namespaced_agents "${PACKAGE_DIR}/agents" "$agents_target" "$agents_namespace" "$backup_dir" "$rt"
+        else
+            copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+        fi
     fi
 
     # Hooks: install when profile is hooks or all, and runtime supports hooks
@@ -1168,25 +1370,34 @@ restore_runtime_global() {
     local rt="$1"
     local backup_dir="$2"
     local target="${RUNTIME_CONF_DIR[${rt}]}"
-    local rt_namespace
-    rt_namespace="$(effective_namespace_for_runtime "$rt")"
+    local skills_namespace agents_namespace commands_namespace
+    skills_namespace="$(effective_namespace_for_runtime_artifact "$rt" "skills")"
+    agents_namespace="$(effective_namespace_for_runtime_artifact "$rt" "agents")"
+    commands_namespace="$(effective_namespace_for_runtime_artifact "$rt" "commands")"
 
     # Skills
     if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
         local skills_target="${target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-        if [ -n "$rt_namespace" ]; then
-            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$rt"
+        if [ -n "$skills_namespace" ]; then
+            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$skills_namespace" "$rt"
         else
             restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir" "skills" "$rt"
         fi
     fi
 
+    # Commands compatibility artifacts
+    if [[ "${RUNTIME_SUPPORTS_COMMANDS[${rt}]}" == "true" ]]; then
+        restore_runtime_commands_compat "$rt" "$target" "$backup_dir" "$commands_namespace"
+    fi
+
     # Agents
     if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
-        local ns_path=""
-        [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
-        local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-        restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents" "$rt"
+        local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}"
+        if [ -n "$agents_namespace" ]; then
+            restore_namespaced_agents "${PACKAGE_DIR}/agents" "$agents_target" "$agents_namespace" "$rt"
+        else
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents" "$rt"
+        fi
     fi
 
     # Hooks
@@ -1206,25 +1417,34 @@ restore_runtime_project() {
     local target="$2"
     local backup_dir="$3"
     local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
-    local rt_namespace
-    rt_namespace="$(effective_namespace_for_runtime "$rt")"
+    local skills_namespace agents_namespace commands_namespace
+    skills_namespace="$(effective_namespace_for_runtime_artifact "$rt" "skills")"
+    agents_namespace="$(effective_namespace_for_runtime_artifact "$rt" "agents")"
+    commands_namespace="$(effective_namespace_for_runtime_artifact "$rt" "commands")"
 
     # Skills
     if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
         local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-        if [ -n "$rt_namespace" ]; then
-            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$rt"
+        if [ -n "$skills_namespace" ]; then
+            restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$skills_namespace" "$rt"
         else
             restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir" "skills" "$rt"
         fi
     fi
 
+    # Commands compatibility artifacts
+    if [[ "${RUNTIME_SUPPORTS_COMMANDS[${rt}]}" == "true" ]]; then
+        restore_runtime_commands_compat "$rt" "$rt_target" "$backup_dir" "$commands_namespace"
+    fi
+
     # Agents
     if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
-        local ns_path=""
-        [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
-        local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-        restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents" "$rt"
+        local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}"
+        if [ -n "$agents_namespace" ]; then
+            restore_namespaced_agents "${PACKAGE_DIR}/agents" "$agents_target" "$agents_namespace" "$rt"
+        else
+            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir" "agents" "$rt"
+        fi
     fi
 
     # Hooks
@@ -1792,37 +2012,7 @@ cleanup_global() {
     local active_runtimes
     read -ra active_runtimes <<< "$(get_active_runtimes)"
     for rt in "${active_runtimes[@]}"; do
-        local rt_target="${RUNTIME_CONF_DIR[${rt}]}"
-        local rt_namespace
-        rt_namespace="$(effective_namespace_for_runtime "$rt")"
-
-        # Skills
-        if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
-            local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-            if [ -n "$rt_namespace" ]; then
-                restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$rt"
-            else
-                restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "" "skills" "$rt"
-            fi
-        fi
-
-        # Agents
-        if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
-            local ns_path=""
-            [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
-            local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "" "agents" "$rt"
-        fi
-
-        # Hooks
-        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]]; then
-            local hooks_dir="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
-            if [ -d "$hooks_dir" ]; then
-                rm -rf "$hooks_dir"
-                log_success "Removed: $hooks_dir"
-                ((++CREATED))
-            fi
-        fi
+        restore_runtime_global "$rt" ""
     done
 
     # Remove shared trees under ~/.claude/ (surgical file-level behavior).
@@ -1910,37 +2100,7 @@ cleanup_project() {
     local active_runtimes
     read -ra active_runtimes <<< "$(get_active_runtimes)"
     for rt in "${active_runtimes[@]}"; do
-        local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
-        local rt_namespace
-        rt_namespace="$(effective_namespace_for_runtime "$rt")"
-
-        # Skills
-        if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/skills" ]; then
-            local skills_target="${rt_target}/${RUNTIME_SKILLS_PATH[${rt}]}"
-            if [ -n "$rt_namespace" ]; then
-                restore_namespaced_skills "${PACKAGE_DIR}/skills" "$skills_target" "$rt_namespace" "$rt"
-            else
-                restore_or_remove_installed_tree "${PACKAGE_DIR}/skills" "$skills_target" "" "skills" "$rt"
-            fi
-        fi
-
-        # Agents
-        if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [ -d "${PACKAGE_DIR}/agents" ]; then
-            local ns_path=""
-            [ -n "$rt_namespace" ] && ns_path="/${rt_namespace}"
-            local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}${ns_path}"
-            restore_or_remove_installed_tree "${PACKAGE_DIR}/agents" "$agents_target" "" "agents" "$rt"
-        fi
-
-        # Hooks
-        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]]; then
-            local hooks_dir="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
-            if [ -d "$hooks_dir" ]; then
-                rm -rf "$hooks_dir"
-                log_success "Removed: $hooks_dir"
-                ((++CREATED))
-            fi
-        fi
+        restore_runtime_project "$rt" "$target" ""
     done
 
     # Remove Serena project file only if this installer created it.

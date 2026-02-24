@@ -73,6 +73,15 @@ assert_no_file_matching() {
     fi
 }
 
+assert_file_lacks_claude_keys() {
+    local file="$1"
+    if grep -Eq '^(argument-hint|user-invocable|context|agent):' "$file"; then
+        echo "  [assert] unexpected Claude-only frontmatter key in: $file" >&2
+        return 1
+    fi
+    return 0
+}
+
 # ---------------------------------------------------------------------------
 # T-087: Smoke tests — each runtime, global install, exit code 0
 # ---------------------------------------------------------------------------
@@ -172,27 +181,68 @@ test_conformance_codex_shared_policy_present() {
 }
 run_test "conformance-codex-shared-policy-present" test_conformance_codex_shared_policy_present
 
-# Gemini: no skills dir, no hooks dir; .toml commands present (T-092)
+# Gemini: skills present by default; hooks absent by policy
 test_conformance_gemini() {
     local tmp
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --gemini >/dev/null 2>&1
     local ok=0
-    assert_dir_absent "${tmp}/.gemini/skills" || ok=1
+    assert_dir_exists "${tmp}/.gemini/skills" || ok=1
+    assert_any_file_in "${tmp}/.gemini/skills" || ok=1
     assert_dir_absent "${tmp}/.gemini/hooks" || ok=1
-    # T-092: TOML command files must be present
-    assert_dir_exists "${tmp}/.gemini/commands" || ok=1
-    assert_no_file_matching "${tmp}/.gemini/commands" "*.md" || ok=1
-    local toml_count
-    toml_count=$(find "${tmp}/.gemini/commands" -name "*.toml" 2>/dev/null | wc -l)
-    if [ "$toml_count" -eq 0 ]; then
-        echo "  [assert] expected .toml files in ${tmp}/.gemini/commands" >&2
+    if [ -d "${tmp}/.gemini/commands" ]; then
+        echo "  [assert] unexpected default commands profile artifacts at ${tmp}/.gemini/commands" >&2
         ok=1
     fi
     rm -rf "$tmp"
     return $ok
 }
-run_test "conformance-gemini-no-skills-no-hooks-toml-present" test_conformance_gemini
+run_test "conformance-gemini-skills-present-hooks-absent" test_conformance_gemini
+
+# Gemini commands profile: TOML output present and syntactically valid
+test_conformance_gemini_commands_toml_valid() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --gemini --profile commands >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.gemini/commands" || ok=1
+    assert_no_file_matching "${tmp}/.gemini/commands" "*.md" || ok=1
+    local toml_count
+    toml_count=$(find "${tmp}/.gemini/commands" -name "*.toml" -type f 2>/dev/null | wc -l)
+    if [ "$toml_count" -eq 0 ]; then
+        echo "  [assert] expected .toml files in ${tmp}/.gemini/commands" >&2
+        ok=1
+    fi
+    if command -v python3 >/dev/null 2>&1; then
+        if ! python3 - "${tmp}/.gemini/commands" <<'PY'; then
+import pathlib
+import sys
+import tomllib
+
+base = pathlib.Path(sys.argv[1])
+files = list(base.rglob("*.toml"))
+if not files:
+    raise SystemExit(1)
+
+for f in files:
+    data = tomllib.loads(f.read_text(encoding="utf-8"))
+    if "name" in data:
+        raise SystemExit(f"unexpected name key in {f}")
+    if "prompt" not in data:
+        raise SystemExit(f"missing prompt key in {f}")
+    if "$ARGUMENTS" in data["prompt"]:
+        raise SystemExit(f"unconverted $ARGUMENTS placeholder in {f}")
+PY
+            echo "  [assert] TOML parse/shape validation failed for Gemini commands profile" >&2
+            ok=1
+        fi
+    else
+        echo "  [warn] python3 missing; skipping TOML parse validation" >&2
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-gemini-commands-profile-toml-valid" test_conformance_gemini_commands_toml_valid
 
 # OpenCode: skills present; agents present; plugins absent (G-001: SH hooks incompatible with JS/TS plugin system)
 test_conformance_opencode() {
@@ -264,6 +314,54 @@ test_conformance_qwen_no_hooks() {
 }
 run_test "conformance-qwen-hooks-absent" test_conformance_qwen_no_hooks
 
+# Non-Claude skills installs strip Claude-only frontmatter keys
+test_non_claude_skills_frontmatter_normalized() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --codex --gemini --opencode --qwen >/dev/null 2>&1
+    local ok=0
+    local codex_skill opencode_skill qwen_skill gemini_skill
+    codex_skill=$(find "${tmp}/.agents/skills" -name "SKILL.md" -type f 2>/dev/null | head -1)
+    opencode_skill=$(find "${tmp}/.config/opencode/skills" -name "SKILL.md" -type f 2>/dev/null | head -1)
+    qwen_skill=$(find "${tmp}/.qwen/skills" -name "SKILL.md" -type f 2>/dev/null | head -1)
+    gemini_skill=$(find "${tmp}/.gemini/skills" -name "SKILL.md" -type f 2>/dev/null | head -1)
+    [ -n "$codex_skill" ] || ok=1
+    [ -n "$opencode_skill" ] || ok=1
+    [ -n "$qwen_skill" ] || ok=1
+    [ -n "$gemini_skill" ] || ok=1
+    [ -n "$codex_skill" ] && assert_file_lacks_claude_keys "$codex_skill" || ok=1
+    [ -n "$opencode_skill" ] && assert_file_lacks_claude_keys "$opencode_skill" || ok=1
+    [ -n "$qwen_skill" ] && assert_file_lacks_claude_keys "$qwen_skill" || ok=1
+    [ -n "$gemini_skill" ] && assert_file_lacks_claude_keys "$gemini_skill" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-non-claude-skills-frontmatter-normalized" test_non_claude_skills_frontmatter_normalized
+
+# Qwen commands profile strips Claude-only keys and converts args placeholder
+test_qwen_commands_frontmatter_and_args_transform() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --qwen --profile commands >/dev/null 2>&1
+    local ok=0
+    local cmd_md
+    cmd_md=$(find "${tmp}/.qwen/commands" -name "*.md" -type f 2>/dev/null | head -1)
+    if [ -z "$cmd_md" ]; then
+        echo "  [assert] expected qwen command markdown file" >&2
+        ok=1
+    else
+        assert_file_lacks_claude_keys "$cmd_md" || ok=1
+        grep -q "{{args}}" "$cmd_md" || { echo "  [assert] missing {{args}} in $cmd_md" >&2; ok=1; }
+        if grep -q '\$ARGUMENTS' "$cmd_md"; then
+            echo "  [assert] found unconverted \$ARGUMENTS in $cmd_md" >&2
+            ok=1
+        fi
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-qwen-commands-frontmatter-and-args-transform" test_qwen_commands_frontmatter_and_args_transform
+
 # ---------------------------------------------------------------------------
 # T-089: Restore/cleanup regression tests for namespaced installs
 # ---------------------------------------------------------------------------
@@ -276,12 +374,12 @@ test_restore_namespace() {
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg >/dev/null 2>&1
     local before_count
-    before_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg.*" -type d 2>/dev/null | wc -l)
+    before_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     [ "$before_count" -gt 0 ] || { echo "  [setup] no namespaced skills installed" >&2; rm -rf "$tmp"; return 1; }
 
     HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg --restore >/dev/null 2>&1
     local after_count
-    after_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg.*" -type d 2>/dev/null | wc -l)
+    after_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     rm -rf "$tmp"
     [ "$after_count" -eq 0 ]
 }
@@ -293,30 +391,32 @@ test_cleanup_namespace() {
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg >/dev/null 2>&1
     local before_count
-    before_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg.*" -type d 2>/dev/null | wc -l)
+    before_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     [ "$before_count" -gt 0 ] || { echo "  [setup] no namespaced skills installed" >&2; rm -rf "$tmp"; return 1; }
 
     HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg --cleanup >/dev/null 2>&1
     local after_count
-    after_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg.*" -type d 2>/dev/null | wc -l)
+    after_count=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     rm -rf "$tmp"
     [ "$after_count" -eq 0 ]
 }
 run_test "cleanup-namespace-myorg-skills-removed" test_cleanup_namespace
 
-# Codex: namespace flag is ignored; install remains flat and does not create namespaced dirs
-test_codex_namespace_ignored_flat_install() {
+# Codex: namespace uses dash fallback naming for skills/agents
+test_codex_namespace_dash_install() {
     local tmp
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg >/dev/null 2>&1
     local ok=0
     assert_dir_exists "${tmp}/.agents/skills" || ok=1
     assert_dir_exists "${tmp}/.agents/agents" || ok=1
-    local ns_skill_count flat_skill_count
-    ns_skill_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg.*" -type d 2>/dev/null | wc -l)
-    flat_skill_count=$(find "${tmp}/.agents/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-    [ "$ns_skill_count" -eq 0 ] || ok=1
-    [ "$flat_skill_count" -gt 0 ] || ok=1
+    local ns_skill_count flat_skill_count ns_agent_count
+    ns_skill_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
+    flat_skill_count=$(find "${tmp}/.agents/skills" -mindepth 1 -maxdepth 1 -type d ! -name "myorg-*" 2>/dev/null | wc -l)
+    ns_agent_count=$(find "${tmp}/.agents/agents" -maxdepth 1 -name "myorg-*.md" -type f 2>/dev/null | wc -l)
+    [ "$ns_skill_count" -gt 0 ] || ok=1
+    [ "$flat_skill_count" -eq 0 ] || ok=1
+    [ "$ns_agent_count" -gt 0 ] || ok=1
     if [ -d "${tmp}/.agents/agents/myorg" ]; then
         echo "  [assert] unexpected codex namespace dir exists: ${tmp}/.agents/agents/myorg" >&2
         ok=1
@@ -324,41 +424,74 @@ test_codex_namespace_ignored_flat_install() {
     rm -rf "$tmp"
     return $ok
 }
-run_test "codex-namespace-ignored-flat-install" test_codex_namespace_ignored_flat_install
+run_test "codex-namespace-dash-install" test_codex_namespace_dash_install
 
-# Codex: restore with namespace still targets flat install paths
-test_codex_restore_namespace_targets_flat() {
+# Codex: restore with namespace removes namespaced artifacts
+test_codex_restore_namespace_targets_dash() {
     local tmp
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg >/dev/null 2>&1
     local before_count
-    before_count=$(find "${tmp}/.agents/skills" -type f 2>/dev/null | wc -l)
+    before_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     [ "$before_count" -gt 0 ] || { echo "  [setup] no codex skill files installed" >&2; rm -rf "$tmp"; return 1; }
 
     HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg --restore >/dev/null 2>&1
-    local after_count
-    after_count=$(find "${tmp}/.agents/skills" -type f 2>/dev/null | wc -l)
+    local after_count agents_after
+    after_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
+    agents_after=$(find "${tmp}/.agents/agents" -maxdepth 1 -name "myorg-*.md" -type f 2>/dev/null | wc -l)
     rm -rf "$tmp"
-    [ "$after_count" -eq 0 ]
+    [ "$after_count" -eq 0 ] && [ "$agents_after" -eq 0 ]
 }
-run_test "codex-restore-with-namespace-removes-flat-skills" test_codex_restore_namespace_targets_flat
+run_test "codex-restore-with-namespace-removes-dash-artifacts" test_codex_restore_namespace_targets_dash
 
-# Codex: cleanup with namespace still targets flat install paths
-test_codex_cleanup_namespace_targets_flat() {
+# Codex: cleanup with namespace removes namespaced artifacts
+test_codex_cleanup_namespace_targets_dash() {
     local tmp
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg >/dev/null 2>&1
     local before_count
-    before_count=$(find "${tmp}/.agents/skills" -type f 2>/dev/null | wc -l)
+    before_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
     [ "$before_count" -gt 0 ] || { echo "  [setup] no codex skill files installed" >&2; rm -rf "$tmp"; return 1; }
 
     HOME="$tmp" bash "${INSTALL}" --global --codex --namespace myorg --cleanup >/dev/null 2>&1
-    local after_count
-    after_count=$(find "${tmp}/.agents/skills" -type f 2>/dev/null | wc -l)
+    local after_count agents_after
+    after_count=$(find "${tmp}/.agents/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
+    agents_after=$(find "${tmp}/.agents/agents" -maxdepth 1 -name "myorg-*.md" -type f 2>/dev/null | wc -l)
     rm -rf "$tmp"
-    [ "$after_count" -eq 0 ]
+    [ "$after_count" -eq 0 ] && [ "$agents_after" -eq 0 ]
 }
-run_test "codex-cleanup-with-namespace-removes-flat-skills" test_codex_cleanup_namespace_targets_flat
+run_test "codex-cleanup-with-namespace-removes-dash-artifacts" test_codex_cleanup_namespace_targets_dash
+
+# Gemini: namespace does not rewrite skills identifiers in skills profile
+test_gemini_namespace_skills_flat() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --gemini --namespace myorg >/dev/null 2>&1
+    local ok=0
+    local ns_skill_count flat_skill_count
+    ns_skill_count=$(find "${tmp}/.gemini/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
+    flat_skill_count=$(find "${tmp}/.gemini/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    [ "$flat_skill_count" -gt 0 ] || ok=1
+    [ "$ns_skill_count" -eq 0 ] || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "gemini-namespace-skills-profile-stays-flat" test_gemini_namespace_skills_flat
+
+# Gemini: commands profile uses native namespace directories
+test_gemini_namespace_commands_subdirectory() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --gemini --profile commands --namespace myorg >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.gemini/commands/myorg" || ok=1
+    local ns_toml_count
+    ns_toml_count=$(find "${tmp}/.gemini/commands/myorg" -maxdepth 1 -name "*.toml" -type f 2>/dev/null | wc -l)
+    [ "$ns_toml_count" -gt 0 ] || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "gemini-namespace-commands-profile-subdirectory" test_gemini_namespace_commands_subdirectory
 
 # Flat install then restore — flat skills removed
 test_restore_flat() {
@@ -383,8 +516,8 @@ test_two_namespace_isolation() {
     HOME="$tmp" bash "${INSTALL}" --global --claude --namespace otherorg >/dev/null 2>&1
 
     local myorg_before otherorg_before
-    myorg_before=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg.*" -type d 2>/dev/null | wc -l)
-    otherorg_before=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "otherorg.*" -type d 2>/dev/null | wc -l)
+    myorg_before=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
+    otherorg_before=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "otherorg-*" -type d 2>/dev/null | wc -l)
     [ "$myorg_before" -gt 0 ] || { echo "  [setup] myorg skills missing" >&2; rm -rf "$tmp"; return 1; }
     [ "$otherorg_before" -gt 0 ] || { echo "  [setup] otherorg skills missing" >&2; rm -rf "$tmp"; return 1; }
 
@@ -392,8 +525,8 @@ test_two_namespace_isolation() {
     HOME="$tmp" bash "${INSTALL}" --global --claude --namespace myorg --cleanup >/dev/null 2>&1
 
     local myorg_after otherorg_after
-    myorg_after=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg.*" -type d 2>/dev/null | wc -l)
-    otherorg_after=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "otherorg.*" -type d 2>/dev/null | wc -l)
+    myorg_after=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "myorg-*" -type d 2>/dev/null | wc -l)
+    otherorg_after=$(find "${tmp}/.claude/skills" -maxdepth 1 -name "otherorg-*" -type d 2>/dev/null | wc -l)
     rm -rf "$tmp"
     [ "$myorg_after" -eq 0 ] && [ "$otherorg_after" -gt 0 ]
 }
