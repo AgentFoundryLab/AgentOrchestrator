@@ -7,8 +7,8 @@
 | Milestone | Status | Active Details | Archive |
 |-----------|--------|----------------|---------|
 | v0 | In progress (I-002 / T-097) | [v0.md](v0.md) | [tasks-v0-completed.md](../archive/tasks-v0-completed.md) |
-| v0.3 | Planned (T-101..T-117) | [v0.3.md](v0.3.md) | — |
-| v1 | Planned (tactical preserved from roadmap) | [v1.md](v1.md) | — |
+| v0.3 | Planned (T-101..T-120) | [v0.3.md](v0.3.md) | — |
+| v1 | Planned (T-121..T-180) | [v1.md](v1.md) | — |
 
 ## Rules
 
