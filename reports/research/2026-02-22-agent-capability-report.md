@@ -1,9 +1,9 @@
 # Agent Capability Report
 
-Date: 2026-02-22 (updated 2026-02-24)
+Date: 2026-02-22 (updated 2026-02-25)
 Scope: Claude Code, Codex CLI, Gemini CLI, OpenCode, Qwen Code
 Status: Canonical consolidated report (replaces two prior research drafts)
-Update: Added sub-agent file format schemas and config settings for Claude agent teams, Codex multi-agent roles, and Gemini sub-agents (all sourced from official primary docs)
+Update: Added sub-agent file format schemas and config settings for Claude agent teams, Codex multi-agent roles, and Gemini sub-agents; clarified official Codex/Gemini skills schemas from primary docs.
 
 ## Purpose
 
@@ -91,7 +91,9 @@ Conflict policy:
   - Invoked as `/prompts:<name>` (deprecated path)
 - Skills:
   - `.agents/skills/*/SKILL.md`, `~/.agents/skills/*/SKILL.md`
-  - Optional admin/system scopes
+  - Optional admin/system scopes (`/etc/codex/skills`, bundled system skills)
+  - Official skill schema: skill directory with required `SKILL.md`; `SKILL.md` must include YAML frontmatter `name` and `description` + Markdown body
+  - Optional skill resources: `scripts/`, `references/`, `assets/`, and `agents/openai.yaml` (UI metadata, invocation policy, dependencies)
 - Hooks:
   - Limited documented callback: `notify` after agent turn completion
   - No full lifecycle event-hook map documented
@@ -104,12 +106,16 @@ Conflict policy:
   - **Confirmed primary source**: `~/.gemini/agents/*.md` (user) or `.gemini/agents/*.md` (project)
   - Enable: `"experimental": { "enableAgents": true }` in `settings.json`
   - Agents exposed as tools to main agent; invoked automatically by description match
-  - `agents.overrides` in settings for disabling/reconfiguring built-in agents
+  - Gemini CLI can delegate tasks to remote subagents via Agent-to-Agent (A2A) protocol (`kind: remote`)
 - Commands:
   - `.gemini/commands/**/*.toml`, `~/.gemini/commands/**/*.toml`
   - Directory nesting maps to command namespaces
 - Skills:
   - `.gemini/skills/`, `~/.gemini/skills/`, extension skill directories
+  - `.agents/skills/` and `~/.agents/skills/` are official aliases for workspace/user skill tiers
+  - Within the same tier, `.agents/skills/` alias takes precedence over `.gemini/skills/`
+  - Official skill schema: required `SKILL.md` with YAML frontmatter `name` and `description` + Markdown body instructions
+  - Optional skill resources: `scripts/`, `references/`, `assets/`
 - Hooks:
   - `hooks` object in settings JSON
   - Paths: `.gemini/settings.json`, `~/.gemini/settings.json`, `/etc/gemini-cli/settings.json`
@@ -255,6 +261,36 @@ Sub-agents inherit parent sandbox policy; run non-interactive. No peer-to-peer m
 
 ---
 
+### Codex CLI — Skills (official)
+
+**Skill locations**:
+- Repo/user/admin/system scopes under `.agents/skills` and `/etc/codex/skills` (plus bundled system skills)
+
+**Skill package schema**:
+- A skill is a directory containing required `SKILL.md`
+- `SKILL.md` must include YAML frontmatter fields:
+  - `name` (required)
+  - `description` (required)
+- Body is Markdown instructions loaded on activation
+
+**Optional files**:
+- `scripts/` (executable helpers)
+- `references/` (documentation)
+- `assets/` (templates/resources)
+- `agents/openai.yaml` (optional UI metadata + invocation policy + dependencies)
+
+**Optional `agents/openai.yaml` capability examples**:
+- `interface`: display metadata (name, description, icon, brand color, default prompt)
+- `policy.allow_implicit_invocation`: disable implicit activation while keeping explicit `$skill`
+- `dependencies.tools`: declare MCP/tool dependencies
+
+**Invocation**:
+- Explicit: `/skills` or `$skill-name`
+- Implicit: matched from skill `description`
+- Source: https://developers.openai.com/codex/skills
+
+---
+
 ### Gemini CLI — Sub-agents
 
 **Enable** (`~/.gemini/settings.json`):
@@ -299,6 +335,12 @@ You are a Developer responsible for code implementation and testing.
 | `max_turns` | number | No | Max conversation turns (default: 15) |
 | `timeout_mins` | number | No | Max execution time in minutes (default: 5) |
 
+**Remote subagent schema nuance**:
+- For remote subagents, `kind` is required and must be `remote`
+- `agent_card_url` is required for remote subagents
+- Remote definitions remain file-based under `.gemini/agents/*.md` / `~/.gemini/agents/*.md`
+- Source: https://geminicli.com/docs/core/remote-agents/
+
 **Gemini tool names** (reference mapping from Claude tool names):
 
 | Claude | Gemini |
@@ -311,28 +353,48 @@ You are a Developer responsible for code implementation and testing.
 | `Grep` | `grep_search` |
 | `["*"]` / all | omit `tools` field |
 
-**Built-in sub-agents** (enabled by default, configurable via `agents.overrides`):
+**Built-in sub-agents** (enabled by default):
 - `codebase_investigator` — deep codebase analysis, reverse engineering
 - `cli_help` — expert knowledge about Gemini CLI itself
 - `generalist_agent` — routes tasks to appropriate sub-agent
 - `browser_agent` — browser automation (disabled by default)
 
-**Override built-in** (e.g. force model):
-```json
-{
-  "agents": {
-    "overrides": {
-      "codebase_investigator": {
-        "model": "gemini-2.5-pro"
-      }
-    }
-  }
-}
-```
-
 **Invocation**: sub-agents are exposed as tools; main agent calls them automatically based on description.
 No peer-to-peer messaging. Results report back to parent context only.
 - Source: https://geminicli.com/docs/core/subagents/, https://geminicli.com/docs/reference/configuration/
+
+---
+
+### Gemini CLI — Skills (official)
+
+**Skill locations**:
+- `.gemini/skills/`, `~/.gemini/skills/`, extension-provided skill directories
+- Official aliases: `.agents/skills/` (workspace) and `~/.agents/skills/` (user)
+
+**Skill package schema**:
+- A skill is a directory with required `SKILL.md`
+- `SKILL.md` uses YAML frontmatter + Markdown instructions
+- Frontmatter required fields:
+  - `name` (unique identifier; should match directory name)
+  - `description` (what the skill does and when to use it)
+
+**Optional files**:
+- `scripts/` (executable helpers)
+- `references/` (static docs)
+- `assets/` (templates/resources)
+
+**Activation**:
+- Skills can be explicitly requested or implicitly activated when the request matches skill semantics
+
+**Discovery precedence (official)**:
+- Tier precedence: Workspace > User > Extension
+- Same-tier precedence: `.agents/skills/` alias overrides `.gemini/skills/`
+- Operational impact: in dual Codex+Gemini installs, identically named skills in `.agents/skills/` can override Gemini-native `.gemini/skills/` skills
+- Typical runtime warning:
+  - `Skill conflict detected: "validate" from "~/.agents/skills/validate/SKILL.md" is overriding the same skill from "~/.gemini/skills/validate/SKILL.md"`
+- Source: https://geminicli.com/docs/cli/skills/
+
+- Source: https://geminicli.com/docs/cli/creating-skills/, https://geminicli.com/docs/cli/skills/
 
 ---
 
@@ -344,6 +406,8 @@ No peer-to-peer messaging. Results report back to parent context only.
 4. Treat Gemini as supporting both skills and hooks; old commands-only assumptions are stale.
 5. Treat Qwen hooks as unsupported until official user-facing schema is published.
 6. Keep `scripts` separate from `hooks` in capability and install logic.
+7. Treat minimal-frontmatter transforms (`name`, `description`) as installer portability policy, not as a complete statement of runtime-native schema capabilities.
+8. Account for Gemini alias precedence during multi-runtime installs: `.agents/skills/` can override `.gemini/skills/` within the same scope.
 
 ## Verified Implementation Gap (2026-02-22)
 
@@ -371,11 +435,13 @@ No peer-to-peer messaging. Results report back to parent context only.
   - https://developers.openai.com/codex/cli/slash-commands
 - Gemini CLI:
   - https://geminicli.com/docs/core/subagents/ *(sub-agent file format confirmed primary, added 2026-02-24)*
+  - https://geminicli.com/docs/core/remote-agents/
   - https://geminicli.com/docs/reference/configuration/ *(settings.json schema, added 2026-02-24)*
   - https://geminicli.com/docs/hooks/
   - https://geminicli.com/docs/reference/commands/
   - https://geminicli.com/docs/cli/custom-commands/
-  - https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/skills.md
+  - https://geminicli.com/docs/cli/skills/
+  - https://geminicli.com/docs/cli/creating-skills/
 - OpenCode:
   - https://opencode.ai/docs/config/
   - https://opencode.ai/docs/agents/
