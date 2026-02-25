@@ -1,11 +1,12 @@
 # AgentOrchestrator Issues
 
-**Updated**: 2026-02-24
+**Updated**: 2026-02-25
 
 | ID | Issue | Priority | Status | Task |
 |----|-------|----------|--------|------|
 | G-001 | OpenCode hooks incompatibility: shell hooks are not natively compatible with OpenCode plugin model | P2 | 🔲 Open | `docs/knowledge/decisions/non-claude-hooks-policy.md` |
 | I-002 | Gemini capability drift: installer behavior still diverges from expected skills/subagents baseline | P1 | 🔄 Reopened (2026-02-24) | T-097 |
+| I-006 | Runtime target isolation + Gemini command transform regression: decoupling fixes landed, but Gemini command files still fail loader validation/parse | P0 | 🔄 Open (2026-02-25) | T-097 |
 
 ---
 
@@ -39,7 +40,44 @@ Current action:
 
 ---
 
+### I-006: Runtime target isolation + Gemini command transform regression
+
+**Type**: Defect  
+**Discovered**: 2026-02-25  
+**Status**: Open (2026-02-25)  
+**Affects**: Global installer target isolation, runtime-scoped policy-reference injection, and Gemini command compatibility profile output  
+**Task**: T-097
+
+Observed behavior (2026-02-25):
+- Historical regression (addressed in current branch):
+  - `./install.sh --global --overwrite --codex` touched `~/.claude/*` shared global paths
+  - `./install.sh --global --overwrite --gemini --uninstall` removed `~/.claude/*` without `--claude`
+  - policy refs in non-Claude docs pointed to `@~/.claude/policy/*`
+- Active blocking regression (still open):
+  - Gemini commands profile emits invalid `.toml` files under `~/.gemini/commands/`
+  - Gemini CLI `FileCommandLoader` reports parse/validation failures, including:
+    - parse failures: `research.toml`, `orchestrate.toml`
+    - validation failures: `validate.toml`, `review.toml`, `reflexion.toml`, `reflect.toml`, `plan.toml`, `spec.toml`, `optimize.toml`, `onboard.toml`, `implement.toml`, `hitl.toml`, `document.toml`, `distill.toml`, `design.toml`, `deploy.toml`, `analyse.toml`
+
+Expected behavior:
+- Runtime target flags are strictly isolated for install/uninstall (`--codex` and `--gemini` must not write/remove `~/.claude/*` unless `--claude` is selected)
+- Global policy/workflow/template assets are installed and cleaned in each selected runtime target directory
+- Policy refs are runtime-scoped per selected agent runtime:
+  - Codex: `Read @~/.agents/policy/PRINCIPLES.md`
+  - Gemini: `Read @~/.gemini/policy/PRINCIPLES.md`
+  - (and equivalent runtime-local paths for other runtimes)
+- Gemini commands profile output must satisfy Gemini CLI parser + schema validation for all generated command files
+
+Current action:
+- Keep issue open until both are true:
+  - zero `.claude/*` side effects for non-Claude-only global operations
+  - zero Gemini `FileCommandLoader` parse/validation errors across generated `.gemini/commands/*.toml`
+- Add/expand regression coverage for real Gemini command schema constraints (not only TOML syntax parsing)
+
+---
+
 ## Resolved Issues Archive
 
 Resolved issues were moved to:
 - [archive/issues-resolved-2026-02-24.md](archive/issues-resolved-2026-02-24.md)
+- [archive/issues-resolved-2026-02-25.md](archive/issues-resolved-2026-02-25.md)

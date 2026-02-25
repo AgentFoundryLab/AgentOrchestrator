@@ -2,9 +2,10 @@
 # AgentOrchestrator Installer
 # Requires: bash 4.0+ (associative arrays). macOS ships bash 3.2; install via: brew install bash
 # Usage:
-#   ./install.sh --global              Install to ~/.claude/
+#   ./install.sh --global              Install to selected runtime global dir(s)
 #   ./install.sh --project <path>      Install project templates to <path>
-#   ./install.sh [--claude|--gemini|--codex|--opencode|--qwen]  Select install targets (default: --claude)
+#   ./install.sh [--claude|--gemini|--codex|--opencode|--qwen|--trio|--all]
+#                                        Select install targets (default selector: --claude)
 #   ./install.sh [--profile <profile>] Capability profile: skills|commands|hooks|scripts|all (default: auto)
 #   ./install.sh [--namespace <name>]  Override agent/skill/command namespace (default: flat)
 #   ./install.sh [--no-namespace]      Use flat agents/skills/commands paths (no namespace)
@@ -40,12 +41,15 @@ BACKUPS=0
 
 # Options
 OVERWRITE=false
-REF_CLAUDE=true
+REF_CLAUDE=false
 REF_GEMINI=false
 REF_CODEX=false
 REF_OPENCODE=false
 REF_QWEN=false
 REF_TARGETS_EXPLICIT=false
+# Target selector used when no runtime flags are passed.
+# Allowed: --claude | --codex | --gemini | --opencode | --qwen | --trio | --all
+DEFAULT_RUNTIME_SELECTOR="--claude"
 
 # Profile: "auto" = runtime-specific default, or one of: skills, commands, hooks, scripts, all
 PROFILE="auto"
@@ -57,18 +61,20 @@ AgentOrchestrator Installer v${VERSION}
 Requires: bash 4.0+ (macOS: brew install bash)
 
 Usage:
-    ./install.sh --global              Install to ~/.claude/ (and other runtime dirs)
+    ./install.sh --global              Install to selected runtime global dir(s)
     ./install.sh --project <path>      Install project templates to <path>
 
-Runtime target flags (composable, default: --claude):
+Runtime target flags (composable):
     --claude                           Install to Claude Code paths (~/.claude/, .claude/)
     --codex                            Install to Codex CLI paths (~/.agents/, .agents/)
     --gemini                           Install to Gemini CLI paths (~/.gemini/, .gemini/)
     --opencode                         Install to OpenCode paths (~/.config/opencode/, .opencode/)
     --qwen                             Install to Qwen Code paths (~/.qwen/, .qwen/)
+    --trio                             Shortcut: --claude --codex --gemini
+    --all                              Shortcut: all runtimes (--claude --codex --gemini --opencode --qwen)
 
     Combine flags: --claude --codex installs to both runtimes in one run.
-    If no runtime flag is provided, --claude is the default.
+    If no runtime flag is provided, default selector '${DEFAULT_RUNTIME_SELECTOR}' is applied.
 
 Profile flags (controls which capability artifacts are installed):
     --profile <profile>                Capability profile (default: auto per runtime)
@@ -112,23 +118,35 @@ What gets installed per runtime (default skills profile):
     - agents/*.md          Agent definitions [default profile]
     - skills/<skill>/      Skills [default profile]
     - prompts/             Commands in .md (strip frontmatter) [--profile commands only]
+    - policy/              PRINCIPLES.md, RULES.md
+    - workflows/           SWE.md, meta-learning.md
+    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
     - [no hooks — not supported by Codex CLI]
 
   gemini  (~/.gemini/, .gemini/):
     - skills/<skill>/      Skills [default profile]
     - commands/*.toml      Commands in TOML format (from SKILL.md transform) [--profile commands]
+    - policy/              PRINCIPLES.md, RULES.md
+    - workflows/           SWE.md, meta-learning.md
+    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
     - [no hooks — excluded by installer policy]
 
   opencode  (~/.config/opencode/, .opencode/):
     - agents/*.md          Agent definitions [default profile]
     - skills/<name>/       Skills [default profile]
     - commands/*.md        Commands in .md format [--profile commands only]
+    - policy/              PRINCIPLES.md, RULES.md
+    - workflows/           SWE.md, meta-learning.md
+    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
     - [no hooks — excluded by installer policy]
 
   qwen  (~/.qwen/, .qwen/):
     - agents/*.md          Agent definitions [default profile]
     - skills/<skill>/      Skills [default profile]
     - commands/*.md        Commands in Markdown format [--profile commands only]
+    - policy/              PRINCIPLES.md, RULES.md
+    - workflows/           SWE.md, meta-learning.md
+    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
     - [no hooks — excluded by installer policy]
 
 --project installs to <path>/ (runtime-agnostic scaffolding):
@@ -150,14 +168,17 @@ Profile defaults per runtime:
     Use --profile commands to install command-format artifacts for selected runtimes.
 
 Examples:
-    # Install to Claude Code only (default runtime)
+    # Install to default runtime selector
     ./install.sh --global
 
     # Install to multiple runtimes in one run
     ./install.sh --global --codex --qwen
 
+    # Install to the claude+codex+gemini trio
+    ./install.sh --global --trio
+
     # Install to all five runtimes
-    ./install.sh --global --claude --codex --gemini --opencode --qwen
+    ./install.sh --global --all
 
     # Namespaced install (dash fallback naming)
     ./install.sh --global --claude --namespace orchestrator
@@ -717,13 +738,56 @@ inject_policy_refs() {
     local start_tag="<!-- ${sentinel}:start -->"
     local end_tag="<!-- ${sentinel}:end -->"
     local header="## Orchestrator Policy References"
+    local desired_block
+    desired_block=$(printf '%s\n%s\n%s\n%s' "$start_tag" "$header" "$refs_block" "$end_tag")
 
     for md_file in $doc_files; do
         local f="${target_dir}/${md_file}"
         [ -f "$f" ] || continue
         if grep -qF "$start_tag" "$f" 2>/dev/null; then
-            log_info "Refs present: $f"
-            ((++UNCHANGED))
+            if ! grep -qF "$end_tag" "$f" 2>/dev/null; then
+                log_warning "Malformed refs block (missing end tag): $f"
+                ((++WARNINGS))
+                continue
+            fi
+
+            local existing_block
+            existing_block=$(awk -v s="$start_tag" -v e="$end_tag" '
+                $0 == s {inblock=1}
+                inblock {print}
+                $0 == e && inblock {exit}
+            ' "$f")
+
+            if [ "$existing_block" = "$desired_block" ]; then
+                log_info "Refs present: $f"
+                ((++UNCHANGED))
+            else
+                local backup_file="${backup_dir}/${backup_prefix}/${md_file}"
+                mkdir -p "$(dirname "$backup_file")"
+                cp "$f" "$backup_file"
+                ((++BACKUPS))
+
+                local tmp_file="${f}.tmp"
+                awk -v s="$start_tag" -v e="$end_tag" -v r="$desired_block" '
+                    BEGIN {inblock=0; replaced=0}
+                    $0 == s && replaced == 0 {
+                        print r
+                        inblock=1
+                        replaced=1
+                        next
+                    }
+                    inblock == 1 {
+                        if ($0 == e) {
+                            inblock=0
+                        }
+                        next
+                    }
+                    {print}
+                ' "$f" > "$tmp_file"
+                mv "$tmp_file" "$f"
+                log_success "Updated refs: $f"
+                ((++PATCHED))
+            fi
         else
             local backup_file="${backup_dir}/${backup_prefix}/${md_file}"
             mkdir -p "$(dirname "$backup_file")"
@@ -912,11 +976,12 @@ normalize_skill_markdown_in_place() {
 # Strip YAML frontmatter (---...---) from a file, printing remaining content to stdout.
 strip_frontmatter() {
     local src="$1"
-    if head -1 "$src" | grep -q '^---$'; then
-        awk '/^---$/{found++; if(found==2){found=0; skip=0; next} else {skip=1; next}} !skip' "$src"
-    else
-        cat "$src"
-    fi
+    awk '
+        NR == 1 && $0 == "---" { in_frontmatter = 1; next }
+        in_frontmatter && $0 == "---" { in_frontmatter = 0; next }
+        in_frontmatter { next }
+        { print }
+    ' "$src"
 }
 
 # ---------------------------------------------------------------------------
@@ -942,9 +1007,9 @@ strip_frontmatter() {
 #   - unknown frontmatter keys are excluded from TOML output
 # Output format (Gemini TOML command schema):
 #   description = "<description>"
-#   prompt = """
+#   prompt = '''
 #   <body content>
-#   """
+#   '''
 # Determinism: same input always produces same output.
 skill_to_gemini_toml() {
     local src="$1"
@@ -966,12 +1031,18 @@ skill_to_gemini_toml() {
     # Trim leading blank lines from body
     body=$(printf '%s' "$body" | sed '/./,$!d')
 
-    # Escape backslashes and double-quotes for TOML basic strings.
-    local safe_description safe_body
+    # Escape description for TOML basic string.
+    local safe_description
     safe_description=$(printf '%s' "$fm_description" | sed 's/\\/\\\\/g; s/"/\\"/g')
-    safe_body=$(printf '%s' "$body" | sed 's/\\/\\\\/g; s/"/\\"/g')
 
-    printf 'description = "%s"\nprompt = """\n%s\n"""\n' "$safe_description" "$safe_body"
+    # Prefer TOML literal multiline strings to avoid escape churn from markdown content.
+    if printf '%s' "$body" | grep -q "'''"; then
+        local safe_body
+        safe_body=$(printf '%s' "$body" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        printf 'description = "%s"\nprompt = """\n%s\n"""\n' "$safe_description" "$safe_body"
+    else
+        printf "description = \"%s\"\nprompt = '''\n%s\n'''\n" "$safe_description" "$body"
+    fi
 }
 
 # render_transformed_skill — T-095: apply per-runtime transform rules.
@@ -1191,6 +1262,37 @@ check_runtime_collisions() {
     done
 }
 
+# prune_gemini_native_alias_conflicts
+# Gemini also loads Codex alias paths (~/.agents/skills or .agents/skills). When both
+# contain the same skill name at the same scope, Gemini emits "Skill conflict detected".
+# To suppress this runtime warning, remove duplicate native Gemini skill folders and keep
+# the alias copy only.
+prune_gemini_native_alias_conflicts() {
+    local gemini_skills_dir="$1"
+    local alias_skills_dir="$2"
+    local removed=0
+
+    [ -d "$gemini_skills_dir" ] || return 0
+    [ -d "$alias_skills_dir" ] || return 0
+
+    for skill_dir in "$gemini_skills_dir"/*; do
+        [ -d "$skill_dir" ] || continue
+        local skill_name="${skill_dir##*/}"
+        local alias_skill_md="${alias_skills_dir}/${skill_name}/SKILL.md"
+        local gemini_skill_md="${skill_dir}/SKILL.md"
+        if [ -f "$alias_skill_md" ] && [ -f "$gemini_skill_md" ]; then
+            rm -rf "$skill_dir"
+            log_info "gemini: pruned duplicate skill '${skill_name}' (alias preferred: ${alias_skill_md})"
+            ((++removed))
+        fi
+    done
+
+    if [ "$removed" -gt 0 ]; then
+        find "$gemini_skills_dir" -depth -type d -empty -delete 2>/dev/null || true
+        log_info "gemini: removed ${removed} duplicate native skills to suppress alias conflict warnings"
+    fi
+}
+
 # Install global artifacts for a single runtime (registry-driven)
 install_runtime_global() {
     local rt="$1"
@@ -1243,6 +1345,11 @@ install_runtime_global() {
                 else
                     copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
                 fi
+            fi
+
+            if [[ "$rt" == "gemini" ]]; then
+                local codex_alias_skills="${RUNTIME_CONF_DIR[codex]}/${RUNTIME_SKILLS_PATH[codex]}"
+                prune_gemini_native_alias_conflicts "$skills_target" "$codex_alias_skills"
             fi
         fi
     fi
@@ -1331,6 +1438,11 @@ install_runtime_project() {
                 else
                     copy_directory "${PACKAGE_DIR}/skills" "$skills_target" "$backup_dir"
                 fi
+            fi
+
+            if [[ "$rt" == "gemini" ]]; then
+                local codex_alias_skills="${target}/${RUNTIME_PROJECT_DIR[codex]}/${RUNTIME_SKILLS_PATH[codex]}"
+                prune_gemini_native_alias_conflicts "$skills_target" "$codex_alias_skills"
             fi
         fi
     fi
@@ -1458,6 +1570,57 @@ restore_runtime_project() {
     fi
 }
 
+# Reset runtime-selection REF_* flags to false.
+reset_runtime_targets() {
+    REF_CLAUDE=false
+    REF_CODEX=false
+    REF_GEMINI=false
+    REF_OPENCODE=false
+    REF_QWEN=false
+}
+
+# Enable runtime-selection REF_* flags from a runtime selector token.
+# Selectors:
+#   --claude --codex --gemini --opencode --qwen
+#   --trio  -> --claude --codex --gemini
+#   --all   -> all runtimes
+apply_runtime_selector() {
+    local selector="$1"
+    case "$selector" in
+        --claude|claude)
+            REF_CLAUDE=true
+            ;;
+        --codex|codex)
+            REF_CODEX=true
+            ;;
+        --gemini|gemini)
+            REF_GEMINI=true
+            ;;
+        --opencode|opencode)
+            REF_OPENCODE=true
+            ;;
+        --qwen|qwen)
+            REF_QWEN=true
+            ;;
+        --trio|trio)
+            REF_CLAUDE=true
+            REF_CODEX=true
+            REF_GEMINI=true
+            ;;
+        --all|all)
+            REF_CLAUDE=true
+            REF_CODEX=true
+            REF_GEMINI=true
+            REF_OPENCODE=true
+            REF_QWEN=true
+            ;;
+        *)
+            log_error "Invalid runtime selector '${selector}'. Valid: --claude --codex --gemini --opencode --qwen --trio --all"
+            exit 1
+            ;;
+    esac
+}
+
 # Build list of active runtimes based on REF_* flags
 get_active_runtimes() {
     local active=()
@@ -1467,6 +1630,23 @@ get_active_runtimes() {
     [ "$REF_OPENCODE" = true ]  && active+=(opencode)
     [ "$REF_QWEN" = true ]      && active+=(qwen)
     echo "${active[@]}"
+}
+
+# Resolve backup anchor target from active runtime set.
+# Keeps per-target operations isolated (e.g., --codex must not touch ~/.claude).
+get_backup_anchor_target() {
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+    local anchor_rt="${active_runtimes[0]:-claude}"
+    echo "${RUNTIME_CONF_DIR[${anchor_rt}]}"
+}
+
+# Build per-runtime global policy refs that point to that runtime's own policy dir.
+global_refs_for_runtime() {
+    local rt="$1"
+    local policy_dir="${RUNTIME_CONF_DIR[${rt}]}/policy"
+    local policy_ref_dir="${policy_dir/#${HOME}/\~}"
+    printf 'Read @%s/PRINCIPLES.md\nRead @%s/RULES.md' "$policy_ref_dir" "$policy_ref_dir"
 }
 
 # Install global components to runtime conf dirs
@@ -1479,62 +1659,71 @@ install_global() {
         log_info "Using flat paths (no namespace prefix)"
     fi
 
-    # Shared global assets always live under ~/.claude/.
     local backup_dir
-    backup_dir=$(create_backup_dir "$claude_target")
+    local backup_anchor_target
+    backup_anchor_target="$(get_backup_anchor_target)"
+    backup_dir=$(create_backup_dir "$backup_anchor_target")
 
-    # Install shared global assets to ~/.claude/ for all global installs.
-    # Runtime docs inject refs to ~/.claude/policy/*, so these must exist
-    # even when claude runtime is not explicitly selected.
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+
+    # Install shared global assets into each selected runtime target dir.
     if [ -d "${PACKAGE_DIR}" ]; then
-        copy_directory "${PACKAGE_DIR}/policy" "${claude_target}/policy" "$backup_dir"
-        copy_directory "${PACKAGE_DIR}/workflows" "${claude_target}/workflows" "$backup_dir"
-        copy_directory "${PACKAGE_DIR}/templates" "${claude_target}/templates" "$backup_dir"
+        for rt in "${active_runtimes[@]}"; do
+            local rt_target="${RUNTIME_CONF_DIR[${rt}]}"
+            local rt_backup_dir="${backup_dir}/shared-${rt}"
+            copy_directory "${PACKAGE_DIR}/policy" "${rt_target}/policy" "$rt_backup_dir"
+            copy_directory "${PACKAGE_DIR}/workflows" "${rt_target}/workflows" "$rt_backup_dir"
+            copy_directory "${PACKAGE_DIR}/templates" "${rt_target}/templates" "$rt_backup_dir"
+        done
+    fi
 
-        # Claude-specific settings are only merged when claude runtime is active.
-        if [ "$REF_CLAUDE" = true ] && [ -f "${PACKAGE_DIR}/settings.json" ]; then
-            merge_json "${PACKAGE_DIR}/settings.json" "${claude_target}/settings.json" "$backup_dir"
-        fi
+    # Claude-specific settings are only merged when claude runtime is active.
+    if [ "$REF_CLAUDE" = true ] && [ -f "${PACKAGE_DIR}/settings.json" ]; then
+        merge_json "${PACKAGE_DIR}/settings.json" "${claude_target}/settings.json" "$backup_dir"
+    fi
 
-        # Claude-specific user-scope MCP config is only merged when claude runtime is active.
-        if [ "$REF_CLAUDE" = true ] && [ -f "${PACKAGE_DIR}/mcp.json" ]; then
-            merge_json "${PACKAGE_DIR}/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
-        fi
+    # Claude-specific user-scope MCP config is only merged when claude runtime is active.
+    if [ "$REF_CLAUDE" = true ] && [ -f "${PACKAGE_DIR}/mcp.json" ]; then
+        merge_json "${PACKAGE_DIR}/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
     fi
 
     # T-081: check for cross-runtime path collisions
     check_runtime_collisions
 
     # Install per-runtime artifacts using registry
-    local active_runtimes
-    read -ra active_runtimes <<< "$(get_active_runtimes)"
     for rt in "${active_runtimes[@]}"; do
         install_runtime_global "$rt" "$backup_dir"
     done
 
     # Inject @-references for global policies into selected runtime docs.
-    # Use home-scoped absolute refs to avoid project-relative resolution.
-    local global_refs
-    global_refs="$(printf 'Read @~/.claude/policy/PRINCIPLES.md\nRead @~/.claude/policy/RULES.md')"
     if [ "$REF_CLAUDE" = true ]; then
+        local claude_global_refs
+        claude_global_refs="$(global_refs_for_runtime "claude")"
         inject_policy_refs "${RUNTIME_CONF_DIR[claude]}" "orchestrator:global-refs" \
-            "$global_refs" "$backup_dir" "claude" "${RUNTIME_DOC_FILE[claude]}"
+            "$claude_global_refs" "$backup_dir" "claude" "${RUNTIME_DOC_FILE[claude]}"
     fi
     if [ "$REF_GEMINI" = true ]; then
+        local gemini_global_refs
+        gemini_global_refs="$(global_refs_for_runtime "gemini")"
         inject_policy_refs "${RUNTIME_CONF_DIR[gemini]}" "orchestrator:global-refs" \
-            "$global_refs" "$backup_dir" "gemini" "${RUNTIME_DOC_FILE[gemini]}"
+            "$gemini_global_refs" "$backup_dir" "gemini" "${RUNTIME_DOC_FILE[gemini]}"
     fi
     if [ "$REF_CODEX" = true ]; then
         local codex_doc_dir="${RUNTIME_DOC_DIR_OVERRIDE[codex]:-${RUNTIME_CONF_DIR[codex]}}"
+        local codex_global_refs
+        codex_global_refs="$(global_refs_for_runtime "codex")"
         inject_policy_refs "$codex_doc_dir" "orchestrator:global-refs" \
-            "$global_refs" "$backup_dir" "codex" "${RUNTIME_DOC_FILE[codex]}"
+            "$codex_global_refs" "$backup_dir" "codex" "${RUNTIME_DOC_FILE[codex]}"
     fi
     if [ "$REF_OPENCODE" = true ]; then
         log_info "opencode: policy-ref injection into opencode.json not yet implemented (JSON format differs)"
     fi
     if [ "$REF_QWEN" = true ]; then
+        local qwen_global_refs
+        qwen_global_refs="$(global_refs_for_runtime "qwen")"
         inject_policy_refs "${RUNTIME_CONF_DIR[qwen]}" "orchestrator:global-refs" \
-            "$global_refs" "$backup_dir" "qwen" "${RUNTIME_DOC_FILE[qwen]}"
+            "$qwen_global_refs" "$backup_dir" "qwen" "${RUNTIME_DOC_FILE[qwen]}"
     fi
 
     log_success "Global installation complete"
@@ -1828,7 +2017,9 @@ restore_global() {
     fi
 
     local backup_dir
-    backup_dir=$(find_latest_backup "$claude_target")
+    local backup_anchor_target
+    backup_anchor_target="$(get_backup_anchor_target)"
+    backup_dir=$(find_latest_backup "$backup_anchor_target")
 
     # Restore per-runtime artifacts using registry
     local active_runtimes
@@ -1837,22 +2028,27 @@ restore_global() {
         restore_runtime_global "$rt" "$backup_dir"
     done
 
-    # Restore/remove shared trees under ~/.claude/ (surgical file-level behavior).
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/policy" \
-        "${claude_target}/policy" \
-        "$backup_dir" \
-        "policy"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/workflows" \
-        "${claude_target}/workflows" \
-        "$backup_dir" \
-        "workflows"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/templates" \
-        "${claude_target}/templates" \
-        "$backup_dir" \
-        "templates"
+    # Restore/remove shared trees under each selected runtime target dir.
+    for rt in "${active_runtimes[@]}"; do
+        local rt_target="${RUNTIME_CONF_DIR[${rt}]}"
+        local rt_backup_dir=""
+        [ -n "$backup_dir" ] && rt_backup_dir="${backup_dir}/shared-${rt}"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/policy" \
+            "${rt_target}/policy" \
+            "$rt_backup_dir" \
+            "policy"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/workflows" \
+            "${rt_target}/workflows" \
+            "$rt_backup_dir" \
+            "workflows"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/templates" \
+            "${rt_target}/templates" \
+            "$rt_backup_dir" \
+            "templates"
+    done
 
     if [ "$REF_CLAUDE" = true ]; then
         # Restore settings.json from backup
@@ -2015,13 +2211,16 @@ cleanup_global() {
         restore_runtime_global "$rt" ""
     done
 
-    # Remove shared trees under ~/.claude/ (surgical file-level behavior).
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/policy" "${claude_target}/policy" "" "policy"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/workflows" "${claude_target}/workflows" "" "workflows"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/templates" "${claude_target}/templates" "" "templates"
+    # Remove shared trees under each selected runtime target dir.
+    for rt in "${active_runtimes[@]}"; do
+        local rt_target="${RUNTIME_CONF_DIR[${rt}]}"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/policy" "${rt_target}/policy" "" "policy"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/workflows" "${rt_target}/workflows" "" "workflows"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/templates" "${rt_target}/templates" "" "templates"
+    done
 
     if [ "$REF_CLAUDE" = true ]; then
         # Unpatch settings.json by removing installer-contributed keys (no backup restore).
@@ -2145,22 +2344,12 @@ main() {
 
     while [ $# -gt 0 ]; do
         case "$1" in
-            --claude|--gemini|--codex|--opencode|--qwen)
+            --claude|--gemini|--codex|--opencode|--qwen|--trio|--all)
                 if [ "$REF_TARGETS_EXPLICIT" = false ]; then
-                    REF_CLAUDE=false
-                    REF_GEMINI=false
-                    REF_CODEX=false
-                    REF_OPENCODE=false
-                    REF_QWEN=false
+                    reset_runtime_targets
                     REF_TARGETS_EXPLICIT=true
                 fi
-                case "$1" in
-                    --claude)   REF_CLAUDE=true ;;
-                    --gemini)   REF_GEMINI=true ;;
-                    --codex)    REF_CODEX=true ;;
-                    --opencode) REF_OPENCODE=true ;;
-                    --qwen)     REF_QWEN=true ;;
-                esac
+                apply_runtime_selector "$1"
                 shift
                 ;;
             --namespace)
@@ -2233,6 +2422,12 @@ main() {
                 ;;
         esac
     done
+
+    # Apply default runtime selector if no explicit runtime flags were passed.
+    if [ "$REF_TARGETS_EXPLICIT" = false ]; then
+        reset_runtime_targets
+        apply_runtime_selector "$DEFAULT_RUNTIME_SELECTOR"
+    fi
 
     # --check: validate registry then exit (no writes)
     if [ "$do_check_drift" = true ]; then

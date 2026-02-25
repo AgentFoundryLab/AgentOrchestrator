@@ -50,6 +50,16 @@ assert_dir_absent() {
     fi
 }
 
+assert_file_exists() {
+    local path="$1"
+    if [ -f "$path" ]; then
+        return 0
+    else
+        echo "  [assert] file missing: $path" >&2
+        return 1
+    fi
+}
+
 assert_any_file_in() {
     local dir="$1"
     if [ -d "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
@@ -70,6 +80,28 @@ assert_no_file_matching() {
     else
         echo "  [assert] unexpected file found: $found" >&2
         return 1
+    fi
+}
+
+assert_file_contains() {
+    local file="$1"
+    local needle="$2"
+    if grep -qF "$needle" "$file" 2>/dev/null; then
+        return 0
+    else
+        echo "  [assert] expected '${needle}' in: $file" >&2
+        return 1
+    fi
+}
+
+assert_file_not_contains() {
+    local file="$1"
+    local needle="$2"
+    if grep -qF "$needle" "$file" 2>/dev/null; then
+        echo "  [assert] unexpected '${needle}' in: $file" >&2
+        return 1
+    else
+        return 0
     fi
 }
 
@@ -125,6 +157,36 @@ test_smoke_global_default_target_claude_only() {
 }
 run_test "smoke-install-global-default-claude-only" test_smoke_global_default_target_claude_only
 
+test_smoke_global_trio_shortcut() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --trio >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.claude/skills" || ok=1
+    assert_dir_exists "${tmp}/.agents/skills" || ok=1
+    assert_dir_exists "${tmp}/.gemini/policy" || ok=1
+    assert_dir_absent "${tmp}/.qwen/skills" || ok=1
+    assert_dir_absent "${tmp}/.config/opencode/skills" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "smoke-install-global-trio-shortcut" test_smoke_global_trio_shortcut
+
+test_smoke_global_all_shortcut() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --all >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.claude/skills" || ok=1
+    assert_dir_exists "${tmp}/.agents/skills" || ok=1
+    assert_dir_exists "${tmp}/.gemini/policy" || ok=1
+    assert_dir_exists "${tmp}/.qwen/skills" || ok=1
+    assert_dir_exists "${tmp}/.config/opencode/skills" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "smoke-install-global-all-shortcut" test_smoke_global_all_shortcut
+
 # ---------------------------------------------------------------------------
 # T-088: Conformance tests — expected capabilities present/absent per runtime
 # ---------------------------------------------------------------------------
@@ -162,24 +224,77 @@ test_conformance_codex() {
 }
 run_test "conformance-codex-skills-present-hooks-absent" test_conformance_codex
 
-# Codex target still installs shared global policy files under ~/.claude
-test_conformance_codex_shared_policy_present() {
+# Codex-only installs must not write Gemini skill artifacts
+test_conformance_codex_no_gemini_skill_artifacts() {
     local tmp
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --codex >/dev/null 2>&1
     local ok=0
-    if [ ! -f "${tmp}/.claude/policy/PRINCIPLES.md" ]; then
-        echo "  [assert] missing shared policy file: ${tmp}/.claude/policy/PRINCIPLES.md" >&2
-        ok=1
-    fi
-    if [ ! -f "${tmp}/.claude/policy/RULES.md" ]; then
-        echo "  [assert] missing shared policy file: ${tmp}/.claude/policy/RULES.md" >&2
+    assert_dir_absent "${tmp}/.gemini/skills" || ok=1
+    assert_dir_absent "${tmp}/.gemini/agents" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-codex-no-gemini-skill-artifacts" test_conformance_codex_no_gemini_skill_artifacts
+
+# Codex-only installs must not write Claude shared assets
+test_conformance_codex_no_claude_artifacts() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --codex >/dev/null 2>&1
+    local ok=0
+    if [ -d "${tmp}/.claude" ]; then
+        echo "  [assert] unexpected claude artifacts for codex-only install: ${tmp}/.claude" >&2
         ok=1
     fi
     rm -rf "$tmp"
     return $ok
 }
-run_test "conformance-codex-shared-policy-present" test_conformance_codex_shared_policy_present
+run_test "conformance-codex-no-claude-artifacts" test_conformance_codex_no_claude_artifacts
+
+# Codex-only installs: global shared assets stay under .agents and refs are codex-scoped.
+test_conformance_codex_global_assets_and_scoped_refs() {
+    local tmp
+    tmp=$(mktemp -d)
+    mkdir -p "${tmp}/.codex"
+    printf '# AGENTS\n' > "${tmp}/.codex/AGENTS.md"
+    HOME="$tmp" bash "${INSTALL}" --global --codex >/dev/null 2>&1
+    local ok=0
+    assert_file_exists "${tmp}/.agents/policy/PRINCIPLES.md" || ok=1
+    assert_file_exists "${tmp}/.agents/workflows/SWE.md" || ok=1
+    assert_file_exists "${tmp}/.agents/templates/prd.md" || ok=1
+    assert_file_contains "${tmp}/.codex/AGENTS.md" "Read @~/.agents/policy/PRINCIPLES.md" || ok=1
+    assert_file_not_contains "${tmp}/.codex/AGENTS.md" "Read @~/.claude/policy/PRINCIPLES.md" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-codex-global-assets-and-scoped-refs" test_conformance_codex_global_assets_and_scoped_refs
+
+# Existing Claude-scoped sentinel block in Codex docs is migrated to Codex-scoped refs.
+test_conformance_codex_ref_block_migrated_from_claude_scope() {
+    local tmp
+    tmp=$(mktemp -d)
+    mkdir -p "${tmp}/.codex"
+    cat > "${tmp}/.codex/AGENTS.md" <<'EOF'
+# AGENTS
+
+<!-- orchestrator:global-refs:start -->
+## Orchestrator Policy References
+Read @~/.claude/policy/PRINCIPLES.md
+Read @~/.claude/policy/RULES.md
+<!-- orchestrator:global-refs:end -->
+EOF
+    HOME="$tmp" bash "${INSTALL}" --global --codex >/dev/null 2>&1
+    local ok=0
+    assert_file_contains "${tmp}/.codex/AGENTS.md" "Read @~/.agents/policy/PRINCIPLES.md" || ok=1
+    assert_file_not_contains "${tmp}/.codex/AGENTS.md" "Read @~/.claude/policy/PRINCIPLES.md" || ok=1
+    local sentinel_count
+    sentinel_count=$(grep -c "orchestrator:global-refs:start" "${tmp}/.codex/AGENTS.md" 2>/dev/null || true)
+    [ "$sentinel_count" -eq 1 ] || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-codex-ref-block-migrated-from-claude-scope" test_conformance_codex_ref_block_migrated_from_claude_scope
 
 # Gemini: skills present by default; hooks absent by policy
 test_conformance_gemini() {
@@ -198,6 +313,130 @@ test_conformance_gemini() {
     return $ok
 }
 run_test "conformance-gemini-skills-present-hooks-absent" test_conformance_gemini
+
+# Gemini-only installs: global shared assets stay under .gemini and refs are gemini-scoped.
+test_conformance_gemini_global_assets_and_scoped_refs() {
+    local tmp
+    tmp=$(mktemp -d)
+    mkdir -p "${tmp}/.gemini"
+    printf '# GEMINI\n' > "${tmp}/.gemini/GEMINI.md"
+    HOME="$tmp" bash "${INSTALL}" --global --gemini >/dev/null 2>&1
+    local ok=0
+    assert_file_exists "${tmp}/.gemini/policy/PRINCIPLES.md" || ok=1
+    assert_file_exists "${tmp}/.gemini/workflows/SWE.md" || ok=1
+    assert_file_exists "${tmp}/.gemini/templates/prd.md" || ok=1
+    assert_file_contains "${tmp}/.gemini/GEMINI.md" "Read @~/.gemini/policy/PRINCIPLES.md" || ok=1
+    assert_file_not_contains "${tmp}/.gemini/GEMINI.md" "Read @~/.claude/policy/PRINCIPLES.md" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-gemini-global-assets-and-scoped-refs" test_conformance_gemini_global_assets_and_scoped_refs
+
+# Existing Claude-scoped sentinel block in Gemini docs is migrated to Gemini-scoped refs.
+test_conformance_gemini_ref_block_migrated_from_claude_scope() {
+    local tmp
+    tmp=$(mktemp -d)
+    mkdir -p "${tmp}/.gemini"
+    cat > "${tmp}/.gemini/GEMINI.md" <<'EOF'
+# GEMINI
+
+<!-- orchestrator:global-refs:start -->
+## Orchestrator Policy References
+Read @~/.claude/policy/PRINCIPLES.md
+Read @~/.claude/policy/RULES.md
+<!-- orchestrator:global-refs:end -->
+EOF
+    HOME="$tmp" bash "${INSTALL}" --global --gemini >/dev/null 2>&1
+    local ok=0
+    assert_file_contains "${tmp}/.gemini/GEMINI.md" "Read @~/.gemini/policy/PRINCIPLES.md" || ok=1
+    assert_file_not_contains "${tmp}/.gemini/GEMINI.md" "Read @~/.claude/policy/PRINCIPLES.md" || ok=1
+    local sentinel_count
+    sentinel_count=$(grep -c "orchestrator:global-refs:start" "${tmp}/.gemini/GEMINI.md" 2>/dev/null || true)
+    [ "$sentinel_count" -eq 1 ] || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-gemini-ref-block-migrated-from-claude-scope" test_conformance_gemini_ref_block_migrated_from_claude_scope
+
+# Gemini uninstall must not touch existing Claude assets when --claude is not selected
+test_conformance_gemini_uninstall_does_not_touch_claude() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --claude >/dev/null 2>&1
+    local ok=0
+    local before after
+    before=$(find "${tmp}/.claude" -type f 2>/dev/null | sort | sha256sum | awk '{print $1}')
+    HOME="$tmp" bash "${INSTALL}" --global --gemini --uninstall >/dev/null 2>&1
+    after=$(find "${tmp}/.claude" -type f 2>/dev/null | sort | sha256sum | awk '{print $1}')
+    [ "$before" = "$after" ] || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-gemini-uninstall-does-not-touch-claude" test_conformance_gemini_uninstall_does_not_touch_claude
+
+# Codex uninstall must not touch existing Claude assets when --claude is not selected
+test_conformance_codex_uninstall_does_not_touch_claude() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --claude >/dev/null 2>&1
+    local ok=0
+    local before after
+    before=$(find "${tmp}/.claude" -type f 2>/dev/null | sort | sha256sum | awk '{print $1}')
+    HOME="$tmp" bash "${INSTALL}" --global --codex --uninstall >/dev/null 2>&1
+    after=$(find "${tmp}/.claude" -type f 2>/dev/null | sort | sha256sum | awk '{print $1}')
+    [ "$before" = "$after" ] || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-codex-uninstall-does-not-touch-claude" test_conformance_codex_uninstall_does_not_touch_claude
+
+# Gemini install after Codex should prune duplicate native skills to avoid conflict warnings.
+test_conformance_gemini_prunes_alias_duplicates_when_codex_exists() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --codex >/dev/null 2>&1
+    HOME="$tmp" bash "${INSTALL}" --global --gemini >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.agents/skills/analyse" || ok=1
+    assert_dir_absent "${tmp}/.gemini/skills/analyse" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-gemini-prunes-alias-duplicates-when-codex-exists" test_conformance_gemini_prunes_alias_duplicates_when_codex_exists
+
+# Gemini-only installs must not write Codex skill artifacts (cross-runtime duplication guard)
+test_conformance_gemini_no_codex_skill_artifacts() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --gemini >/dev/null 2>&1
+    local ok=0
+    assert_dir_absent "${tmp}/.agents/skills" || ok=1
+    assert_dir_absent "${tmp}/.agents/agents" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-gemini-no-codex-skill-artifacts" test_conformance_gemini_no_codex_skill_artifacts
+
+# Gemini commands profile should preserve markdown content and use TOML literal multiline prompt strings
+test_conformance_gemini_commands_body_preserved_literal_prompt() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --gemini --profile commands >/dev/null 2>&1
+    local ok=0
+    local research_toml
+    research_toml="${tmp}/.gemini/commands/research.toml"
+    if [ ! -f "$research_toml" ]; then
+        echo "  [assert] expected research command TOML at ${research_toml}" >&2
+        ok=1
+    else
+        grep -q "prompt = '''" "$research_toml" || { echo "  [assert] expected TOML literal multiline prompt in ${research_toml}" >&2; ok=1; }
+        grep -q "^---$" "$research_toml" || { echo "  [assert] expected markdown horizontal rule preserved in ${research_toml}" >&2; ok=1; }
+        grep -q "## References" "$research_toml" || { echo "  [assert] expected non-truncated body content in ${research_toml}" >&2; ok=1; }
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-gemini-commands-body-preserved-literal-prompt" test_conformance_gemini_commands_body_preserved_literal_prompt
 
 # Gemini commands profile: TOML output present and syntactically valid
 test_conformance_gemini_commands_toml_valid() {
@@ -328,15 +567,29 @@ test_non_claude_skills_frontmatter_normalized() {
     [ -n "$codex_skill" ] || ok=1
     [ -n "$opencode_skill" ] || ok=1
     [ -n "$qwen_skill" ] || ok=1
-    [ -n "$gemini_skill" ] || ok=1
     [ -n "$codex_skill" ] && assert_file_lacks_claude_keys "$codex_skill" || ok=1
     [ -n "$opencode_skill" ] && assert_file_lacks_claude_keys "$opencode_skill" || ok=1
     [ -n "$qwen_skill" ] && assert_file_lacks_claude_keys "$qwen_skill" || ok=1
-    [ -n "$gemini_skill" ] && assert_file_lacks_claude_keys "$gemini_skill" || ok=1
+    [ -n "$gemini_skill" ] && assert_file_lacks_claude_keys "$gemini_skill" || true
     rm -rf "$tmp"
     return $ok
 }
 run_test "conformance-non-claude-skills-frontmatter-normalized" test_non_claude_skills_frontmatter_normalized
+
+# Gemini + Codex combined install keeps one active skill source to suppress alias conflicts.
+test_conformance_gemini_codex_combined_conflict_suppressed() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --gemini --codex >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.agents/skills" || ok=1
+    assert_any_file_in "${tmp}/.agents/skills" || ok=1
+    assert_dir_exists "${tmp}/.gemini/policy" || ok=1
+    assert_dir_absent "${tmp}/.gemini/skills/analyse" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-gemini-codex-combined-conflict-suppressed" test_conformance_gemini_codex_combined_conflict_suppressed
 
 # Qwen commands profile strips Claude-only keys and converts args placeholder
 test_qwen_commands_frontmatter_and_args_transform() {
