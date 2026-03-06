@@ -7,6 +7,7 @@
 #   ./install.sh [--claude|--gemini|--codex|--opencode|--qwen|--trio|--all]
 #                                        Select install targets (default selector: --claude)
 #   ./install.sh [--profile <profile>] Capability profile: skills|commands|hooks|scripts|all (default: auto)
+#   ./install.sh [--hooks]             Enable hooks install for runtimes that support hooks (default: disabled)
 #   ./install.sh [--namespace <name>]  Override agent/skill/command namespace (default: flat)
 #   ./install.sh [--no-namespace]      Use flat agents/skills/commands paths (no namespace)
 #   ./install.sh --overwrite           Overwrite existing files (backup to .backup/)
@@ -53,6 +54,7 @@ DEFAULT_RUNTIME_SELECTOR="--claude"
 
 # Profile: "auto" = runtime-specific default, or one of: skills, commands, hooks, scripts, all
 PROFILE="auto"
+HOOKS_ENABLED=false
 
 # Print usage
 usage() {
@@ -86,6 +88,7 @@ Profile flags (controls which capability artifacts are installed):
                                        - scripts: embedded within skill packages (no extra step)
                                        - all: install all capabilities supported by the runtime
                                        Default when runtime supports skills: skills
+    --hooks                            Enable hook installation + Claude hook settings merge (default: disabled)
 
 Namespace flags:
     --namespace <name>                 Override namespace for agents/skills/commands (default: flat)
@@ -108,8 +111,8 @@ What gets installed per runtime (default skills profile):
     - agents/*.md          Agent definitions [default profile]
     - skills/<skill>/      Skills [default profile]
     - commands/            Commands in .md format [--profile commands only]
-    - hooks/scripts/       Hook scripts [default profile]
-    - settings.json        Hook and MCP configuration
+    - hooks/scripts/       Hook scripts [only when --hooks is passed]
+    - settings.json        MCP + runtime settings (hook settings only when --hooks is passed)
     - policy/              PRINCIPLES.md, RULES.md
     - workflows/           SWE.md, meta-learning.md
     - templates/           PRD, architecture, ADR, roadmap, backlog, issues
@@ -164,7 +167,7 @@ Profile defaults per runtime:
         Optional --namespace translation is runtime/artifact-aware:
           - Skills/agents on flat runtimes: <namespace>-<name> fallback
           - Commands on Gemini/Qwen: <namespace>/<name> for /<namespace>:<name>
-        Hooks are installed only where runtime support is enabled by installer policy (claude).
+        Hooks are installed only when --hooks is passed and runtime support is enabled by installer policy (claude).
     Use --profile commands to install command-format artifacts for selected runtimes.
 
 Examples:
@@ -1320,6 +1323,9 @@ install_runtime_global() {
             eff_profile="commands"
         fi
     fi
+    if [[ "$HOOKS_ENABLED" != "true" ]] && [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [[ "$eff_profile" == "skills" || "$eff_profile" == "hooks" || "$eff_profile" == "all" ]]; then
+        log_info "${rt}: hooks disabled by default; pass --hooks to install hooks"
+    fi
     local skills_namespace agents_namespace commands_namespace
     skills_namespace="$(effective_namespace_for_runtime_artifact "$rt" "skills")"
     agents_namespace="$(effective_namespace_for_runtime_artifact "$rt" "agents")"
@@ -1369,14 +1375,8 @@ install_runtime_global() {
         fi
     fi
 
-    # Hooks: install when profile is hooks or all, and runtime supports hooks
-    if [[ "$eff_profile" == "hooks" || "$eff_profile" == "all" ]]; then
-        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/hooks" ]; then
-            local hooks_target="${target}/${RUNTIME_HOOKS_PATH[${rt}]}"
-            copy_directory "${PACKAGE_DIR}/hooks" "$hooks_target" "$backup_dir"
-        fi
-    elif [[ "$eff_profile" == "skills" ]]; then
-        # skills profile also installs hooks (existing behavior for claude)
+    # Hooks: install only when explicitly enabled via --hooks.
+    if [[ "$HOOKS_ENABLED" == "true" ]] && [[ "$eff_profile" == "hooks" || "$eff_profile" == "all" || "$eff_profile" == "skills" ]]; then
         if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/hooks" ]; then
             local hooks_target="${target}/${RUNTIME_HOOKS_PATH[${rt}]}"
             copy_directory "${PACKAGE_DIR}/hooks" "$hooks_target" "$backup_dir"
@@ -1412,6 +1412,9 @@ install_runtime_project() {
         else
             eff_profile="commands"
         fi
+    fi
+    if [[ "$HOOKS_ENABLED" != "true" ]] && [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [[ "$eff_profile" == "skills" || "$eff_profile" == "hooks" || "$eff_profile" == "all" ]]; then
+        log_info "${rt}: hooks disabled by default; pass --hooks to install hooks"
     fi
     local skills_namespace agents_namespace commands_namespace
     skills_namespace="$(effective_namespace_for_runtime_artifact "$rt" "skills")"
@@ -1462,14 +1465,8 @@ install_runtime_project() {
         fi
     fi
 
-    # Hooks: install when profile is hooks or all, and runtime supports hooks
-    if [[ "$eff_profile" == "hooks" || "$eff_profile" == "all" ]]; then
-        if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/hooks" ]; then
-            local hooks_target="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
-            copy_directory "${PACKAGE_DIR}/hooks" "$hooks_target" "$backup_dir"
-        fi
-    elif [[ "$eff_profile" == "skills" ]]; then
-        # skills profile also installs hooks (existing behavior for claude)
+    # Hooks: install only when explicitly enabled via --hooks.
+    if [[ "$HOOKS_ENABLED" == "true" ]] && [[ "$eff_profile" == "hooks" || "$eff_profile" == "all" || "$eff_profile" == "skills" ]]; then
         if [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" == "true" ]] && [ -d "${PACKAGE_DIR}/hooks" ]; then
             local hooks_target="${rt_target}/${RUNTIME_HOOKS_PATH[${rt}]}"
             copy_directory "${PACKAGE_DIR}/hooks" "$hooks_target" "$backup_dir"
@@ -1679,8 +1676,14 @@ install_global() {
     fi
 
     # Claude-specific settings are only merged when claude runtime is active.
-    if [ "$REF_CLAUDE" = true ] && [ -f "${PACKAGE_DIR}/settings.json" ]; then
-        merge_json "${PACKAGE_DIR}/settings.json" "${claude_target}/settings.json" "$backup_dir"
+    if [ "$REF_CLAUDE" = true ]; then
+        local claude_settings_source="${PACKAGE_DIR}/settings.no-hooks.json"
+        if [ "$HOOKS_ENABLED" = true ]; then
+            claude_settings_source="${PACKAGE_DIR}/settings.json"
+        fi
+        if [ -f "$claude_settings_source" ]; then
+            merge_json "$claude_settings_source" "${claude_target}/settings.json" "$backup_dir"
+        fi
     fi
 
     # Claude-specific user-scope MCP config is only merged when claude runtime is active.
@@ -2405,6 +2408,10 @@ main() {
                     skills|commands|hooks|scripts|all|auto) ;;
                     *) log_error "Invalid --profile: ${PROFILE}. Valid: skills commands hooks scripts all auto"; exit 1 ;;
                 esac
+                shift
+                ;;
+            --hooks)
+                HOOKS_ENABLED=true
                 shift
                 ;;
             --check)

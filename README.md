@@ -36,13 +36,16 @@ AgentOrchestrator transforms Claude Code from a single-turn assistant into an or
 | OpenCode    | `--opencode`  | Yes               | Yes    | No    | Yes            |
 | Qwen Code   | `--qwen`      | Yes               | Yes    | No    | Yes            |
 
-`skills` is the default profile for all five runtimes. `commands` remains available via `--profile commands` as compatibility mode. For Codex, skills/agents stay in `~/.agents/`, while compatibility commands are written to `~/.codex/prompts/`.
+`skills` is the default profile for all five runtimes. Hooks are disabled by default and installed only when `--hooks` is passed. `commands` remains available via `--profile commands` as compatibility mode. For Codex, skills/agents stay in `~/.agents/`, while compatibility commands are written to `~/.codex/prompts/`.
 
 ### Installation
 
 ```bash
 # Install globally to Claude Code (default runtime)
 ./install.sh --global
+
+# Install globally with hooks enabled
+./install.sh --global --hooks
 
 # Install to multiple runtimes in one run
 ./install.sh --global --codex --qwen
@@ -78,7 +81,7 @@ AgentOrchestrator transforms Claude Code from a single-turn assistant into an or
 | agents/           | Yes                   | Yes                   | No                    | Yes                              | Yes               |
 | skills/           | Yes (default)         | Yes (default)         | Yes (default)         | Yes (default)                    | Yes (default)     |
 | commands/         | Yes (`--profile commands`) | Yes (`~/.codex/prompts`, `--profile commands`) | Yes (`--profile commands`) | Yes (`--profile commands`) | Yes (`--profile commands`) |
-| hooks/            | Yes                   | No                    | No                    | No                               | No                |
+| hooks/            | Yes (`--hooks`)       | No                    | No                    | No                               | No                |
 | settings.json     | Yes                   | No                    | No                    | No                               | No                |
 | policy/           | Yes                   | No                    | No                    | No                               | No                |
 | workflows/        | Yes                   | No                    | No                    | No                               | No                |
@@ -264,11 +267,11 @@ MCP servers are pre-configured in `settings.json`. Serena requires `uvx` for dyn
 
 ## Hook System
 
-Orchestrator uses Claude Code hooks for lifecycle management.
+Orchestrator can use Claude Code hooks for lifecycle management when installed with `--hooks`.
 
 ### Global Hooks (command-based)
 
-Installed to `~/.claude/settings.json`:
+Installed to `~/.claude/settings.json` when `--hooks` is passed:
 
 | Event | Script | Purpose |
 |-------|--------|---------|
@@ -298,7 +301,7 @@ Hooks provide **reminders**, not enforcement. Agents decide whether to act (ADR-
 ### Global Settings (`~/.claude/settings.json`)
 
 Installed by `--global` flag. Contains:
-- Hook configurations (command-based)
+- Hook configurations (command-based, only when `--hooks` is passed)
 - MCP server definitions (Serena, Context7, DeepWiki, Parallel Search, Parallel Task, Playwright)
 - Default permissions
 

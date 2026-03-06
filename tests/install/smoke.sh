@@ -193,11 +193,26 @@ run_test "smoke-install-global-all-shortcut" test_smoke_global_all_shortcut
 echo ""
 echo "=== T-088: Conformance Tests (Capability Presence/Absence) ==="
 
-# Claude: skills + hooks present; agents present
-test_conformance_claude() {
+# Claude default: skills present; hooks disabled unless --hooks; agents present
+test_conformance_claude_default() {
     local tmp
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --claude >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${tmp}/.claude/skills" || ok=1
+    assert_any_file_in "${tmp}/.claude/skills" || ok=1
+    assert_dir_absent "${tmp}/.claude/hooks" || ok=1
+    assert_dir_exists "${tmp}/.claude/agents" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-claude-default-hooks-absent" test_conformance_claude_default
+
+# Claude with --hooks: hooks present
+test_conformance_claude_with_hooks() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --claude --hooks >/dev/null 2>&1
     local ok=0
     assert_dir_exists "${tmp}/.claude/skills" || ok=1
     assert_any_file_in "${tmp}/.claude/skills" || ok=1
@@ -207,7 +222,7 @@ test_conformance_claude() {
     rm -rf "$tmp"
     return $ok
 }
-run_test "conformance-claude-skills-hooks-present" test_conformance_claude
+run_test "conformance-claude-hooks-present-with-flag" test_conformance_claude_with_hooks
 
 # Codex: skills present; hooks absent
 test_conformance_codex() {
