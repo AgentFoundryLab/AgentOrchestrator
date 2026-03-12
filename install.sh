@@ -153,7 +153,7 @@ What gets installed per runtime (default skills profile):
     - [no hooks — excluded by installer policy]
 
 --project installs to <path>/ (runtime-agnostic scaffolding):
-    - docs/                Provisioned folder tree with .gitkeep
+    - docs/                Provisioned folder tree with .gitignore placeholders
     - docs/policy/         STANDARDS.md, GUIDELINES.md templates
     - docs/knowledge/      README.md
     - reports/             analysis/, research/ directories
@@ -1752,13 +1752,18 @@ install_project() {
     local backup_dir
     backup_dir=$(create_backup_dir "$target")
 
-    # 1. Provision docs folder tree with .gitkeep
+    # 1. Provision docs folder tree with .gitignore placeholders
     local dirs=(docs/policy docs/objectives docs/architecture docs/architecture/adr
-                docs/development docs/knowledge reports/analysis reports/research)
+                docs/development docs/knowledge docs/knowledge/decisions
+                docs/knowledge/domain docs/knowledge/patterns docs/knowledge/runbooks
+                reports/analysis reports/research)
     for d in "${dirs[@]}"; do
         mkdir -p "${target}/${d}"
         if [ -z "$(ls -A "${target}/${d}" 2>/dev/null)" ]; then
-            touch "${target}/${d}/.gitkeep"
+            printf '# Placeholder to keep this directory in git.\n' > "${target}/${d}/.gitignore"
+        elif [ -f "${target}/${d}/.gitkeep" ] && [ ! -f "${target}/${d}/.gitignore" ] && [ "$(find "${target}/${d}" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]; then
+            rm -f "${target}/${d}/.gitkeep"
+            printf '# Placeholder to keep this directory in git.\n' > "${target}/${d}/.gitignore"
         fi
     done
 
@@ -1772,20 +1777,26 @@ install_project() {
     copy_markdown "${PACKAGE_DIR}/templates/guidelines.md" \
                   "${target}/docs/policy/GUIDELINES.md" "$backup_dir" "docs/policy/GUIDELINES.md"
 
-    # 4. Deploy shared claude assets (templates, policy, workflows) — always written to .claude/
-    #    regardless of which runtimes are active, as these are project-level reference files.
-    copy_directory "${PACKAGE_DIR}/templates" "${target}/.claude/templates" "$backup_dir"
-    copy_directory "${PACKAGE_DIR}/policy" "${target}/.claude/policy" "$backup_dir"
-    if [ -d "${PACKAGE_DIR}/workflows" ]; then
-        copy_directory "${PACKAGE_DIR}/workflows" "${target}/.claude/workflows" "$backup_dir"
-    fi
+    local active_runtimes
+    read -ra active_runtimes <<< "$(get_active_runtimes)"
+
+    # 4. Deploy shared runtime assets (templates, policy, workflows) into each
+    #    selected runtime's project root so installed skills/agents resolve the
+    #    same relative locations across Claude, Codex, Gemini, OpenCode, and Qwen.
+    for rt in "${active_runtimes[@]}"; do
+        local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
+        local rt_backup_dir="${backup_dir}/shared-project-${rt}"
+        copy_directory "${PACKAGE_DIR}/templates" "${rt_target}/templates" "$rt_backup_dir"
+        copy_directory "${PACKAGE_DIR}/policy" "${rt_target}/policy" "$rt_backup_dir"
+        if [ -d "${PACKAGE_DIR}/workflows" ]; then
+            copy_directory "${PACKAGE_DIR}/workflows" "${rt_target}/workflows" "$rt_backup_dir"
+        fi
+    done
 
     # T-081: check for cross-runtime path collisions
     check_runtime_collisions
 
     # 5. Install per-runtime project artifacts using registry
-    local active_runtimes
-    read -ra active_runtimes <<< "$(get_active_runtimes)"
     for rt in "${active_runtimes[@]}"; do
         install_runtime_project "$rt" "$target" "$backup_dir"
     done
@@ -2147,26 +2158,32 @@ restore_project() {
         "${target}/docs/policy/GUIDELINES.md" \
         "$docs_backup_guidelines"
 
-    # Restore/remove managed .claude shared trees (surgical file-level).
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/templates" \
-        "${target}/.claude/templates" \
-        "$backup_dir" \
-        "templates"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/policy" \
-        "${target}/.claude/policy" \
-        "$backup_dir" \
-        "policy"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/workflows" \
-        "${target}/.claude/workflows" \
-        "$backup_dir" \
-        "workflows"
-
-    # Restore per-runtime project artifacts using registry
     local active_runtimes
     read -ra active_runtimes <<< "$(get_active_runtimes)"
+
+    # Restore/remove managed shared runtime trees (surgical file-level).
+    for rt in "${active_runtimes[@]}"; do
+        local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
+        local rt_backup_dir=""
+        [ -n "$backup_dir" ] && rt_backup_dir="${backup_dir}/shared-project-${rt}"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/templates" \
+            "${rt_target}/templates" \
+            "$rt_backup_dir" \
+            "templates"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/policy" \
+            "${rt_target}/policy" \
+            "$rt_backup_dir" \
+            "policy"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/workflows" \
+            "${rt_target}/workflows" \
+            "$rt_backup_dir" \
+            "workflows"
+    done
+
+    # Restore per-runtime project artifacts using registry
     for rt in "${active_runtimes[@]}"; do
         restore_runtime_project "$rt" "$target" "$backup_dir"
     done
@@ -2290,17 +2307,21 @@ cleanup_project() {
         "${PACKAGE_DIR}/templates/guidelines.md" \
         "${target}/docs/policy/GUIDELINES.md" ""
 
-    # Remove managed .claude shared trees (no backup restore).
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/templates" "${target}/.claude/templates" "" "templates"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/policy" "${target}/.claude/policy" "" "policy"
-    restore_or_remove_installed_tree \
-        "${PACKAGE_DIR}/workflows" "${target}/.claude/workflows" "" "workflows"
-
-    # Remove per-runtime project artifacts using registry (no backup restore).
     local active_runtimes
     read -ra active_runtimes <<< "$(get_active_runtimes)"
+
+    # Remove managed shared runtime trees (no backup restore).
+    for rt in "${active_runtimes[@]}"; do
+        local rt_target="${target}/${RUNTIME_PROJECT_DIR[${rt}]}"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/templates" "${rt_target}/templates" "" "templates"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/policy" "${rt_target}/policy" "" "policy"
+        restore_or_remove_installed_tree \
+            "${PACKAGE_DIR}/workflows" "${rt_target}/workflows" "" "workflows"
+    done
+
+    # Remove per-runtime project artifacts using registry (no backup restore).
     for rt in "${active_runtimes[@]}"; do
         restore_runtime_project "$rt" "$target" ""
     done
