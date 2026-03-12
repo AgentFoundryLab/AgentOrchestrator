@@ -43,8 +43,18 @@ Priority order for preservation (highest → lowest):
 
 ### 1. Run Estimation Script
 
+The estimator is bundled with the distill skill package. Resolve it relative to this `SKILL.md` file, not relative to the current working directory.
+
+Typical locations:
+- Repo source: `package/skills/distill/scripts/estimate_distill.py`
+- Codex global install: `~/.agents/skills/distill/scripts/estimate_distill.py`
+- Claude global install: `~/.claude/skills/distill/scripts/estimate_distill.py`
+- Gemini global install: `~/.gemini/skills/distill/scripts/estimate_distill.py`
+
+Run the resolved estimator path:
+
 ```bash
-scripts/estimate_distill.py "$FILE" [content_type]
+"$DISTILL_ESTIMATOR" "$FILE" [content_type]
 ```
 
 ### 2. Present Results & Confirm
@@ -77,7 +87,7 @@ Remove ONLY what "May Remove" permits for selected level.
 After writing, measure actual tokens:
 
 ```bash
-scripts/estimate_distill.py "$FILE" [content_type]
+"$DISTILL_ESTIMATOR" "$FILE" [content_type]
 ```
 
 Report (compare against initial estimation, not generic range):
@@ -96,6 +106,7 @@ If variance >10%, warn and offer git restore.
 ## Anti-Patterns
 
 - Distilling without estimation first
+- Assuming `scripts/estimate_distill.py` exists relative to the current working directory
 - Removing content not permitted by level's "May Remove"
 - Not verifying actual vs target reduction
 - Skipping user confirmation
