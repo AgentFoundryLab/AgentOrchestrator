@@ -50,11 +50,11 @@ Analyze for recurring themes:
 
 ### 3. Map to Components
 For each pattern, identify relevant Orchestrator component:
-- Agent instructions → `.claude/agents/*.md` (project) or `~/.claude/agents/*.md` (global)
-- Skill workflows → `.claude/skills/*/SKILL.md` (project) or `~/.claude/skills/*/SKILL.md` (global)
-- Hook prompts → `.claude/hooks/scripts/*.sh` (project) or `~/.claude/hooks/scripts/*.sh` (global)
+- Agent instructions → `<project>/<runtime-root>/agents/*.md` locally, or the runtime's installed agent files globally
+- Skill workflows → `<project>/<runtime-root>/skills/*/SKILL.md` locally, or the runtime's installed skill files globally
+- Hook prompts → `<runtime-root>/hooks/scripts/*.sh` where the runtime supports hooks
 - Rules → `docs/policy/{STANDARDS,GUIDELINES}.md` (project) and runtime `RULES.md` (global)
-- Workflows → `.claude/workflows/*.md` (project) or `~/.claude/workflows/*.md` (global)
+- Workflows → `<runtime-root>/workflows/*.md` (project or global for the active runtime)
 
 ### 4. Draft Proposals
 For each improvement:

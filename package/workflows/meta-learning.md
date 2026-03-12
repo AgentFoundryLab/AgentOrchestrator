@@ -205,8 +205,8 @@ What can be optimized:
 | Agent instructions | `package/agents/*.md` or `.claude/agents/jarvis/*.md` | Add clarifying guidance |
 | Skill workflows | `package/skills/*/SKILL.md` or `.claude/skills/jarvis/*/SKILL.md` | Improve process steps |
 | Hook prompts | `package/hooks/scripts/*.sh` or `.claude/hooks/scripts/*.sh` | Refine reminder text |
-| Rules | `package/policy/RULES.md` or `~/.claude/policy/RULES.md` | Add new rule from pattern |
-| Workflow templates | `package/workflows/*.md` or `~/.claude/workflows/*.md` | Adjust decision criteria |
+| Rules | `package/policy/RULES.md` or `<runtime-root>/policy/RULES.md` | Add new rule from pattern |
+| Workflow templates | `package/workflows/*.md` or `<runtime-root>/workflows/*.md` | Adjust decision criteria |
 
 ---
 

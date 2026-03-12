@@ -158,5 +158,5 @@ Before completing:
 
 ## Policy References
 
-**Should-read** from `~/.claude/policy/RULES.md`:
+**Should-read** from the active runtime root's `policy/RULES.md`:
 - Failure Investigation - Root cause analysis, never skip tests or validation

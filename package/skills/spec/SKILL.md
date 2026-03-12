@@ -92,7 +92,7 @@ Before completing, verify:
 
 ## Template Reference
 
-Template source: installed templates directory (`~/.claude/templates/` or `.claude/templates/`):
+Template source: installed templates directory under the active runtime root (`templates/` inside `~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`, or the matching project-local runtime directory):
 - `prd.md`
 
 Use the PRD template structure:

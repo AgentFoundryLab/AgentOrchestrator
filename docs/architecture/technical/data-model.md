@@ -105,7 +105,7 @@ Policy files are versioned configuration artifacts.
 | updated | date | required for project | YYYY-MM-DD |
 | body | markdown | required | Policy content |
 
-**Global Policy Entities** (in `~/.claude/policy/`):
+**Global Policy Entities** (in `<runtime-root>/policy/`):
 - `PRINCIPLES.md` — Universal SW engineering philosophy
 - `RULES.md` — Agent behavioral rules (orchestrator-level)
 

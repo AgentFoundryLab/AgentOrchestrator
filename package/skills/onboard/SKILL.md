@@ -26,9 +26,9 @@ Analyze a brownfield project and generate concise governance docs from repositor
 - `docs/INDEX.md`
 
 Generate from templates:
-- `.claude/templates/standards.md` (project) or `~/.claude/templates/standards.md` (global)
-- `.claude/templates/guidelines.md` (project) or `~/.claude/templates/guidelines.md` (global)
-- `.claude/templates/index.md` (project) or `~/.claude/templates/index.md` (global)
+- `<runtime-root>/templates/standards.md` (project or global for the active runtime)
+- `<runtime-root>/templates/guidelines.md` (project or global for the active runtime)
+- `<runtime-root>/templates/index.md` (project or global for the active runtime)
 
 These files are generated artifacts. Do not hand-author policy/index content outside `/onboard` output updates.
 
@@ -37,7 +37,7 @@ If `AGENTS.md` does not reference `docs/INDEX.md`, update it and remove duplicat
 ## Inputs
 
 - `$ARGUMENTS`: Project path (defaults to current directory)
-- Global policies: `~/.claude/policy/PRINCIPLES.md`, `~/.claude/policy/RULES.md`
+- Global policies from the active runtime root's `policy/` directory
 
 ## Output Contract
 
@@ -63,8 +63,8 @@ If a detail already has a canonical source, reference it instead of reproducing 
 
 ### 1) Load Global Context
 Read:
-- `~/.claude/policy/PRINCIPLES.md`
-- `~/.claude/policy/RULES.md`
+- `<runtime-root>/policy/PRINCIPLES.md`
+- `<runtime-root>/policy/RULES.md`
 
 ### 2) Inspect Project Evidence
 Sample only high-signal sources:

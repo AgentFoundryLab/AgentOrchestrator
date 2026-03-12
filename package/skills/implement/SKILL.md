@@ -157,7 +157,7 @@ If blocked:
 
 ## Policy References
 
-**Should-read** from `~/.claude/policy/RULES.md`:
+**Should-read** from the active runtime root's `policy/RULES.md`:
 - Implementation Completeness - No partial features, no TODOs
 - Git Workflow - Feature branches, incremental commits
 - Safety Rules - Framework respect, pattern adherence

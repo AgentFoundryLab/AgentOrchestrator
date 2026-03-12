@@ -161,5 +161,5 @@ Before deploying:
 
 ## Policy References
 
-**Should-read** from `~/.claude/policy/RULES.md`:
+**Should-read** from the active runtime root's `policy/RULES.md`:
 - Safety Rules - Transaction-safe, systematic changes

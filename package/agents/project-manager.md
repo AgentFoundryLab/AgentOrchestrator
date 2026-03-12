@@ -68,7 +68,7 @@ Return a concise summary:
 
 ## Policies
 
-MUST Read @~/.claude/policy/PRINCIPLES.md
+MUST Read global `PRINCIPLES.md` from the active runtime root's `policy/` directory
 SHOULD Read @docs/policy/GUIDELINES.md
 MUST Read @docs/knowledge/README.md
 MUST Read `docs/knowledge/decisions/` (if present)

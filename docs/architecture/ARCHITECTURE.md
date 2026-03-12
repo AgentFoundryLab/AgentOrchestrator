@@ -472,12 +472,12 @@ Two-tier policy structure separates framework-level rules from project-specific 
 
 > **See**: [ADR-006](adr/006-policy-modularization.md) and [ADR-012](adr/012-governance-rationalization.md)
 
-**Tier 1: Global Framework Policy** (auto-loaded via `~/.claude/CLAUDE.md` `@`-references)
+**Tier 1: Global Framework Policy** (auto-loaded via runtime-native root docs `@`-references)
 
 | File | Tokens | Purpose | Scope |
 |------|--------|---------|-------|
-| `~/.claude/policy/PRINCIPLES.md` | ~640 | Universal SW engineering philosophy | All agents, always |
-| `~/.claude/policy/RULES.md` | ~4,200 | Agent behavioral rules | Orchestrator-level |
+| `<runtime-root>/policy/PRINCIPLES.md` | ~640 | Universal SW engineering philosophy | All agents, always |
+| `<runtime-root>/policy/RULES.md` | ~4,200 | Agent behavioral rules | Orchestrator-level |
 
 **Tier 2: Project-Specific Policy** (auto-loaded via project `CLAUDE.md` `@`-references)
 
@@ -490,8 +490,8 @@ Two-tier policy structure separates framework-level rules from project-specific 
 
 | Source | Installed To |
 |--------|-------------|
-| `package/policy/PRINCIPLES.md` | `~/.claude/policy/PRINCIPLES.md` |
-| `package/policy/RULES.md` | `~/.claude/policy/RULES.md` |
+| `package/policy/PRINCIPLES.md` | `<runtime-root>/policy/PRINCIPLES.md` |
+| `package/policy/RULES.md` | `<runtime-root>/policy/RULES.md` |
 | `package/templates/standards.md` | Template used by `/onboard` to create `docs/policy/STANDARDS.md` |
 | `package/templates/guidelines.md` | Template used by `/onboard` to create `docs/policy/GUIDELINES.md` |
 
@@ -502,9 +502,9 @@ Two-tier policy structure separates framework-level rules from project-specific 
 #### 6.2 Policy Loading Flow
 
 ```
-~/.claude/CLAUDE.md
-  @~/.claude/policy/PRINCIPLES.md     ← always in context
-  @~/.claude/policy/RULES.md          ← always in context (orchestrator)
+<runtime-root>/<runtime-doc>
+  @<runtime-root>/policy/PRINCIPLES.md     ← always in context
+  @<runtime-root>/policy/RULES.md          ← always in context (orchestrator)
 
 <project>/CLAUDE.md
   @docs/policy/STANDARDS.md           ← project MUST conventions (if exists)
@@ -688,15 +688,15 @@ orchestrator/
 │   │       ├── checkpoint-session.sh
 │   │       └── setup-project.sh
 │   │
-│   ├── policy/                         # → ~/.claude/policy/
+│   ├── policy/                         # → <runtime-root>/policy/
 │   │   ├── RULES.md
 │   │   └── PRINCIPLES.md
 │   │
-│   ├── workflows/                      # → ~/.claude/workflows/
+│   ├── workflows/                      # → <runtime-root>/workflows/
 │   │   ├── SWE.md
 │   │   └── meta-learning.md
 │   │
-│   ├── templates/                      # → ~/.claude/templates/ (and project-local)
+│   ├── templates/                      # → <runtime-root>/templates/ (and project-local)
 │       ├── vision.md
 │       ├── blueprint.md
 │       ├── prd.md

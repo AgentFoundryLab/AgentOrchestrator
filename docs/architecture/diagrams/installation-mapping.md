@@ -5,25 +5,25 @@ REPOSITORY                              INSTALLATION TARGETS
 
 orchestrator/
 |
-+-- package/                ---------------------> ~/.claude/
-|   +-- agents/                                   +-- agents/jarvis/
++-- package/                ---------------------> <runtime-global-root>/
+|   +-- agents/                                   +-- agents/
 |   |   +-- *.md            [warn if different]   |   +-- *.md
-|   +-- skills/                                   +-- skills/jarvis/
+|   +-- skills/                                   +-- skills/
 |   |   +-- */SKILL.md      [warn if different]   |   +-- */SKILL.md
-|   +-- hooks/                                    +-- hooks/
+|   +-- hooks/                                    +-- hooks/              (runtime support varies)
 |   |   +-- scripts/*.sh    [backup + overwrite]      +-- scripts/*.sh
-|   +-- settings.json       [patch/merge]         +-- settings.json
-|   +-- mcp.json            [patch/merge]         +-- ~/.claude.json:mcpServers
+|   +-- settings.json       [patch/merge]         +-- settings.json       (runtime-specific where supported)
+|   +-- mcp.json            [patch/merge]         +-- runtime MCP config  (Claude-specific today)
 |   +-- policy/                                   +-- policy/
 |   +-- workflows/                                +-- workflows/
 |   +-- templates/                                +-- templates/
 |
 +-- package/                ---------------------> <target-project>/
-    +-- agents/                                   +-- .claude/agents/jarvis/
-    +-- skills/                                   +-- .claude/skills/jarvis/
-    +-- policy/                                   +-- .claude/policy/
-    +-- workflows/                                +-- .claude/workflows/
-    +-- templates/                                +-- .claude/templates/
+    +-- agents/                                   +-- <runtime-root>/agents/
+    +-- skills/                                   +-- <runtime-root>/skills/
+    +-- policy/                                   +-- <runtime-root>/policy/
+    +-- workflows/                                +-- <runtime-root>/workflows/
+    +-- templates/                                +-- <runtime-root>/templates/
     +-- templates/{knowledge,standards,guidelines}.md
         [create/warn]                             +-- docs/{knowledge,policy}/...
     +-- (scaffold dirs)                           +-- docs/*, reports/*, .serena/

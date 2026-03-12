@@ -94,11 +94,11 @@ Pass `--namespace <name>` to enable runtime-aware namespace translation:
 - Gemini and Qwen commands use native directory namespaces (`commands/<ns>/<name>` => `/<ns>:<name>`).
 
 **`--project` installs to `<path>/`:**
-- `.claude/agents/` - Project-local agents (default flat)
-- `.claude/skills/` - Project-local skills (default flat)
-- `.claude/templates/` - Project-local template copies
-- `.claude/policy/` - Project-local policy copies
-- `.claude/workflows/` - Project-local workflow copies
+- `<runtime-root>/agents/` - Project-local agents for each selected runtime (`.claude/`, `.agents/`, `.gemini/`, `.opencode/`, `.qwen/` as applicable)
+- `<runtime-root>/skills/` - Project-local skills for each selected runtime
+- `<runtime-root>/templates/` - Project-local template copies for each selected runtime
+- `<runtime-root>/policy/` - Project-local policy copies for each selected runtime
+- `<runtime-root>/workflows/` - Project-local workflow copies for each selected runtime
 - `.serena/project.yml` - Auto-generated via `uvx` (language auto-detection)
 - `docs/policy/` - RULES.md, GUIDELINES.md templates
 - `docs/knowledge/` - Project knowledge base
@@ -319,7 +319,7 @@ Three-tier policy structure:
 
 | Location | Purpose | Installed To |
 |----------|---------|--------------|
-| `package/policy/` | Framework-wide policy source in this repo | `~/.claude/policy/` and `<project>/.claude/policy/` |
+| `package/policy/` | Framework-wide policy source in this repo | `<runtime-root>/policy/` globally and project-locally for the selected runtime(s) |
 | `docs/policy/` | Orchestrator repo policy docs | In-repo only |
 | `<project>/docs/policy/` | Project template output (STANDARDS, GUIDELINES) | `<project>/docs/policy/` |
 
@@ -334,7 +334,7 @@ Projects can customize `<project>/docs/policy/` files to supplement (not replace
 
 ## Templates
 
-Orchestrator template source lives in `package/templates/` and is installed to `~/.claude/templates/` (global) and `<project>/.claude/templates/` (project-local):
+Orchestrator template source lives in `package/templates/` and is installed to `<runtime-root>/templates/` globally and project-locally for the selected runtime(s) (`~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`, and matching project-local roots):
 
 | Template | Purpose | Output Location |
 |----------|---------|-----------------|

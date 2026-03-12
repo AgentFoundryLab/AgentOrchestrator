@@ -428,6 +428,6 @@ Check documentation quality:
 
 ## Policy References
 
-**Should-read** from `~/.claude/policy/RULES.md`:
+**Should-read** from the active runtime root's `policy/RULES.md`:
 - Professional Honesty - No marketing language, accurate claims
 - File Organization - Purpose-based organization

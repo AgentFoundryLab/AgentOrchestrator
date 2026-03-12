@@ -172,7 +172,7 @@ Based on research:
 
 ## Policy References
 
-**Should-read** from `~/.claude/policy/RULES.md`:
+**Should-read** from the active runtime root's `policy/RULES.md`:
 - Tool Optimization - MCP tool selection priority
 
 ### Documentation Tool Selection

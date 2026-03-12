@@ -155,7 +155,7 @@ Document API and integration contracts at `docs/architecture/technical/contracts
 
 ## Template Reference
 
-Template source: installed templates directory (`~/.claude/templates/` or `.claude/templates/`):
+Template source: installed templates directory under the active runtime root (`templates/` inside `~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`, or the matching project-local runtime directory):
 - `architecture.md` — Complete ARCHITECTURE structure
 - `adr.md` — ADR template
 

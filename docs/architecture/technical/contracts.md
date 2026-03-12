@@ -125,7 +125,7 @@ EOF
 
 ## Artifact Schemas
 
-Templates are the source of truth for artifact structure. They live in `package/templates/` and install to `~/.claude/templates/` (global) or `<target>/.claude/templates/` (project-local).
+Templates are the source of truth for artifact structure. They live in `package/templates/` and install to `<runtime-root>/templates/` globally and project-locally for the selected runtime.
 
 | Artifact | Output Path | Template | Hydrated By |
 |----------|-------------|----------|-------------|

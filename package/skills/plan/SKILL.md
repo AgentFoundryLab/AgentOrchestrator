@@ -217,7 +217,7 @@ Parallel Group A: Epic A, Epic B, Epic C (all blocked by Epic Foundation)
 
 ## Template References
 
-Template source: installed templates directory (`~/.claude/templates/` or `.claude/templates/`):
+Template source: installed templates directory under the active runtime root (`templates/` inside `~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`, or the matching project-local runtime directory):
 - `roadmap.md` - Complete ROADMAP structure
 - `backlog.md` - Complete BACKLOG structure
 

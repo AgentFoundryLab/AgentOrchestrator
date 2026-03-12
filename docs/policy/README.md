@@ -1,11 +1,11 @@
 # Project Policy Files
 
-This directory contains project-specific policy outputs that supplement (not replace) global policy in `~/.claude/policy/`.
+This directory contains project-specific policy outputs that supplement (not replace) global policy in the active runtime root's `policy/` directory.
 
 ## Effective Hierarchy
 
 ```
-~/.claude/policy/         # Global (framework-level)
+<runtime-root>/policy/    # Global (framework-level)
 ├── PRINCIPLES.md         # Engineering principles
 └── RULES.md              # Orchestrator behavior rules
 

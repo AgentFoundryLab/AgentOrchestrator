@@ -66,7 +66,7 @@ docs/policy/           # Project policy
 
 Loading behavior:
 
-- Global runtime loads `~/.claude/policy/PRINCIPLES.md` and `~/.claude/policy/RULES.md`.
+- Global runtime loads `policy/PRINCIPLES.md` and `policy/RULES.md` from the active runtime root (for example `~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, or `~/.qwen/`).
 - Project runtime loads `docs/policy/STANDARDS.md` and `docs/policy/GUIDELINES.md` when present.
 - Sub-agents receive principles plus project standards/guidelines via injected references.
 - `RULES.md` remains orchestrator-level.
@@ -74,7 +74,7 @@ Loading behavior:
 ### Install Context Boundary (Project-Only)
 
 - `package/` is framework source authoring context.
-- Installed/runtime execution context is project/global runtime paths (for example `.claude/`, `~/.claude/`, and project `docs/` outputs).
+- Installed/runtime execution context is project/global runtime paths (for example `.claude/`, `.agents/`, `.gemini/`, `.opencode/`, `.qwen/`, their matching `~/` roots, and project `docs/` outputs).
 - Any agent/skill instruction intended to run after install must be valid in runtime context, not source-only context.
 - Source-internal references belong in maintainer/build docs, not runtime instruction bodies.
 
