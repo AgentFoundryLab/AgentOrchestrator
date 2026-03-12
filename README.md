@@ -131,7 +131,7 @@ claude
 |-------|-------|---------|--------|
 | `/spec` | Business Analyst | Requirements elicitation | `docs/architecture/PRD.md` |
 | `/design` | Architect | System architecture | `docs/architecture/ARCHITECTURE.md`, ADRs |
-| `/plan` | Project Manager | Task decomposition | `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md` |
+| `/plan` | Project Manager | Task decomposition | `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`, optional `docs/development/tasks/*.md` |
 | `/implement` | Developer | Code implementation | Source files, tests |
 | `/validate` | Validator | Testing and verification | Validation report |
 | `/deploy` | Deployer | Build and deployment | Deployment artifacts |
@@ -219,7 +219,7 @@ your-project/
 ├── docs/
 │   ├── objectives/       # VISION.md, BLUEPRINT.md, ROADMAP.md
 │   ├── architecture/     # PRD.md, ARCHITECTURE.md, adr/
-│   ├── development/      # BACKLOG.md, ISSUES.md
+│   ├── development/      # BACKLOG.md, ISSUES.md, tasks/
 │   └── knowledge/        # Project knowledge base
 └── reports/
     ├── analysis/         # /analyse outputs
@@ -244,7 +244,8 @@ Specification (changes with approval)
 
 Execution (changes frequently)
 ├── ROADMAP.md       # Milestones, phases, epics + dependencies
-├── BACKLOG.md       # Prioritized tasks from ROADMAP epics
+├── BACKLOG.md       # Task index, status, traceability, refs
+├── tasks/*.md       # Canonical task-detail docs for complex work
 └── ISSUES.md        # Discovered bugs, blockers, tech debt
 ```
 

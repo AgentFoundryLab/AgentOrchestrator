@@ -8,15 +8,17 @@
 
 ## Tasks
 
-| ID | Milestone | Phase | Epic | Task | User Story | Priority | Status |
-|----|-----------|-------|------|------|------------|----------|:------:|
-| T-001 | v0 | Initial | {{EPIC}} | {{TASK_NAME}} | {{US_REF}} | P0 | Pending |
-| T-002 | v0 | Initial | {{EPIC}} | {{TASK_NAME}} | {{US_REF}} | P1 | Pending |
-| T-003 | v0 | Initial | {{EPIC}} | {{TASK_NAME}} | {{US_REF}} | P2 | Pending |
+| ID | Milestone | Phase | Epic | Task | User Story | Priority | Status | Canonical Refs | Dependency Refs | Evidence Refs |
+|----|-----------|-------|------|------|------------|----------|:------:|----------------|-----------------|---------------|
+| T-001 | v0 | Initial | {{EPIC}} | {{TASK_NAME}} | {{US_REF}} | P0 | Pending | {{TASK_REF}} | {{DEPENDENCY_REFS}} | {{EVIDENCE_REFS}} |
+| T-002 | v0 | Initial | {{EPIC}} | {{TASK_NAME}} | {{US_REF}} | P1 | Pending | {{TASK_REF}} | {{DEPENDENCY_REFS}} | {{EVIDENCE_REFS}} |
+| T-003 | v0 | Initial | {{EPIC}} | {{TASK_NAME}} | {{US_REF}} | P2 | Pending | {{TASK_REF}} | {{DEPENDENCY_REFS}} | {{EVIDENCE_REFS}} |
 
 ---
 
-## Task Details
+## Embedded Task Details (Optional)
+
+Use this section only for simple, self-contained tasks. For complex tasks, store the execution contract in `docs/development/tasks/*.md` and link it from `Canonical Refs` above.
 
 ### T-001: {{TASK_NAME}}
 **AC**:
@@ -66,3 +68,4 @@
 - **ROADMAP**: [ROADMAP.md](../objectives/ROADMAP.md)
 - **PRD**: [PRD.md](../architecture/PRD.md)
 - **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
+- **Task Details Index**: [INDEX.md](../development/tasks/INDEX.md)

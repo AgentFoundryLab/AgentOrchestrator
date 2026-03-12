@@ -34,9 +34,14 @@ Orchestrate the full development lifecycle by:
 
 ### What to Read (High-Level Only)
 - `docs/objectives/ROADMAP.md` - milestone/phase overview
-- `docs/development/BACKLOG.md` - task table only (not full details)
+- `docs/development/BACKLOG.md` - task index, status, and refs
 - `docs/architecture/PRD.md` - requirements summary
 - Agent results - summary output from Task tool
+
+### What to Read Before Implementation Delegation
+- Resolve the task's canonical refs from `docs/development/BACKLOG.md`
+- Load only the narrowest authoritative task-detail section needed for the worker brief
+- Prefer exact task-detail docs or anchors over broader phase documents
 
 ### What to NEVER Read Directly
 - Source code files
@@ -52,7 +57,7 @@ Cluttered context causes:
 - Failure to catch blockers
 - Lost orchestration thread
 
-**Rule**: If you need details, spawn an agent to analyze and summarize.
+**Rule**: Use high-level docs for workflow control. Before implementation delegation, resolve canonical task-detail refs if they exist.
 
 ### Context Budget
 - Keep orchestrator turns focused on: assess → delegate → checkpoint → proceed
@@ -174,6 +179,16 @@ Task(subagent_type="developer", prompt="Implement task T-001: ...")
 ```
 
 **IMPORTANT**: Always use Option A. The orchestrator coordinates; subagents execute.
+
+### 3a. Pre-Delegation Task-Context Gate
+Before delegating implementation or validation work:
+1. Identify the candidate task in BACKLOG.
+2. Resolve canonical task-detail refs if present.
+3. Load only the narrowest authoritative source needed.
+4. Build a minimal worker brief from that source.
+5. Delegate.
+
+If the task is complex and no authoritative task-detail source is discoverable, stop and report incomplete execution context instead of delegating from a weak backlog line.
 
 ### 3b. HITL Relay Loop
 Use the shared `/hitl` protocol for QUESTIONS block format and escalation rules.

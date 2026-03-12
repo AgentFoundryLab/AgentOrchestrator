@@ -6,6 +6,8 @@
 
 ## Summary
 
+Issues record symptoms, impact, and resolution path. They may reference BACKLOG or task-detail docs, but they are not the execution contract unless explicitly elevated and linked from BACKLOG.
+
 | Type | Open | Resolved |
 |------|:----:|:--------:|
 | Bug | 0 | 0 |

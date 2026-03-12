@@ -27,7 +27,8 @@ Ensure quality by:
 ## Inputs
 
 - `$ARGUMENTS`: Task ID or artifact path to validate
-- BACKLOG for acceptance criteria: `docs/development/BACKLOG.md`
+- BACKLOG for task lookup and refs: `docs/development/BACKLOG.md`
+- Canonical task-detail docs when present: `docs/development/tasks/*.md`
 - PRD for requirements: `docs/architecture/PRD.md`
 
 ## Outputs
@@ -38,14 +39,15 @@ Validation report stored in Serena memory (transient).
 
 ### 1. Identify Target
 Parse `$ARGUMENTS`:
-- Task ID → Load task details and AC from BACKLOG
+- Task ID → Load task lookup data from BACKLOG, then resolve canonical task-detail refs if present
 - File path → Validate specific artifact
 - No args → Validate most recent implementation
 
 ### 2. Load Acceptance Criteria
-From task details or PRD:
+From the canonical task-detail source first, then PRD if needed:
 - List all criteria to check
 - Note any dependencies
+- Capture any evidence refs needed to prove completion
 
 ### 3. Run Tests
 Execute appropriate test commands:
@@ -64,6 +66,8 @@ For each criterion:
 - Can it be verified automatically?
 - If yes, run verification
 - If no, check manually via code inspection
+
+If stronger task-detail refs exist, validation against backlog summary text alone is insufficient.
 
 ### 5. Check Quality
 Run quality checks if available:
@@ -148,6 +152,7 @@ status: pass | fail | partial
 Before completing:
 - [ ] Tests pass (no regressions)
 - [ ] Each AC explicitly verified with evidence (not assumed)
+- [ ] Canonical task-detail refs were used when available
 - [ ] Code follows established patterns
 - [ ] Documentation accurate (matches implementation)
 - [ ] Security considerations addressed

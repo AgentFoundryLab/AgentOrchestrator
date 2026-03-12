@@ -31,7 +31,8 @@ Execute a task by:
 ## Inputs
 
 - `$ARGUMENTS`: Task ID (e.g., "T-001") or task description
-- BACKLOG: `docs/development/BACKLOG.md` for task details
+- BACKLOG: `docs/development/BACKLOG.md` for task lookup, status, traceability, and canonical refs
+- Task-detail docs when present: `docs/development/tasks/*.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md` for patterns
 
 ## Outputs
@@ -48,11 +49,17 @@ Parse `$ARGUMENTS` to find the task:
 - If description provided, match to existing task or confirm new work
 
 ### 2. Read Task Details
-From BACKLOG.md, extract:
-- Task description
+Resolve task context in this order:
+1. Find the task in BACKLOG.md.
+2. If canonical task-detail refs exist, use them as the execution contract.
+3. Use embedded backlog detail directly only when no stronger task contract exists.
+
+Extract:
+- Task description and goal
 - Acceptance criteria
 - Epic context
-- Dependencies (ensure they're complete)
+- Scope and non-goals when present
+- Dependencies and evidence refs
 
 ### 3. Explore Codebase
 Before writing code:
@@ -67,6 +74,7 @@ Outline the approach:
 - Functions/classes needed
 - Test approach (derive test cases directly from AC)
 - Edge cases to handle
+- Required shape constraints from the task-detail source
 
 **Skip TDD** (go directly to step 6) for: bug fixes in existing code, localized edits,
 refactors with no behavior change, documentation-only changes.
@@ -138,7 +146,7 @@ Types: feat, fix, refactor, test, docs, chore
 
 ## Validation Checklist
 Before completing:
-- [ ] All AC from task definition met (each criterion explicitly verified)
+- [ ] All AC from the canonical task definition met (each criterion explicitly verified)
 - [ ] Tests written and passing
 - [ ] No TODO/mock/placeholder left in code
 - [ ] Code follows existing patterns

@@ -203,6 +203,7 @@ test_conformance_claude_default() {
     assert_any_file_in "${tmp}/.claude/skills" || ok=1
     assert_dir_absent "${tmp}/.claude/hooks" || ok=1
     assert_dir_exists "${tmp}/.claude/agents" || ok=1
+    assert_file_exists "${tmp}/.claude/templates/task-detail.md" || ok=1
     rm -rf "$tmp"
     return $ok
 }

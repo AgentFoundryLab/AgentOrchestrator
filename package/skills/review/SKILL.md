@@ -25,6 +25,7 @@ After `/plan` and before `/implement`, ensure:
 - No ADR contradicts ARCHITECTURE
 - ADRs and TDRs are not mixed
 - ROADMAP and BACKLOG are aligned
+- Complex tasks are safe to delegate because their execution contract is discoverable
 - Blocking gaps are surfaced before implementation begins
 
 ## Inputs
@@ -46,7 +47,8 @@ Blocking issues also logged to `docs/development/ISSUES.md`.
 
 ### 1. Load All Artifacts
 Read PRD, ARCHITECTURE.md, all ADRs, ROADMAP.md, BACKLOG.md.
-Extract: FRs, NFRs, user stories, components, ADR decisions, milestones, tasks.
+Resolve task-detail refs for complex tasks when present.
+Extract: FRs, NFRs, user stories, components, ADR decisions, milestones, tasks, and canonical task contracts.
 
 ### 2. Consistency Check
 Cross-check:
@@ -54,7 +56,8 @@ Cross-check:
 - Every FR → has at least one BACKLOG task
 - Every BACKLOG task → traceable to an FR or NFR
 - ROADMAP milestones → match BACKLOG milestone groupings
-- ROADMAP captures strategic scope/sequencing while BACKLOG captures executable task detail and traceability
+- ROADMAP captures strategic scope/sequencing while BACKLOG captures task inventory, status, and refs
+- Complex tasks either embed executable detail or resolve to canonical task-detail docs
 
 ### 3. Correctness Check
 - Each ADR status (Accepted/Proposed) — does ARCHITECTURE reflect it?
@@ -64,6 +67,7 @@ Cross-check:
   - ADRs (`docs/architecture/adr/`) contain only architecture decisions
   - Technical Decision Records (TDRs) (`docs/knowledge/decisions/`) contain only non-architectural technical/operational decisions
   - ARCHITECTURE/ADR do not use BACKLOG/ISSUES as normative design sources
+  - ISSUES records problems and resolution path; it is not the execution spec unless explicitly elevated and linked
 
 ### 4. Coverage Check
 - Every user story → has AC → has at least one task covering it
@@ -94,11 +98,12 @@ Cross-check:
 | ID | Type | Description | Recommendation |
 |----|------|-------------|----------------|
 | R-001 | [Consistency/Coverage/Correctness] | [Details] | Re-run /[agent] |
+| R-002 | delegation-risk | Complex task lacks executable detail or canonical refs | Re-run /plan |
 
 ### Non-Blocking Issues
 | ID | Type | Description | Note |
 |----|------|-------------|------|
-| R-002 | [Type] | [Details] | [Note] |
+| R-003 | [Type] | [Details] | [Note] |
 
 ## Traceability Matrix
 | FR | Component | Task(s) | Status |

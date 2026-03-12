@@ -25,6 +25,7 @@ Decompose architecture into implementable tasks organized by milestones and epic
 Transform architecture into:
 - ROADMAP with milestones and phases
 - BACKLOG with prioritized, atomic tasks
+- Task-detail docs for complex tasks when backlog alone would be too weak
 - Clear dependencies and sequencing
 - Traceability from requirements to tasks
 
@@ -39,6 +40,7 @@ Transform architecture into:
 
 - ROADMAP: `docs/objectives/ROADMAP.md`
 - BACKLOG: `docs/development/BACKLOG.md`
+- Task-detail docs when needed: `docs/development/tasks/*.md`
 
 ## Task Hierarchy (ADR-005)
 
@@ -102,7 +104,11 @@ For each epic, create atomic tasks in BACKLOG:
 | T-001 | [Task description] | P0 | pending |
 ```
 
-**Task Details**:
+Choose one execution-contract mode explicitly:
+- **Simple mode**: embed task detail in BACKLOG when the task is short, low-risk, and self-contained.
+- **Complex mode**: create a task-detail doc and link it from BACKLOG when the task has long AC, non-trivial dependencies, traps, or shape constraints.
+
+**Simple mode example**:
 ```markdown
 ### T-001: [Task Name]
 **AC**:
@@ -111,9 +117,22 @@ For each epic, create atomic tasks in BACKLOG:
 **Commit**: `type(scope): description`
 ```
 
+**Complex mode example**:
+```markdown
+| ID | Task | Priority | Status | Canonical Refs |
+|----|------|----------|--------|----------------|
+| T-001 | [Task description] | P0 | pending | docs/development/tasks/v0.md#t-001 |
+```
+
 **Write AC as test specifications** (enables TDD in `/implement`):
 - Bad: "User can log in"
 - Good: "Given valid credentials, POST /auth/login returns 200 with token"
+
+Externalize task details when:
+- a milestone contains many tasks or long AC blocks
+- the task needs explicit in-scope/out-of-scope boundaries
+- implementation shape matters beyond a short AC list
+- validator evidence needs dedicated refs
 
 ### 6. Set Priorities
 - **P0**: Critical path - blocks other tasks
@@ -132,7 +151,7 @@ For each task, define:
 - Research tasks are almost always parallel
 - Implementation tasks across independent components can parallel
 
-**Output in BACKLOG**: Note blockedBy and parallel groups in task detail:
+**Output in BACKLOG**: Note blockedBy and parallel groups in embedded task detail or linked task-detail docs:
 ```
 ### T-005: Implement AuthService
 **blockedBy**: T-001 (schema), T-002 (DB setup)
@@ -192,13 +211,13 @@ Parallel Group A: Epic A, Epic B, Epic C (all blocked by Epic Foundation)
 
 ## Tasks
 
-| ID | Milestone | Phase | Epic | Task | Priority | Status |
-|----|-----------|-------|------|------|----------|--------|
-| T-001 | v0 | Initial | [Epic] | [Task] | P0 | pending |
+| ID | Milestone | Phase | Epic | Task | Priority | Status | Canonical Refs |
+|----|-----------|-------|------|------|----------|--------|----------------|
+| T-001 | v0 | Initial | [Epic] | [Task] | P0 | pending | docs/development/tasks/v0.md#t-001 |
 
 ---
 
-## Task Details
+## Embedded Task Details (Optional)
 
 ### T-001: [Task Name]
 **AC**:
@@ -220,6 +239,7 @@ Parallel Group A: Epic A, Epic B, Epic C (all blocked by Epic Foundation)
 Template source: installed templates directory under the active runtime root (`templates/` inside `~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`, or the matching project-local runtime directory):
 - `roadmap.md` - Complete ROADMAP structure
 - `backlog.md` - Complete BACKLOG structure
+- `task-detail.md` - Canonical task-detail structure for complex work
 
 ## Validation Checklist
 - [ ] All architecture components have corresponding tasks
@@ -228,3 +248,4 @@ Template source: installed templates directory under the active runtime root (`t
 - [ ] Critical path is identified (P0 tasks)
 - [ ] Parallelization opportunities identified and noted
 - [ ] Traceability: FR -> Component -> Epic -> Task
+- [ ] Complex tasks either embed executable detail or point to canonical task-detail docs

@@ -44,9 +44,11 @@
 ## Strategic & Tactical Planning [CRITICAL]
 
 - ROADMAP exists to align stakeholders on release direction: milestone/phase/epic goals, outcomes, dependencies, and status.
-- BACKLOG exists to execute delivery: task IDs (`T-xxx`), acceptance criteria, priorities, statuses, and issue/version linkage.
-- "ROADMAP and BACKLOG are aligned" means strategic scope and milestone mapping are coherent while execution detail remains operationally traceable in BACKLOG.
+- BACKLOG exists to execute delivery: task IDs (`T-xxx`), priorities, statuses, traceability, issue/version linkage, and canonical refs to task detail where needed.
+- Task-detail docs exist to hold the execution contract for complex work: scope, non-goals, acceptance criteria, dependencies, evidence refs, and delivery traps.
+- "ROADMAP and BACKLOG are aligned" means strategic scope and milestone mapping are coherent while execution detail remains operationally traceable through BACKLOG and its canonical task-detail refs.
 - Docs-only changes SHOULD be merged into an existing open task/issue when possible; create a new task only when scope adds new executable behavior, and include a one-line justification.
+- ISSUES records problems, impact, and resolution path; it is not an execution spec unless explicitly elevated and linked from BACKLOG.
 
 ## Planning Efficiency [CRITICAL]
 

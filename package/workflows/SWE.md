@@ -54,8 +54,8 @@ Three workflow depths based on project complexity:
 
 3. **Planning** (`/plan` → Project Manager)
    - Input: Architecture
-   - Output: `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`
-   - Activities: Task decomposition, prioritization, dependency mapping
+   - Output: `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`, optional `docs/development/tasks/*.md`
+   - Activities: Task decomposition, prioritization, dependency mapping, canonical task-detail generation for complex work
 
 4. **Review** (`/review` → Tech Writer)
    - Input: ROADMAP, BACKLOG, PRD, ARCHITECTURE, ADRs
@@ -64,12 +64,12 @@ Three workflow depths based on project complexity:
    - Note: **Blocking gate** — halt if blocking issues found. Skip for medium/light workflows.
 
 5. **Implementation** (`/implement` → Developer)
-   - Input: Task from backlog
+   - Input: Task from backlog plus canonical task-detail refs when present
    - Output: Code, tests
    - Activities: Coding, testing, code review prep
 
 6. **Validation** (`/validate` → Validator)
-   - Input: Implementation
+   - Input: Implementation plus canonical task-detail refs when present
    - Output: Validation report (Serena memory)
    - Activities: Testing, AC verification, quality checks
 
