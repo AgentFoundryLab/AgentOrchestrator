@@ -566,6 +566,7 @@ copy_namespaced_agents_dash_prefix() {
     local target_parent="$2"
     local namespace="$3"
     local backup_dir="$4"
+    local rt="${5:-claude}"
 
     [ -d "$source_dir" ] || return 0
     mkdir -p "$target_parent"
@@ -580,6 +581,8 @@ copy_namespaced_agents_dash_prefix() {
         local ns_agent="${namespace}-${agent_name}"
         apply_frontmatter_name_override "$agent_file" "$agent_name" "$ns_agent"
         mv "$agent_file" "${tmp_agents_dir}/${ns_agent}.md"
+        # Apply runtime-specific agent transformation
+        normalize_agent_markdown_in_place "${tmp_agents_dir}/${ns_agent}.md" "$rt"
     done
 
     copy_directory "$tmp_agents_dir" "$target_parent" "$backup_dir"
@@ -592,8 +595,20 @@ copy_namespaced_agents_subdirectory() {
     local target_parent="$2"
     local namespace="$3"
     local backup_dir="$4"
+    local rt="${5:-claude}"
 
-    copy_directory "$source_dir" "${target_parent}/${namespace}" "$backup_dir"
+    [ -d "$source_dir" ] || return 0
+    local tmp_agents_dir
+    tmp_agents_dir="$(mktemp -d)"
+    cp -r "${source_dir}/." "$tmp_agents_dir/"
+    
+    for agent_file in "$tmp_agents_dir"/*.md; do
+        [ -f "$agent_file" ] || continue
+        normalize_agent_markdown_in_place "$agent_file" "$rt"
+    done
+
+    copy_directory "$tmp_agents_dir" "${target_parent}/${namespace}" "$backup_dir"
+    rm -rf "$tmp_agents_dir"
 }
 
 copy_namespaced_agents() {
@@ -958,6 +973,373 @@ convert_args_placeholder() {
     local f="$1"
     [ -f "$f" ] || return 0
     sed -i 's/\$ARGUMENTS/{{args}}/g' "$f"
+}
+
+# ============================================================================
+# Tool name mapping: Claude tool names → target runtime formats
+# Used by normalize_agent_markdown_in_place for agent frontmatter transformation.
+# ============================================================================
+
+declare -A TOOL_MAP_CLAUDE_TO_CODEX=(
+    [Read]="read"
+    [Write]="write"
+    [Edit]="edit"
+    [Glob]="glob"
+    [Grep]="grep"
+    [Bash]="bash"
+    [ListDirectory]="list"
+    [WebSearch]="web_search"
+    [WebFetch]="web_fetch"
+    [Task]="task"
+    [AskUserQuestion]="ask_user"
+    ["*"]="*"
+)
+
+declare -A TOOL_MAP_CLAUDE_TO_GEMINI=(
+    [Read]="read_file"
+    [Write]="write_file"
+    [Edit]="replace"
+    [Glob]="glob"
+    [Grep]="grep_search"
+    [Bash]="run_shell_command"
+    [ListDirectory]="list_directory"
+    [WebSearch]="google_web_search"
+    [WebFetch]="web_fetch"
+    [Task]="task"
+    [AskUserQuestion]="ask_user"
+    ["*"]="*"
+)
+
+declare -A TOOL_MAP_CLAUDE_TO_OPENCODE=(
+    [Read]="read"
+    [Write]="write"
+    [Edit]="edit"
+    [Glob]="glob"
+    [Grep]="grep"
+    [Bash]="bash"
+    [ListDirectory]="list"
+    [WebSearch]="websearch"
+    [WebFetch]="webfetch"
+    [Task]="task"
+    [AskUserQuestion]="question"
+    ["*"]="*"
+)
+
+declare -A TOOL_MAP_CLAUDE_TO_QWEN=(
+    [Read]="read_file"
+    [Write]="write_file"
+    [Edit]="replace"
+    [Glob]="glob"
+    [Grep]="grep_search"
+    [Bash]="run_shell_command"
+    [ListDirectory]="list_directory"
+    [WebSearch]="web_search"
+    [WebFetch]="web_fetch"
+    [Task]="task"
+    [AskUserQuestion]="ask_user"
+    ["*"]="*"
+)
+
+# Claude-only keys to strip from agent frontmatter for non-Claude runtimes.
+declare -a CLAUDE_ONLY_AGENT_KEYS=(disallowedTools skills hooks)
+
+# strip_claude_agent_frontmatter — Remove Claude-specific keys from AGENT.md frontmatter.
+# Preserves: name, description, tools, model, temperature, max_turns, timeout_mins, kind.
+# Drops: disallowedTools, skills, hooks (Claude-specific).
+# Warns on unknown keys.
+strip_claude_agent_frontmatter() {
+    local f="$1"
+    [ -f "$f" ] || return 0
+    local tmp
+    tmp="$(mktemp)"
+    local rt="$2"
+    
+    # Known universal keys across all runtimes
+    local known_keys="name|description|tools|model|temperature|max_turns|timeout_mins|kind|mode|permission|permissionMode"
+    
+    # AWK script handles multi-line arrays by tracking indentation
+    awk -v strip="disallowedTools|skills|hooks" -v known="$known_keys" -v rt="$rt" '
+        BEGIN { in_fm = 0; in_strip = 0; warned = 0 }
+        NR == 1 && $0 == "---" { in_fm = 1; print; next }
+        in_fm && $0 == "---" { in_fm = 0; in_strip = 0; print; next }
+        
+        # In frontmatter
+        in_fm {
+            # Check if we are in a multi-line array that should be stripped
+            if (in_strip) {
+                # Continue skipping until we hit a new top-level key (no leading space) or end of frontmatter
+                if ($0 ~ /^[a-zA-Z]/ || $0 == "---") {
+                    in_strip = 0
+                    # Re-process this line
+                    if ($0 == "---") {
+                        in_fm = 0
+                        print
+                        next
+                    }
+                } else {
+                    # Still in indented array content, skip it
+                    next
+                }
+            }
+            
+            # Extract key name (before colon)
+            key = $0
+            sub(/:.*/, "", key)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+            
+            # Strip Claude-only keys (entire block including multi-line arrays)
+            if (key ~ "^(" strip ")$") {
+                in_strip = 1
+                next
+            }
+            
+            # Check for unknown keys (only top-level keys, not indented values)
+            if (!warned && key != "" && $0 ~ /^[a-zA-Z]/) {
+                if (key !~ "^(" known ")$") {
+                    print "[WARN] Unknown frontmatter key: " key " (runtime: " rt ", file: " FILENAME ")" > "/dev/stderr"
+                    warned = 1
+                }
+            }
+        }
+        
+        # Not in stripped section and not skipping
+        { print }
+    ' "$f" > "$tmp"
+    mv "$tmp" "$f"
+}
+
+# map_tool_names — Map Claude tool names to target runtime format.
+# Input: tools list line from frontmatter (e.g., "tools: [Read, Write, Edit]")
+# Output: transformed tools list with mapped names
+map_tool_names() {
+    local tools_line="$1"
+    local rt="$2"
+    local map_name="TOOL_MAP_CLAUDE_TO_$(echo "$rt" | tr '[:lower:]' '[:upper:]')"
+    
+    # Get the tools array content
+    local tools_content
+    tools_content=$(echo "$tools_line" | sed -n 's/.*\[\(.*\)\].*/\1/p')
+    [ -z "$tools_content" ] && echo "$tools_line" && return 0
+    
+    # Split by comma, map each tool
+    local mapped_tools=""
+    local IFS=','
+    for tool in $tools_content; do
+        # Trim whitespace
+        tool=$(echo "$tool" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        # Remove quotes
+        tool=$(echo "$tool" | sed 's/^"//;s/"$//')
+        
+        local mapped=""
+        case "$rt" in
+            codex) mapped="${TOOL_MAP_CLAUDE_TO_CODEX[$tool]:-$tool}" ;;
+            gemini) mapped="${TOOL_MAP_CLAUDE_TO_GEMINI[$tool]:-$tool}" ;;
+            opencode) mapped="${TOOL_MAP_CLAUDE_TO_OPENCODE[$tool]:-$tool}" ;;
+            qwen) mapped="${TOOL_MAP_CLAUDE_TO_QWEN[$tool]:-$tool}" ;;
+            *) mapped="$tool" ;;
+        esac
+        
+        [ -n "$mapped_tools" ] && mapped_tools+=", "
+        mapped_tools+="$mapped"
+    done
+    
+    echo "tools: [$mapped_tools]"
+}
+
+# transform_agent_to_opencode_permission — Transform tools list to permission object for OpenCode.
+# OpenCode uses permission object format instead of tools list.
+transform_agent_to_opencode_permission() {
+    local f="$1"
+    [ -f "$f" ] || return 0
+    local tmp
+    tmp="$(mktemp)"
+    
+    # First pass: extract tools list and convert to permission format
+    # Handles both inline arrays [A, B] and multi-line lists:
+    #   tools:
+    #     - Read
+    #     - Write
+    awk '
+        BEGIN { in_fm = 0; in_tools = 0; tools_arr = ""; has_tools = 0; has_permission = 0 }
+        NR == 1 && $0 == "---" { in_fm = 1; print; next }
+        in_fm && $0 == "---" {
+            # End of frontmatter
+            if (has_tools && tools_arr != "" && !has_permission) {
+                # Emit permission block
+                print "permission:"
+                
+                # Parse tools - split by newlines for multi-line or comma for inline
+                n = split(tools_arr, items, "\n")
+                has_wildcard = 0
+                
+                for (i = 1; i <= n; i++) {
+                    # Clean up item
+                    gsub(/^[[:space:]-]*/, "", items[i])
+                    gsub(/[[:space:]]*$/, "", items[i])
+                    gsub(/"/, "", items[i])
+                    if (items[i] == "*") has_wildcard = 1
+                }
+                
+                if (has_wildcard) {
+                    print "  "*": allow"
+                } else {
+                    for (i = 1; i <= n; i++) {
+                        if (items[i] != "") {
+                            # Map to OpenCode tool name (lowercase)
+                            tool = tolower(items[i])
+                            printf "  %s: allow\n", tool
+                        }
+                    }
+                }
+            }
+            in_fm = 0
+            print
+            next
+        }
+        in_fm {
+            # Strip name field for OpenCode (filename is used)
+            if ($0 ~ /^name:/) { next }
+            
+            # Already have permission block - skip tools
+            if ($0 ~ /^permission:/) { has_permission = 1 }
+            if (has_permission) { print; next }
+            
+            # Collect tools from multi-line list
+            if ($0 ~ /^tools:/) {
+                in_tools = 1
+                has_tools = 1
+                # Check for inline array
+                if ($0 ~ /\[/) {
+                    # Inline array: tools: [Read, Write]
+                    line = $0
+                    gsub(/^tools:[[:space:]]*\[/, "", line)
+                    gsub(/\].*/, "", line)
+                    gsub(/,[[:space:]]*/, "\n", line)
+                    tools_arr = line
+                    in_tools = 0
+                }
+                next
+            }
+            
+            if (in_tools) {
+                # Multi-line list item: "  - Read" or indented continuation
+                if ($0 ~ /^[[:space:]]*-[[:space:]]/) {
+                    line = $0
+                    gsub(/^[[:space:]]*-[[:space:]]*/, "", line)
+                    tools_arr = tools_arr (tools_arr ? "\n" : "") line
+                    next
+                } else if ($0 ~ /^[[:space:]]+/) {
+                    # Still indented, may be continuation
+                    next
+                } else {
+                    # Not indented, tools list ended
+                    in_tools = 0
+                }
+            }
+            
+            # Strip Claude-specific keys
+            if ($0 ~ /^(disallowedTools|skills|hooks):/) { 
+                # Skip entire block until next key
+                while ((getline line > 0) && line ~ /^[[:space:]-]/) {}
+                # Re-process the non-indented line
+                if (line !~ /^---/) { print line }
+                next
+            }
+            
+            # Add mode if not present
+            if ($0 ~ /^mode:/) { has_mode = 1 }
+        }
+        { print }
+    ' "$f" > "$tmp"
+    mv "$tmp" "$f"
+    
+    # Add mode: subagent if not already present (default for agents)
+    if ! grep -q "^mode:" "$f"; then
+        awk '
+            BEGIN { in_fm = 0; added_mode = 0 }
+            NR == 1 && $0 == "---" { in_fm = 1; print; next }
+            in_fm && $0 == "---" { 
+                if (!added_mode) {
+                    print "mode: subagent"
+                    added_mode = 1
+                }
+                print; next 
+            }
+            /^description:/ && !added_mode {
+                print
+                print "mode: subagent"
+                added_mode = 1
+                next
+            }
+            { print }
+        ' "$f" > "$tmp"
+        mv "$tmp" "$f"
+    fi
+}
+
+# normalize_agent_markdown_in_place — Apply per-runtime agent frontmatter transformation.
+# Runtime-specific rules:
+#   - claude: No transformation (native format)
+#   - codex: Strip Claude-only keys, lowercase tool names
+#   - gemini: Strip Claude-only keys, map tool names, add kind: local
+#   - opencode: Strip name, transform tools → permission, add mode
+#   - qwen: Strip Claude-only keys, map tool names
+normalize_agent_markdown_in_place() {
+    local f="$1"
+    local rt="$2"
+
+    [ -f "$f" ] || return 0
+
+    # Claude: no transformation needed
+    [[ "$rt" == "claude" ]] && return 0
+
+    # Strip Claude-only agent keys
+    strip_claude_agent_frontmatter "$f" "$rt"
+
+    # Runtime-specific transformations
+    case "$rt" in
+        codex)
+            # Lowercase tool names in frontmatter
+            awk '
+                BEGIN { in_fm = 0 }
+                /^---$/ { in_fm = !in_fm; print; next }
+                in_fm && /^tools:/ {
+                    # Lowercase the tool names
+                    line = $0
+                    gsub(/tools:[[:space:]]*\[/, "tools: [", line)
+                    # Keep brackets, lowercase content
+                    line_tolower = line
+                    # Lowercase everything after "tools:"
+                    prefix = "tools:"
+                    idx = index(line_tolower, prefix)
+                    if (idx > 0) {
+                        before = substr(line_tolower, 1, idx + length(prefix) - 1)
+                        after = substr(line_tolower, idx + length(prefix))
+                        print before tolower(after)
+                        next
+                    }
+                }
+                { print }
+            ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+            ;;
+        gemini)
+            # Map tool names and add kind: local if absent
+            awk '
+                BEGIN { in_fm = 0; has_kind = 0 }
+                /^---$/ { in_fm = !in_fm; print; next }
+                in_fm && /^kind:/ { has_kind = 1; print; next }
+                in_fm && /^---$/ && !has_kind { print "kind: local"; print; next }
+                { print }
+                END { if (!has_kind && in_fm) print "kind: local" }
+            ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+            ;;
+        opencode)
+            transform_agent_to_opencode_permission "$f"
+            ;;
+        qwen)
+            # Map tool names (same as gemini mapping)
+            ;;
+    esac
 }
 
 # normalize_skill_markdown_in_place — T-095: Apply per-runtime frontmatter/body normalization.
@@ -1371,7 +1753,46 @@ install_runtime_global() {
         if [ -n "$agents_namespace" ]; then
             copy_namespaced_agents "${PACKAGE_DIR}/agents" "$agents_target" "$agents_namespace" "$backup_dir" "$rt"
         else
-            copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+            # Non-Claude runtimes need transformed AGENT.md; copy transformed source to avoid repeated false diffs.
+            if [[ "$rt" != "claude" ]]; then
+                local tmp_agents_dir
+                tmp_agents_dir="$(mktemp -d)"
+                cp -r "${PACKAGE_DIR}/agents/." "$tmp_agents_dir/"
+                for agent_md in "$tmp_agents_dir"/*.md; do
+                    [ -f "$agent_md" ] || continue
+                    normalize_agent_markdown_in_place "$agent_md" "$rt"
+                done
+                copy_directory "$tmp_agents_dir" "$agents_target" "$backup_dir"
+                rm -rf "$tmp_agents_dir"
+            else
+                copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+            fi
+        fi
+    fi
+
+    # Extra agents: runtime-specific agents from package/agents-also-run/<runtime>/
+    if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [[ -n "${RUNTIME_EXTRA_AGENTS[${rt}]:-}" ]]; then
+        local extra_agents_dir="${PACKAGE_DIR}/agents-also-run/${rt}"
+        if [ -d "$extra_agents_dir" ]; then
+            local agents_target="${target}/${RUNTIME_AGENTS_PATH[${rt}]}"
+            for extra_agent in ${RUNTIME_EXTRA_AGENTS[${rt}]}; do
+                local extra_agent_file="${extra_agents_dir}/${extra_agent}.md"
+                if [ -f "$extra_agent_file" ]; then
+                    mkdir -p "$agents_target"
+                    # Transform extra agent for target runtime
+                    if [[ "$rt" != "claude" ]]; then
+                        local tmp_extra_agent
+                        tmp_extra_agent="$(mktemp)"
+                        cp "$extra_agent_file" "$tmp_extra_agent"
+                        normalize_agent_markdown_in_place "$tmp_extra_agent" "$rt"
+                        cp "$tmp_extra_agent" "${agents_target}/${extra_agent}.md"
+                        rm -f "$tmp_extra_agent"
+                    else
+                        cp "$extra_agent_file" "${agents_target}/${extra_agent}.md"
+                    fi
+                    log_success "Installed extra agent: ${extra_agent}.md for ${rt}"
+                fi
+            done
         fi
     fi
 
@@ -1461,7 +1882,46 @@ install_runtime_project() {
         if [ -n "$agents_namespace" ]; then
             copy_namespaced_agents "${PACKAGE_DIR}/agents" "$agents_target" "$agents_namespace" "$backup_dir" "$rt"
         else
-            copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+            # Non-Claude runtimes need transformed AGENT.md; copy transformed source to avoid repeated false diffs.
+            if [[ "$rt" != "claude" ]]; then
+                local tmp_agents_dir
+                tmp_agents_dir="$(mktemp -d)"
+                cp -r "${PACKAGE_DIR}/agents/." "$tmp_agents_dir/"
+                for agent_md in "$tmp_agents_dir"/*.md; do
+                    [ -f "$agent_md" ] || continue
+                    normalize_agent_markdown_in_place "$agent_md" "$rt"
+                done
+                copy_directory "$tmp_agents_dir" "$agents_target" "$backup_dir"
+                rm -rf "$tmp_agents_dir"
+            else
+                copy_directory "${PACKAGE_DIR}/agents" "$agents_target" "$backup_dir"
+            fi
+        fi
+    fi
+
+    # Extra agents: runtime-specific agents from package/agents-also-run/<runtime>/
+    if [[ -n "${RUNTIME_AGENTS_PATH[${rt}]}" ]] && [[ -n "${RUNTIME_EXTRA_AGENTS[${rt}]:-}" ]]; then
+        local extra_agents_dir="${PACKAGE_DIR}/agents-also-run/${rt}"
+        if [ -d "$extra_agents_dir" ]; then
+            local agents_target="${rt_target}/${RUNTIME_AGENTS_PATH[${rt}]}"
+            for extra_agent in ${RUNTIME_EXTRA_AGENTS[${rt}]}; do
+                local extra_agent_file="${extra_agents_dir}/${extra_agent}.md"
+                if [ -f "$extra_agent_file" ]; then
+                    mkdir -p "$agents_target"
+                    # Transform extra agent for target runtime
+                    if [[ "$rt" != "claude" ]]; then
+                        local tmp_extra_agent
+                        tmp_extra_agent="$(mktemp)"
+                        cp "$extra_agent_file" "$tmp_extra_agent"
+                        normalize_agent_markdown_in_place "$tmp_extra_agent" "$rt"
+                        cp "$tmp_extra_agent" "${agents_target}/${extra_agent}.md"
+                        rm -f "$tmp_extra_agent"
+                    else
+                        cp "$extra_agent_file" "${agents_target}/${extra_agent}.md"
+                    fi
+                    log_success "Installed extra agent: ${extra_agent}.md for ${rt}"
+                fi
+            done
         fi
     fi
 

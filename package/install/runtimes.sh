@@ -94,6 +94,76 @@
 # produces the same output regardless of install order or runtime context.
 #
 # ============================================================================
+# AGENT FRONTMATTER TRANSFORM SPECIFICATION
+# ============================================================================
+#
+# Defines how AGENT.md content maps to each runtime's agents format.
+# The actual transform implementation lives in install.sh transform functions.
+#
+# Source format (Claude-style YAML frontmatter):
+#   ---
+#   name: <agent-name>
+#   description: <one-line description>
+#   tools: ["Read", "Write", "Edit", ...]  # or tools: ["*"]
+#   disallowedTools: [Bash, ...]             # Claude-specific
+#   skills: [spec, hitl, ...]               # Claude-specific
+#   hooks:                                   # Claude-specific
+#     SubagentStop: [...]
+#   ---
+#   <body content in Markdown>
+#
+# Per-runtime transform rules:
+#
+# 1. CLAUDE (target: .claude/agents/<name>.md)
+#    - Native format. No transform needed.
+#    - All frontmatter keys preserved as-is.
+#
+# 2. CODEX (target: .agents/agents/<name>.md)
+#    - Strip Claude-only keys: disallowedTools, skills, hooks.
+#    - Keep: name, description, tools.
+#    - Lowercase tool names: Read → read.
+#
+# 3. GEMINI (target: .gemini/agents/<name>.md)
+#    - Strip Claude-only keys: disallowedTools, skills, hooks.
+#    - Keep: name, description, tools.
+#    - Map tool names to Gemini format: Read → read_file, Bash → run_shell_command.
+#    - Add: kind: local (default if absent).
+#
+# 4. OPENCODE (target: .opencode/agents/<name>.md)
+#    - Strip: name (filename is used), disallowedTools, skills, hooks.
+#    - Keep: description.
+#    - Transform tools list → permission object:
+#        tools: [Read, Write, Edit] → permission: {read: allow, write: allow, edit: allow}
+#        tools: ["*"] → permission: {"*": allow}
+#        disallowedTools: [Bash] → add permission: {bash: deny}
+#    - Add: mode: subagent (default).
+#
+# 5. QWEN (target: .qwen/agents/<name>.md)
+#    - Strip Claude-only keys: disallowedTools, skills, hooks.
+#    - Keep: name, description, tools.
+#    - Map tool names similar to Gemini: Read → read_file.
+#
+# Tool name mapping (Claude → target runtime):
+#
+# Claude Tool   | Codex     | Gemini           | OpenCode | Qwen
+# --------------|-----------|------------------|----------|------------------
+# Read          | read      | read_file        | read     | read_file
+# Write         | write     | write_file       | write    | write_file
+# Edit          | edit      | replace          | edit     | replace
+# Glob          | glob      | glob             | glob     | glob
+# Grep          | grep      | grep_search      | grep     | grep_search
+# Bash          | bash      | run_shell_command| bash     | run_shell_command
+# WebSearch     | web_search| google_web_search| websearch| web_search
+# WebFetch      | web_fetch | web_fetch        | webfetch | web_fetch
+# Task          | task      | task             | task     | task
+# AskUserQuestion| ask_user | ask_user        | question | ask_user
+# ListDirectory | list      | list_directory   | list     | list_directory
+# "*"           | *         | *                | *        | *
+#
+# Determinism guarantee: given the same AGENT.md input, the transform always
+# produces the same output regardless of install order or runtime context.
+#
+# ============================================================================
 
 # Guard against double-sourcing
 if [[ "${_ORCHESTRATOR_RUNTIMES_LOADED:-}" == "1" ]]; then
@@ -159,6 +229,16 @@ RUNTIME_AGENTS_PATH[codex]="agents"
 RUNTIME_AGENTS_PATH[gemini]=""
 RUNTIME_AGENTS_PATH[opencode]="agents"
 RUNTIME_AGENTS_PATH[qwen]="agents"
+
+# Extra agents to install from package/agents-also-run/<runtime>/*.md
+# These are runtime-specific agents that supplement the baseline agents.
+# Empty string = no extra agents for this runtime.
+declare -A RUNTIME_EXTRA_AGENTS
+RUNTIME_EXTRA_AGENTS[claude]=""
+RUNTIME_EXTRA_AGENTS[codex]=""
+RUNTIME_EXTRA_AGENTS[gemini]=""
+RUNTIME_EXTRA_AGENTS[opencode]="orchestrator"
+RUNTIME_EXTRA_AGENTS[qwen]=""
 
 # Relative path for commands installation (from RUNTIME_CONF_DIR or RUNTIME_PROJECT_DIR).
 declare -A RUNTIME_COMMANDS_PATH
@@ -280,6 +360,7 @@ register_runtime_defaults() {
         RUNTIME_DOC_DIR_OVERRIDE
         RUNTIME_SKILLS_PATH
         RUNTIME_AGENTS_PATH
+        RUNTIME_EXTRA_AGENTS
         RUNTIME_COMMANDS_PATH
         RUNTIME_COMMANDS_CONF_OVERRIDE
         RUNTIME_HOOKS_PATH
