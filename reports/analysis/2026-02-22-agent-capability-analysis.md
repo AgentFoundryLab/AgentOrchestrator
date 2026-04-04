@@ -1,4 +1,4 @@
-# Agent Capability Report
+# Agent Capability Analysis
 
 Date: 2026-02-22 (updated 2026-02-25)
 Scope: Claude Code, Codex CLI, Gemini CLI, OpenCode, Qwen Code
