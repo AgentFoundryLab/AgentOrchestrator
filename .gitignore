@@ -76,8 +76,8 @@ Thumbs.db
 
 # Environment
 .envrc
-!.env.*.example
 .env*
+!.env.*.example
 .env.local
 .env.development.local
 .env.test.local
@@ -111,6 +111,12 @@ temp/
 
 # Claude Code
 .claude/settings.local.json
+
+# Orchestrator project-local installs (optional gitignore for target projects)
+.claude/templates/
+.claude/policy/
+.claude/workflows/
+.backup/
 
 # Serena MCP - commit project.yml, ignore runtime data
 .serena/memories/

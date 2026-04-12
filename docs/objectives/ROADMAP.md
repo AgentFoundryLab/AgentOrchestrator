@@ -1,304 +1,293 @@
-# SuperClaudeZero Roadmap
+# AgentOrchestrator Roadmap
 
-**Version**: 0.3.2
-**Updated**: 2026-01-24
+**Version**: 0.4.1
+**Updated**: 2026-02-24
 
 ---
 
 ## Milestone Overview
 
-| Milestone | Goal | Phases |
+| Milestone | Goal | Status |
 |-----------|------|--------|
-| **v0** | Minimal viable multi-agent orchestration | Initial → Validation |
-| **v1** | Full Orchestrator vision | MVP → Foundation → Factory |
+| v0.1.0 | Core orchestration foundation | ✅ Complete |
+| v0.1.1 | Governance and quality controls | ✅ Complete |
+| v0.2.0 | Multi-runtime installer extension | ✅ Complete |
+| v0.3.0 | Subagents extension + installer modularization | 🔄 In progress |
+| v1.0.0 | Full orchestrator platform vision | 🔲 Planned |
 
 ---
 
-# v0 Milestone
+## v0 Milestone (Completed Foundation)
 
-**Goal**: Minimal viable multi-agent orchestration framework for Claude Code.
+**Goal**: Deliver a usable multi-agent orchestration baseline with executable workflows and policy controls.
 
-**Scope**: 7 agents, 14 skills, 5 hooks, 2 workflows, 8 templates, 2 policies
+### Initial Phase
 
----
-
-## Initial Phase
-
-Core orchestration with file-based memory and MD workflow templates.
-
-### Epic: Hook System
+#### Epic: Hook System
 **Depends on**: None
+**Status**: Complete
+**Outcomes**:
+- Standardized reminder/checkpoint lifecycle in orchestration flow.
+- Stable session context injection and validation signaling.
 
-- [x] `inject-context.sh` (SessionStart)
-- [x] `remind-validate.sh` (SubagentStop)
-- [x] `remind-reflexion.sh` (SubagentStop)
-- [x] `remind-reflect.sh` (Stop)
-- [x] `checkpoint-session.sh` (SessionEnd)
-
-### Epic: Core Agents
+#### Epic: Agent System
 **Depends on**: Hook System
+**Status**: Complete
+**Outcomes**:
+- Core and support agent roles established with clear boundaries.
+- Skill-agent mapping operationalized for delivery workflow.
 
-- [x] `business-analyst.md`
-- [x] `architect.md`
-- [x] `project-manager.md`
-- [x] `developer.md`
+#### Epic: Skills and Workflow Engine
+**Depends on**: Agent System
+**Status**: Complete
+**Outcomes**:
+- End-to-end workflow path from specification through documentation.
+- Utility skills for investigation, learning capture, and optimization.
 
-### Epic: Support Agents
-**Depends on**: Hook System
-
-- [x] `validator.md`
-- [x] `deployer.md`
-- [x] `tech-writer.md`
-
-### Epic: Agent-Backed Skills
-**Depends on**: Core Agents, Support Agents
-
-- [x] `spec/SKILL.md`
-- [x] `design/SKILL.md`
-- [x] `plan/SKILL.md`
-- [x] `implement/SKILL.md`
-- [x] `validate/SKILL.md`
-- [x] `deploy/SKILL.md`
-- [x] `document/SKILL.md`
-
-### Epic: Utility Skills
+#### Epic: Policy and Templates
 **Depends on**: None
+**Status**: Complete
+**Outcomes**:
+- Governance baseline codified for execution quality and artifact flow.
+- Reusable artifact templates established across planning/design/delivery.
 
-- [x] `reflexion/SKILL.md`
-- [x] `reflect/SKILL.md`
-- [x] `optimize/SKILL.md`
-- [x] `analyse/SKILL.md`
-- [x] `research/SKILL.md`
-- [x] `distill/SKILL.md`
-
-### Epic: Orchestration
-**Depends on**: Agent-Backed Skills
-
-- [x] `orchestrate/SKILL.md`
-
-### Epic: Policy
+#### Epic: Installer Baseline
 **Depends on**: None
+**Status**: Complete
+**Outcomes**:
+- Project/global installation foundations in place.
+- Baseline runtime/tooling setup standardized.
 
-- [x] `RULES.md`
-- [x] `PRINCIPLES.md`
+### Validation Phase
 
-### Epic: Workflows
-**Depends on**: None
-
-- [x] `SWE.md`
-- [x] `meta-learning.md`
-
-### Epic: Templates
-**Depends on**: None
-
-- [x] `vision.md`
-- [x] `blueprint.md`
-- [x] `prd.md`
-- [x] `architecture.md`
-- [x] `adr.md`
-- [x] `roadmap.md`
-- [x] `backlog.md`
-- [x] `issues.md`
-
-### Epic: Settings & Installer
-**Depends on**: None
-
-- [x] Global `settings.json`
-- [x] Project `settings.json`
-- [x] `.claude/settings.json`
-- [x] `install.sh` (global + project modes)
-
----
-
-## Validation Phase
-
-Integration testing and documentation.
-
-### Epic: Integration Validation
+#### Epic: Integration Validation
 **Depends on**: All Initial Phase epics
-
-- [x] End-to-end test: `/orchestrate` workflow
-- [x] Dogfood: use SCZ to build SCZ docs
-- [x] Update README.md
-
-**→ TAG: v0.1.0 ✅**
+**Status**: Complete
+**Outcomes**:
+- Workflow integration validated through end-to-end execution.
+- Core documentation and onboarding surfaces aligned with implemented behavior.
 
 ---
 
-# v1 Milestone (Orchestrator)
+## v0.1.1 Milestone (Governance Extension)
 
-**Goal**: Full Orchestrator vision with observability, execution engine, and advanced workflows.
+**Goal**: Strengthen planning quality with onboarding, review gating, and shared HITL protocol.
 
-**Prerequisite**: v0.1.0  complete
-
----
-
-## MVP Phase
-
-File-based KB, local Devcontainer, Basic Workflow Engine with MD templates.
-
-> **Note**: v0 components carry forward. This phase adds execution environment.
-
-### Epic: Local Execution Environment
-**Depends on**: v0 complete
-
-- [ ] Devcontainer configuration
-- [ ] Development environment setup
-- [ ] Basic build integration
-
-### Epic: Enhanced Memory
-**Depends on**: v0 Memory System
-
-- [ ] File-based Knowledge Base structure
-- [ ] Improved Serena memory organization
-- [ ] Session context management
+#### Epic: Governance and Quality Controls
+**Depends on**: v0.1.0 complete
+**Status**: Complete
+**Outcomes**:
+- Governance onboarding flow added for project policy bootstrapping.
+- Cross-artifact review gate integrated before implementation.
+- HITL escalation path normalized across agents and workflows.
 
 ---
 
-## Foundation Phase
+## v0.2.0 Milestone (Installer Extension)
 
-Ontology, Graph DB, Observability, Context Manager, Cloud Runtime.
+**Goal**: Expand installer to multiple runtimes with consistent capability semantics.
 
-**Prerequisite**: MVP Phase complete
+### Installer Extension Phase
 
-### Epic: Data Foundation
-**Depends on**: Enhanced Memory
+#### Epic: Runtime Matrix and Canonical Paths
+**Depends on**: v0.1.0 complete
+**Status**: Complete
+**Outcomes**:
+- Runtime support matrix formalized with canonical install targets.
+- Drift detection between policy and installer behavior established.
 
-- [ ] Ontology schema (entities, relationships)
-- [ ] Knowledge GraphDB integration
-- [ ] Observability DB (logs/traces/metrics)
+#### Epic: Namespace Semantics
+**Depends on**: Runtime Matrix and Canonical Paths
+**Status**: Complete
+**Outcomes**:
+- Namespace behavior unified with explicit flat/default handling.
+- Restore/cleanup behaviors aligned to namespace mode expectations.
 
-### Epic: Context Manager
+#### Epic: Capability-Scoped Installer Profiles
+**Depends on**: Runtime Matrix and Canonical Paths
+**Status**: Complete
+**Outcomes**:
+- Installer profile model aligned to runtime capability boundaries.
+- Compatibility behavior clarified without changing default strategic direction.
+
+#### Epic: UX and Documentation
+**Depends on**: Namespace Semantics, Capability-Scoped Installer Profiles
+**Status**: Complete
+**Outcomes**:
+- Installer usage guidance aligned with capability model.
+- Runtime behavior and compatibility messaging made consistent.
+
+#### Epic: Validation and CI
+**Depends on**: All Installer Extension epics
+**Status**: Complete
+**Outcomes**:
+- Automated checks established for runtime conformance and drift detection.
+- Regression coverage expanded for install/restore/cleanup consistency.
+
+---
+
+## v0.3.0 Milestone (Current Execution Stream)
+
+**Goal**: Add subagent-oriented runtime support while reducing installer monolith risk through modularization.
+
+### Phase: Installer Modularization
+
+#### Epic: Installer Decomposition
+**Depends on**: v0.2.0 complete
+**Status**: In progress
+**Outcomes**:
+- Runtime-specific installer concerns isolated into modular boundaries.
+- Shared transformation/validation concerns centralized for reuse.
+- Modularity principles codified as operational policy.
+
+### Phase: Subagents Extension
+
+#### Epic: Runtime Subagents Enablement
+**Depends on**: Installer Decomposition
+**Status**: Planned
+**Parallel**: Claude, Codex, Gemini runtime tracks
+**Outcomes**:
+- Runtime-specific subagent delivery paths enabled under unified policy model.
+- Experimental-control behavior defined consistently for subagent flows.
+
+#### Epic: Subagents Validation and Documentation
+**Depends on**: Runtime Subagents Enablement
+**Status**: Planned
+**Outcomes**:
+- Capability conformance and regression validation extended for subagents.
+- User-facing guidance updated to reflect subagent support boundaries.
+
+---
+
+## v1 Milestone (Platform Expansion)
+
+**Goal**: Evolve from framework baseline to production-grade orchestrator platform.
+**Tactical details**: [docs/development/tasks/v1.md](../development/tasks/v1.md)
+
+### POC Phase
+
+#### Epic: Platform Setup
+**Depends on**: v0 stream stability
+**Status**: Planned
+**Outcomes**:
+- Executable platform packaging and repeatable development environment.
+- Baseline operational install/run path for orchestrator runtime.
+
+#### Epic: Framework Integration
+**Depends on**: Platform Setup
+**Status**: Planned
+**Outcomes**:
+- Workflow orchestration integrated with target execution framework.
+- Multi-agent collaboration model formalized for implementation lifecycle.
+
+#### Epic: Structured Memory
+**Depends on**: v0 memory patterns
+**Status**: Planned
+**Outcomes**:
+- Durable knowledge representation and retrieval structure.
+- Stronger context handoff quality across agents.
+
+### MVP Phase
+
+#### Epic: Multi-Provider Support
+**Depends on**: Framework Integration
+**Status**: Planned
+**Outcomes**:
+- Provider interoperability layer for multi-runtime orchestration.
+- Standard discovery/configuration flow across providers.
+
+#### Epic: Workflow Refinement
+**Depends on**: Framework Integration
+**Status**: Planned
+**Outcomes**:
+- Hook-era behaviors migrated into explicit workflow steps.
+- Human-in-the-loop controls embedded in runtime flow.
+
+#### Epic: Observability Foundation
+**Depends on**: POC completion
+**Status**: Planned
+**Outcomes**:
+- Baseline tracing, metrics, and dashboarding for orchestrator + agents.
+- Parent/child execution visibility across multi-agent runs.
+
+### Foundation Phase
+
+#### Epic: Evaluations
+**Depends on**: Observability Foundation
+**Status**: Planned
+**Outcomes**:
+- Measurable quality gates and automated output evaluation.
+
+#### Epic: Data Foundation
+**Depends on**: Structured Memory
+**Status**: Planned
+**Outcomes**:
+- Core data layer for entities, relationships, and longitudinal signals.
+
+#### Epic: Advanced Workflow Engine
+**Depends on**: Agent framework maturity
+**Status**: Planned
+**Outcomes**:
+- Conditional/graph/swarm workflow strategies with conflict management.
+
+#### Epic: Policy Engine
 **Depends on**: Data Foundation
+**Status**: Planned
+**Outcomes**:
+- Dynamic policy controls for permissions, steering, and runtime governance.
 
-- [ ] Dynamic context loading
-- [ ] Token budget management
-- [ ] Priority-based context selection
+### Factory Phase
 
-### Epic: Cloud Runtime
-**Depends on**: Local Execution Environment
+#### Epic: Cloud Runtime
+**Depends on**: Foundation readiness
+**Status**: Planned
+**Outcomes**:
+- Isolated, scalable runtime deployment baseline.
 
-- [ ] Remote Devcontainer support
-- [ ] VM/K8s runtime configuration
-- [ ] Environment isolation
-
-### Epic: Build Pipeline
+#### Epic: Build Pipeline
 **Depends on**: Cloud Runtime
+**Status**: Planned
+**Outcomes**:
+- End-to-end delivery automation for platform artifacts.
 
-- [ ] GitOps integration
-- [ ] MLOps integration
-- [ ] CI/CD workflow definitions
-- [ ] Artifact registry management
+#### Epic: Security Controls
+**Depends on**: Cloud Runtime
+**Status**: Planned
+**Outcomes**:
+- Identity, secret, and permission boundaries enforced across environments.
 
-### Epic: Observability
-**Depends on**: Data Foundation
+#### Epic: Guardrails and Resource Management
+**Depends on**: Security and Observability maturity
+**Status**: Planned
+**Outcomes**:
+- Runtime guardrails, budget controls, and stability protections.
 
-- [ ] OpenTelemetry integration
-- [ ] Sub-agent span tracking
-- [ ] Metrics collection
+#### Epic: Autonomous Operations
+**Depends on**: Advanced Workflow Engine and Guardrails
+**Status**: Planned
+**Outcomes**:
+- Background autonomous behaviors with safe operational boundaries.
 
 ---
 
-## Factory Phase
+## Dependency Summary
 
-Security, Resource Management, Evaluations, DAG Workflow Engine.
-
-**Prerequisite**: Foundation Phase complete
-
-### Epic: Security Controls
-**Depends on**: Cloud Runtime
-
-- [ ] Devcontainer isolation
-- [ ] Cross-container restrictions
-- [ ] Runtime/CI/Cloud permissions escalation
-- [ ] Execution environment boundaries
-
-### Epic: Guardrails
-**Depends on**: Security Controls
-
-- [ ] Command restriction in "Bypass permissions" mode
-- [ ] Content filtering
-- [ ] PII/secrets redaction
-- [ ] Policy enforcement hooks
-
-### Epic: Resource Management
-**Depends on**: Observability
-
-- [ ] Token budget allocation
-- [ ] Compute resource limits
-- [ ] Cost tracking
-
-### Epic: Evaluations
-**Depends on**: Observability
-
-- [ ] Automated quality assessment
-- [ ] Output validation framework
-- [ ] Benchmark integration
-
-### Epic: DAG Workflow Engine
-**Depends on**: Context Manager, Resource Management
-
-- [ ] DAG execution engine
-- [ ] Reactive triggers (webhook/event)
-- [ ] Proactive triggers (scheduled)
-- [ ] Human-in-the-loop (HITL) gates
-- [ ] Durable execution (failure recovery)
-- [ ] Persistent & shared state
-
-### Epic: Autonomous Agents
-**Depends on**: DAG Workflow Engine, Guardrails
-
-- [ ] Sensor/Ambient agent framework
-- [ ] Background monitoring
-- [ ] Proactive suggestions
-
-**→ TAG: v1.0.0**
-
----
-
-## Dependency Graph
-
-```
-v0 Milestone
-├── Initial Phase
-│   ├── Hook System ─────────────────┬──────────────────────┐
-│   │                                │                      │
-│   ├── Core Agents ◄────────────────┤                      │
-│   │                                │                      │
-│   ├── Support Agents ◄─────────────┘                      │
-│   │                                                       │
-│   ├── Agent-Backed Skills ◄── Core + Support Agents       │
-│   │                                                       │
-│   ├── Utility Skills (parallel) ──────────────────────────┤
-│   ├── Policy (parallel) ──────────────────────────────────┤
-│   ├── Workflows (parallel) ───────────────────────────────┤
-│   ├── Templates (parallel) ───────────────────────────────┤
-│   ├── Settings & Installer (parallel) ────────────────────┘
-│   │
-│   └── Orchestration ◄── Agent-Backed Skills
-│
-└── Validation Phase ◄── All Initial Phase epics
-    └── Integration Validation
-        → TAG: v0.1.0
-
-v1 Milestone
-├── MVP Phase ◄── v0.1.0
-├── Foundation Phase ◄── MVP
-└── Factory Phase ◄── Foundation
-    → TAG: v1.0.0
-```
+- v0.1.0 is the operational foundation for all subsequent releases.
+- v0.2.0 depends on v0.1.0 governance and baseline installer stability.
+- v0.3.0 depends on v0.2.0 and prioritizes modularity before feature expansion.
+- v1.0.0 depends on v0 stream stabilization and validated multi-runtime behavior.
 
 ---
 
 ## Progress Tracking
 
-| Milestone | Phase | Epics | Tasks | Status |
-|-----------|-------|-------|-------|--------|
-| v0 | Initial | 10 | 40 | ✅ Complete |
-| v0 | Validation | 1 | 3 | ✅ Complete |
-| v1 | MVP | 2 | 6 | 🔲 Not started |
-| v1 | Foundation | 5 | 15 | 🔲 Not started |
-| v1 | Factory | 6 | 23 | 🔲 Not started |
+| Stream | Current State |
+|--------|---------------|
+| v0.1.0 Foundation | ✅ Complete |
+| v0.1.1 Governance | ✅ Complete |
+| v0.2.0 Installer Extension | ✅ Complete |
+| v0.3.0 Modularization + Subagents | 🔄 In progress |
+| v1.0.0 Platform Expansion | 🔲 Planned |
 
 ---
 
@@ -308,3 +297,4 @@ v1 Milestone
 - **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
 - **Blueprint**: [BLUEPRINT.md](BLUEPRINT.md)
 - **Task Hierarchy**: [ADR-005](../architecture/adr/005-task-decomposition-hierarchy.md)
+- **Backlog Index**: [BACKLOG.md](../development/BACKLOG.md)

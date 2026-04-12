@@ -1,18 +1,18 @@
-# SuperClaudeZero
+# AgentOrchestrator
 
 Minimalist multi-agent orchestration framework for Claude Code.
 Inspired by SuperClaude.
 
-**Version**: 0.1.0  | **Status**: v0 Initial Phase Complete
+**Version**: 0.2.0  | **Status**: v0.2.0 Multi-Runtime Install
 
 ---
 
 ## Overview
 
-SuperClaudeZero (SCZ) transforms Claude Code from a single-turn assistant into an orchestrated multi-agent system with:
+AgentOrchestrator transforms Claude Code from a single-turn assistant into an orchestrated multi-agent system with:
 
 - **7 Specialized Agents**: Business Analyst, Architect, Project Manager, Developer, Validator, Deployer, Tech Writer
-- **14 Skills**: Workflow commands from `/spec` to `/deploy`
+- **15 Skills**: Workflow commands from `/spec` to `/deploy` plus shared HITL protocol
 - **3 Workflow Depths**: Full, Medium, Light based on complexity
 - **Hook System**: Lifecycle events for validation and learning
 - **Memory Integration**: Serena MCP for persistent knowledge
@@ -26,39 +26,79 @@ SuperClaudeZero (SCZ) transforms Claude Code from a single-turn assistant into a
 - **uv**: Required for Python operations and Serena MCP (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - **jq**: Required for JSON merging during installation (`apt install jq` or `brew install jq`)
 
+### Runtime Support Matrix
+
+| Runtime     | Install flag  | SubAgents         | Skills | Hooks | Commands       |
+|-------------|---------------|-------------------|--------|-------|----------------|
+| Claude Code | `--claude`    | Yes               | Yes    | Yes   | Yes            |
+| Codex CLI   | `--codex`     | Yes (experimental)| Yes    | No    | Yes (compat)   |
+| Gemini CLI  | `--gemini`    | Partial (exp)     | Yes    | No (policy) | Yes (compat) |
+| OpenCode    | `--opencode`  | Yes               | Yes    | No    | Yes            |
+| Qwen Code   | `--qwen`      | Yes               | Yes    | No    | Yes            |
+
+`skills` is the default profile for all five runtimes. Hooks are disabled by default and installed only when `--hooks` is passed. `commands` remains available via `--profile commands` as compatibility mode. For Codex, skills/agents stay in `~/.agents/`, while compatibility commands are written to `~/.codex/prompts/`.
+
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/super-claude-zero.git
-cd super-claude-zero
-
-# Install globally (agents, skills, hooks, workflows)
+# Install globally to Claude Code (default runtime)
 ./install.sh --global
+
+# Install globally with hooks enabled
+./install.sh --global --hooks
+
+# Install to multiple runtimes in one run
+./install.sh --global --codex --qwen
+
+# Install to all five runtimes
+./install.sh --global --claude --codex --gemini --opencode --qwen
+
+# Namespaced install (runtime-aware namespace translation)
+./install.sh --global --claude --namespace orchestrator
+
+# Install with commands compatibility profile
+./install.sh --global --gemini --profile commands
 
 # Install project templates to a target project
 ./install.sh --project /path/to/your/project
 
-# Install both
-./install.sh --all /path/to/your/project
+# Install both global and project in one run
+./install.sh --global --project /path/to/your/project
 
 # Overwrite existing markdown files during reinstall
 ./install.sh --global --overwrite
+
+# Validate registry paths against package layout (no writes)
+./install.sh --check
 ```
 
 ### What Gets Installed
 
-**`--global` installs to `~/.claude/`:**
-- `agents/` - Agent definitions (7 files)
-- `skills/` - Skill definitions (14 directories)
-- `hooks/scripts/` - Hook scripts (5 files) + shared library
-- `settings.json` - Hook and MCP configuration
-- `policy/` - PRINCIPLES.md, RULES.md, GUIDELINES.md
-- `workflows/` - SWE.md, meta-learning.md
-- `templates/` - Vision, Blueprint, PRD, Architecture, ADR, Roadmap, Backlog, Issues
+**`--global` installs per runtime (default: `--claude`):**
+
+| Artifact          | claude (`~/.claude/`) | codex (skills/agents: `~/.agents/`; commands compat: `~/.codex/prompts/`) | gemini (`~/.gemini/`) | opencode (`~/.config/opencode/`) | qwen (`~/.qwen/`) |
+|-------------------|-----------------------|-----------------------|-----------------------|----------------------------------|-------------------|
+| agents/           | Yes                   | Yes                   | No                    | Yes                              | Yes               |
+| skills/           | Yes (default)         | Yes (default)         | Yes (default)         | Yes (default)                    | Yes (default)     |
+| commands/         | Yes (`--profile commands`) | Yes (`~/.codex/prompts`, `--profile commands`) | Yes (`--profile commands`) | Yes (`--profile commands`) | Yes (`--profile commands`) |
+| hooks/            | Yes (`--hooks`)       | No                    | No                    | No                               | No                |
+| settings.json     | Yes                   | No                    | No                    | No                               | No                |
+| policy/           | Yes                   | No                    | No                    | No                               | No                |
+| workflows/        | Yes                   | No                    | No                    | No                               | No                |
+| templates/        | Yes                   | No                    | No                    | No                               | No                |
+
+Codex note: default install is skills-first under `~/.agents/skills`; `~/.codex/prompts` is written only with `--profile commands`.
+
+Pass `--namespace <name>` to enable runtime-aware namespace translation:
+- Skills/agents on flat runtimes use dash fallback naming (`<ns>-<name>`).
+- Gemini and Qwen commands use native directory namespaces (`commands/<ns>/<name>` => `/<ns>:<name>`).
 
 **`--project` installs to `<path>/`:**
-- `.claude/settings.json` - Project settings with prompt-based hook examples
+- `<runtime-root>/agents/` - Project-local agents for each selected runtime (`.claude/`, `.agents/`, `.gemini/`, `.opencode/`, `.qwen/` as applicable)
+- `<runtime-root>/skills/` - Project-local skills for each selected runtime
+- `<runtime-root>/templates/` - Project-local template copies for each selected runtime
+- `<runtime-root>/policy/` - Project-local policy copies for each selected runtime
+- `<runtime-root>/workflows/` - Project-local workflow copies for each selected runtime
 - `.serena/project.yml` - Auto-generated via `uvx` (language auto-detection)
 - `docs/policy/` - RULES.md, GUIDELINES.md templates
 - `docs/knowledge/` - Project knowledge base
@@ -91,7 +131,7 @@ claude
 |-------|-------|---------|--------|
 | `/spec` | Business Analyst | Requirements elicitation | `docs/architecture/PRD.md` |
 | `/design` | Architect | System architecture | `docs/architecture/ARCHITECTURE.md`, ADRs |
-| `/plan` | Project Manager | Task decomposition | `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md` |
+| `/plan` | Project Manager | Task decomposition | `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`, optional `docs/development/tasks/*.md` |
 | `/implement` | Developer | Code implementation | Source files, tests |
 | `/validate` | Validator | Testing and verification | Validation report |
 | `/deploy` | Deployer | Build and deployment | Deployment artifacts |
@@ -135,7 +175,7 @@ claude
 
 ## Workflow Depths
 
-SCZ assesses complexity and recommends appropriate workflow depth:
+Orchestrator assesses complexity and recommends appropriate workflow depth:
 
 ### Full Workflow
 **Use when**: New product, complex system, multiple components
@@ -167,13 +207,19 @@ After installation, your project will have:
 ```
 your-project/
 ├── .claude/
-│   └── settings.json     # Project settings with prompt-based hooks
+│   ├── agents/
+│   │   └── *.md          # Project-local AgentOrchestrator agents
+│   ├── skills/
+│   │   └── <skill>/      # Project-local AgentOrchestrator skills
+│   ├── templates/        # Project-local templates
+│   ├── policy/           # Project-local policy copies
+│   └── workflows/        # Project-local workflow copies
 ├── .serena/
 │   └── project.yml       # Auto-generated Serena project config
 ├── docs/
 │   ├── objectives/       # VISION.md, BLUEPRINT.md, ROADMAP.md
 │   ├── architecture/     # PRD.md, ARCHITECTURE.md, adr/
-│   ├── development/      # BACKLOG.md, ISSUES.md
+│   ├── development/      # BACKLOG.md, ISSUES.md, tasks/
 │   └── knowledge/        # Project knowledge base
 └── reports/
     ├── analysis/         # /analyse outputs
@@ -184,7 +230,7 @@ your-project/
 
 ## Artifact Hierarchy
 
-SCZ follows a layered artifact structure:
+Orchestrator follows a layered artifact structure:
 
 ```
 Strategic (locked after PRD)
@@ -198,7 +244,8 @@ Specification (changes with approval)
 
 Execution (changes frequently)
 ├── ROADMAP.md       # Milestones, phases, epics + dependencies
-├── BACKLOG.md       # Prioritized tasks from ROADMAP epics
+├── BACKLOG.md       # Task index, status, traceability, refs
+├── tasks/*.md       # Canonical task-detail docs for complex work
 └── ISSUES.md        # Discovered bugs, blockers, tech debt
 ```
 
@@ -206,11 +253,13 @@ Execution (changes frequently)
 
 ## MCP Requirements
 
-| Server | Purpose | Required |
-|--------|---------|----------|
-| **Serena** | Memory persistence, symbolic code ops | Yes |
-| **Context7** | Documentation lookup | Yes |
-| **DeepWiki** | GitHub repository documentation | Yes |
+| Server | Purpose | Status |
+|--------|---------|--------|
+| **Serena** | Memory persistence, symbolic code ops | Required |
+| **Context7** | Documentation lookup | Recommended |
+| **DeepWiki** | GitHub repository documentation | Recommended |
+| **Parallel Search** | Fast parallel web lookup for research workflows | Recommended |
+| **Parallel Task** | Deep research and batch enrichment task execution | Recommended |
 | **Playwright** | Browser automation | Optional |
 
 MCP servers are pre-configured in `settings.json`. Serena requires `uvx` for dynamic project initialization.
@@ -219,11 +268,11 @@ MCP servers are pre-configured in `settings.json`. Serena requires `uvx` for dyn
 
 ## Hook System
 
-SCZ uses Claude Code hooks for lifecycle management.
+Orchestrator can use Claude Code hooks for lifecycle management when installed with `--hooks`.
 
 ### Global Hooks (command-based)
 
-Installed to `~/.claude/settings.json`:
+Installed to `~/.claude/settings.json` when `--hooks` is passed:
 
 | Event | Script | Purpose |
 |-------|--------|---------|
@@ -235,7 +284,7 @@ Installed to `~/.claude/settings.json`:
 
 ### Project Hooks (prompt-based)
 
-Installed to `.claude/settings.json`:
+Optional in `.claude/settings.json` (not auto-provisioned by `--project`):
 
 | Event | Type | Purpose |
 |-------|------|---------|
@@ -253,13 +302,13 @@ Hooks provide **reminders**, not enforcement. Agents decide whether to act (ADR-
 ### Global Settings (`~/.claude/settings.json`)
 
 Installed by `--global` flag. Contains:
-- Hook configurations (command-based)
-- MCP server definitions (Serena, Context7, DeepWiki)
+- Hook configurations (command-based, only when `--hooks` is passed)
+- MCP server definitions (Serena, Context7, DeepWiki, Parallel Search, Parallel Task, Playwright)
 - Default permissions
 
 ### Project Settings (`.claude/settings.json`)
 
-Installed by `--project` flag. Contains:
+Not auto-installed by `--project` (add manually if needed). Typical contents:
 - Project-specific hooks (prompt-based examples)
 - Inherits MCP and permissions from global
 
@@ -271,9 +320,9 @@ Three-tier policy structure:
 
 | Location | Purpose | Installed To |
 |----------|---------|--------------|
-| `global/policy/` | Framework-wide policies for all projects | `~/.claude/policy/` |
-| `docs/policy/` | SCZ project-specific policies | Not installed |
-| `project/docs/policy/` | Project template (RULES.md, GUIDELINES.md) | `<project>/docs/policy/` |
+| `package/policy/` | Framework-wide policy source in this repo | `<runtime-root>/policy/` globally and project-locally for the selected runtime(s) |
+| `docs/policy/` | Orchestrator repo policy docs | In-repo only |
+| `<project>/docs/policy/` | Project template output (STANDARDS, GUIDELINES) | `<project>/docs/policy/` |
 
 **Policy files**:
 - `PRINCIPLES.md` - Core software engineering principles
@@ -286,7 +335,7 @@ Projects can customize `<project>/docs/policy/` files to supplement (not replace
 
 ## Templates
 
-SCZ provides templates for all artifact types in `~/.claude/templates/`:
+Orchestrator template source lives in `package/templates/` and is installed to `<runtime-root>/templates/` globally and project-locally for the selected runtime(s) (`~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`, and matching project-local roots):
 
 | Template | Purpose | Output Location |
 |----------|---------|-----------------|
@@ -316,7 +365,7 @@ Milestone (v0, v1)     -> Git Tag
 
 1. Fork the repository
 2. Create a feature branch
-3. Use SCZ to plan and implement (`/orchestrate your feature`)
+3. Use Orchestrator to plan and implement (`/orchestrate your feature`)
 4. Submit a pull request
 
 ---
@@ -331,10 +380,21 @@ Milestone (v0, v1)     -> Git Tag
 - [Roadmap](docs/objectives/ROADMAP.md) - Milestones and phases
 - [Backlog](docs/development/BACKLOG.md) - Task tracking
 - [Serena Integration](.serena/README.md) - Memory system guide
-- [Hook System](.claude/hooks/README.md) - Hook documentation
-- [Principles](global/policy/PRINCIPLES.md) - Software engineering principles
-- [Rules](docs/policy/RULES.md) - Behavioral rules
+- [Hook System](package/hooks/README.md) - Hook documentation
+- [Principles](package/policy/PRINCIPLES.md) - Software engineering principles
+- [Rules](package/policy/RULES.md) - Agent behavioral rules
+- [Standards](docs/policy/STANDARDS.md) - Project technical standards
 - [Guidelines](docs/policy/GUIDELINES.md) - User guidance
+
+---
+
+## Current Constraints
+
+- Codex multi-agent flow follows official role-config model: enable `/experimental` (or `[features] multi_agent = true`), define `[agents.<role>]` in config, spawn via prompt, switch/check threads with `/agent`.
+- Codex default install is skills-first (`~/.agents/skills`); compatibility prompts are emitted to `~/.codex/prompts` only with explicit `--profile commands`.
+- Gemini default install is skills-first; `.toml` commands are emitted only with explicit `--profile commands`.
+- Non-Claude hook integration is intentionally out of scope (`docs/knowledge/decisions/non-claude-hooks-policy.md`).
+- `--profile commands` is a functional conversion mode that installs command-format artifacts for selected runtimes.
 
 ---
 

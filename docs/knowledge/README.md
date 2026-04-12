@@ -9,8 +9,8 @@ This directory contains accumulated project knowledge that persists across sessi
 Store domain-specific information that helps agents understand your project:
 - Domain concepts and terminology
 - API patterns and conventions
-- Architecture decisions and rationale
-- Troubleshooting guides
+- Technical and operational decisions (non-ADR)
+- Operational runbooks
 - Team conventions
 
 ---
@@ -38,9 +38,18 @@ knowledge/
 │   └── testing.md      # Testing patterns
 ├── decisions/          # Key decisions
 │   └── tech-stack.md   # Technology choices
-└── guides/             # How-to guides
+└── runbooks/           # Procedures, SOPs, workflows
     └── debugging.md    # Common issues
 ```
+
+---
+
+## Decision Types
+
+- **ADRs** (`docs/architecture/adr/`): significant architecture decisions with alternatives and consequences.
+- **Technical decision records (TDRs)** (`docs/knowledge/decisions/`): lightweight technical/operational decisions, protocols, and guidance that do not rise to ADR scope.
+
+Do not duplicate ADR content in `docs/knowledge/decisions/`; link or summarize when needed.
 
 ---
 

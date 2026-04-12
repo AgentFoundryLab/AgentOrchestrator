@@ -1,4 +1,4 @@
-# SuperClaudeZero Vision
+# AgentOrchestrator Vision
 
 **Version**: 0.1.0
 **Updated**: 2026-01-24
@@ -13,11 +13,20 @@ AI coding assistants operate in single-turn mode: no persistent memory, no struc
 
 **"From assistant to orchestrator"**
 
-SCZ transforms Claude Code into an autonomous software engineering orchestrator that:
+Orchestrator transforms Claude Code into an autonomous software engineering orchestrator that:
 - Coordinates specialized agents through defined workflows
 - Validates its own work through hooks
 - Learns from mistakes via reflexion
 - Persists knowledge across sessions
+
+## Technical Architecture Vision
+
+True multi-agent system with independent, observable agents coordinated through workflow orchestration. Strands Agents framework with L1 Workflow, L2 Graph, and L3 Swarm coordination. Subscription-based authentication via custom Claude SDK provider and CLI wrappers for other providers.
+
+**Architecture Pillars**:
+- **MCP**: Agent ↔ Tools/Resources (client-server)
+- **A2A**: Orchestrator ↔ Agent (task-based coordination)
+- **Strands Framework**: L1 Sequential/DAG, L2 Conditional routing, L3 Autonomous mesh
 
 ## Target Users
 

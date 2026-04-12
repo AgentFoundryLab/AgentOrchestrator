@@ -3,13 +3,13 @@
 **Status**: Accepted
 **Version**: 1.1
 **Date**: 2026-01-25
-**Context**: SuperClaudeZero v0 policy loading strategy
+**Context**: AgentOrchestrator v0 policy loading strategy
 
 ---
 
 ## Context
 
-SuperClaudeZero defines operational policies in three files:
+AgentOrchestrator defines operational policies in three files:
 
 | File | Tokens | Purpose |
 |------|--------|---------|
@@ -58,7 +58,7 @@ Loading all policies (~5,600 tokens) into every agent/skill wastes context, espe
 
 ### Agent -> Section Mapping
 
-Per PRD FR1, SuperClaudeZero has 7 specialized agents plus orchestration:
+Per PRD FR1, AgentOrchestrator has 7 specialized agents plus orchestration:
 
 | Agent | Skill | RULES Sections |
 |-------|-------|----------------|
@@ -146,8 +146,10 @@ Per PRD, MCP dependencies are:
 | Server | Purpose | Priority |
 |--------|---------|----------|
 | Serena | Session persistence, semantic memory, symbolic code operations | Required |
-| Context7 | Documentation lookup, prevents hallucination | Required |
-| DeepWiki | GitHub repository documentation | Required |
+| Context7 | Documentation lookup, prevents hallucination | Recommended |
+| DeepWiki | GitHub repository documentation | Recommended |
+| Parallel Search | Fast parallel web lookup | Recommended |
+| Parallel Task | Deep research and batch task execution | Recommended |
 | Playwright | Browser automation for validation | Optional |
 
 RULES.md `Tool Optimization` section includes:
@@ -204,15 +206,15 @@ Keep policies as documentation only.
 
 ## Related Decisions
 
-- **ADR-003**: Minimal MCP Footprint (Context7, DeepWiki, Serena)
+- **ADR-003**: Minimal MCP Footprint (Serena required; Context7/DeepWiki/Parallel Search/Task recommended; Playwright optional)
 - **ADR-004**: Skill-Agent Invocation Paths
 - **PRD FR1**: Agent System (7 agents)
 - **PRD FR2**: Skill Interface (14 skills)
-- **PRD MCP Dependencies**: Serena, Context7, DeepWiki (Required), Playwright (Optional)
+- **PRD MCP Dependencies**: Serena (Required), Context7/DeepWiki/Parallel Search/Task (Recommended), Playwright (Optional)
 
 ## References
 
-- [PRINCIPLES.md](../../../global/policy/PRINCIPLES.md)
-- [RULES.md](../../../global/policy/RULES.md)
-- [GUIDELINES.md](../../../global/policy/GUIDELINES.md)
+- [PRINCIPLES.md](../../../package/policy/PRINCIPLES.md)
+- [RULES.md](../../../package/policy/RULES.md)
+- [GUIDELINES.md](../../../package/templates/guidelines.md)
 - [PRD.md](../PRD.md)

@@ -1,0 +1,121 @@
+---
+name: review
+description: Analyze cross-artifact consistency, correctness, and coverage
+argument-hint: optional focus area (PRD, ARCH, BACKLOG)
+user-invocable: true
+allowed-tools:
+  - Read
+  - Write
+  - Grep
+  - Glob
+  - AskUserQuestion
+context: fork
+agent: tech-writer
+---
+
+# /review - Cross-Artifact Review
+
+Analyze consistency, correctness, and coverage across all planning artifacts.
+
+## Purpose
+
+After `/plan` and before `/implement`, ensure:
+- Every FR has architecture components and BACKLOG tasks
+- Every user story traces to acceptance criteria and tasks
+- No ADR contradicts ARCHITECTURE
+- ADRs and TDRs are not mixed
+- ROADMAP and BACKLOG are aligned
+- Complex tasks are safe to delegate because their execution contract is discoverable
+- Blocking gaps are surfaced before implementation begins
+
+## Inputs
+
+- `$ARGUMENTS`: Optional focus area (PRD, ARCH, BACKLOG) — default: all
+- PRD: `docs/architecture/PRD.md`
+- Architecture: `docs/architecture/ARCHITECTURE.md`
+- ADRs: `docs/architecture/adr/`
+- ROADMAP: `docs/objectives/ROADMAP.md`
+- BACKLOG: `docs/development/BACKLOG.md`
+
+## Outputs
+
+Review report at `reports/analysis/review-YYYY-MM-DD.md`
+
+Blocking issues also logged to `docs/development/ISSUES.md`.
+
+## Workflow
+
+### 1. Load All Artifacts
+Read PRD, ARCHITECTURE.md, all ADRs, ROADMAP.md, BACKLOG.md.
+Resolve task-detail refs for complex tasks when present.
+Extract: FRs, NFRs, user stories, components, ADR decisions, milestones, tasks, and canonical task contracts.
+
+### 2. Consistency Check
+Cross-check:
+- Every FR → has at least one architecture component
+- Every FR → has at least one BACKLOG task
+- Every BACKLOG task → traceable to an FR or NFR
+- ROADMAP milestones → match BACKLOG milestone groupings
+- ROADMAP captures strategic scope/sequencing while BACKLOG captures task inventory, status, and refs
+- Complex tasks either embed executable detail or resolve to canonical task-detail docs
+
+### 3. Correctness Check
+- Each ADR status (Accepted/Proposed) — does ARCHITECTURE reflect it?
+- No ADR contradicts the final design in ARCHITECTURE.md
+- Task acceptance criteria match the FR they trace to
+- Taxonomy check:
+  - ADRs (`docs/architecture/adr/`) contain only architecture decisions
+  - Technical Decision Records (TDRs) (`docs/knowledge/decisions/`) contain only non-architectural technical/operational decisions
+  - ARCHITECTURE/ADR do not use BACKLOG/ISSUES as normative design sources
+  - ISSUES records problems and resolution path; it is not the execution spec unless explicitly elevated and linked
+
+### 4. Coverage Check
+- Every user story → has AC → has at least one task covering it
+- No orphaned tasks (tasks with no FR/NFR traceability)
+- No FRs without test coverage plan in BACKLOG
+
+### 5. Produce Report
+
+```markdown
+# Cross-Artifact Review — YYYY-MM-DD
+
+## Summary
+[Overall status: Clean / Issues Found]
+
+## Validation Checklist
+- [ ] All FRs have ARCHITECTURE components
+- [ ] All FRs have BACKLOG tasks
+- [ ] All BACKLOG tasks traceable to FR or NFR
+- [ ] No ADR contradicts ARCHITECTURE
+- [ ] ADR vs TDR taxonomy is clean
+- [ ] ROADMAP and BACKLOG are aligned
+- [ ] ROADMAP and BACKLOG follow their strategic/execution roles
+- [ ] Blocking issues logged to ISSUES.md
+
+## Gaps & Inconsistencies
+
+### Blocking Issues
+| ID | Type | Description | Recommendation |
+|----|------|-------------|----------------|
+| R-001 | [Consistency/Coverage/Correctness] | [Details] | Re-run /[agent] |
+| R-002 | delegation-risk | Complex task lacks executable detail or canonical refs | Re-run /plan |
+
+### Non-Blocking Issues
+| ID | Type | Description | Note |
+|----|------|-------------|------|
+| R-003 | [Type] | [Details] | [Note] |
+
+## Traceability Matrix
+| FR | Component | Task(s) | Status |
+|----|-----------|---------|--------|
+| FR1 | [comp] | T-001, T-002 | OK |
+| FR2 | — | — | MISSING |
+```
+
+### 6. Handle Blocking Issues
+If blocking issues found:
+- Log each to `docs/development/ISSUES.md`
+- In report, recommend which agent to re-invoke (e.g., "Re-run /design for missing component")
+- Return QUESTIONS block to Orchestrator if human decision needed
+
+Non-blocking issues: note in report only, do not block.
