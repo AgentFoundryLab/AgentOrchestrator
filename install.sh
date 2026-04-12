@@ -1181,7 +1181,7 @@ transform_agent_to_opencode_permission() {
                 }
                 
                 if (has_wildcard) {
-                    print "  "*": allow"
+                    print "  \"*\": allow"
                 } else {
                     for (i = 1; i <= n; i++) {
                         if (items[i] != "") {
@@ -1299,25 +1299,40 @@ normalize_agent_markdown_in_place() {
     # Runtime-specific transformations
     case "$rt" in
         codex)
-            # Lowercase tool names in frontmatter
+            # Lowercase tool names in frontmatter, supporting both inline arrays and YAML lists.
             awk '
-                BEGIN { in_fm = 0 }
+                BEGIN { in_fm = 0; in_tools = 0 }
                 /^---$/ { in_fm = !in_fm; print; next }
                 in_fm && /^tools:/ {
-                    # Lowercase the tool names
-                    line = $0
-                    gsub(/tools:[[:space:]]*\[/, "tools: [", line)
-                    # Keep brackets, lowercase content
-                    line_tolower = line
-                    # Lowercase everything after "tools:"
-                    prefix = "tools:"
-                    idx = index(line_tolower, prefix)
-                    if (idx > 0) {
-                        before = substr(line_tolower, 1, idx + length(prefix) - 1)
-                        after = substr(line_tolower, idx + length(prefix))
-                        print before tolower(after)
+                    if ($0 ~ /\[/) {
+                        line = $0
+                        gsub(/tools:[[:space:]]*\[/, "tools: [", line)
+                        prefix = "tools:"
+                        idx = index(line, prefix)
+                        if (idx > 0) {
+                            before = substr(line, 1, idx + length(prefix) - 1)
+                            after = substr(line, idx + length(prefix))
+                            print before tolower(after)
+                            next
+                        }
+                    }
+                    in_tools = 1
+                    print
+                    next
+                }
+                in_fm && in_tools {
+                    if ($0 ~ /^[[:space:]]*-[[:space:]]/) {
+                        match($0, /^[[:space:]]*-[[:space:]]*/)
+                        prefix = substr($0, 1, RLENGTH)
+                        tool = substr($0, RLENGTH + 1)
+                        print prefix tolower(tool)
                         next
                     }
+                    if ($0 ~ /^[[:space:]]+/) {
+                        print
+                        next
+                    }
+                    in_tools = 0
                 }
                 { print }
             ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
@@ -1520,8 +1535,14 @@ install_runtime_commands_compat() {
     local base_dir="$2"   # RUNTIME_CONF_DIR[rt] or rt_target
     local backup_dir="$3"
     local namespace="${4:-}"
+    local commands_base_override="${5-__USE_RUNTIME_DEFAULT__}"
 
-    local commands_base="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-}"
+    local commands_base=""
+    if [ "$commands_base_override" = "__USE_RUNTIME_DEFAULT__" ]; then
+        commands_base="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-}"
+    else
+        commands_base="$commands_base_override"
+    fi
     local commands_dir
     if [ -n "$commands_base" ]; then
         commands_dir="${commands_base}/${RUNTIME_COMMANDS_PATH[${rt}]}"
@@ -1582,8 +1603,14 @@ restore_runtime_commands_compat() {
     local base_dir="$2"
     local backup_dir="$3"
     local namespace="${4:-}"
+    local commands_base_override="${5-__USE_RUNTIME_DEFAULT__}"
 
-    local commands_base="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-}"
+    local commands_base=""
+    if [ "$commands_base_override" = "__USE_RUNTIME_DEFAULT__" ]; then
+        commands_base="${RUNTIME_COMMANDS_CONF_OVERRIDE[${rt}]:-}"
+    else
+        commands_base="$commands_base_override"
+    fi
     local commands_dir
     if [ -n "$commands_base" ]; then
         commands_dir="${commands_base}/${RUNTIME_COMMANDS_PATH[${rt}]}"
@@ -1873,7 +1900,7 @@ install_runtime_project() {
 
     # Commands compat: install when profile is commands or all
     if [[ "$eff_profile" == "commands" || "$eff_profile" == "all" ]]; then
-        install_runtime_commands_compat "$rt" "$rt_target" "$backup_dir" "$commands_namespace"
+        install_runtime_commands_compat "$rt" "$rt_target" "$backup_dir" "$commands_namespace" ""
     fi
 
     # Agents: only if runtime has agents path (not gated by profile)
@@ -2003,7 +2030,7 @@ restore_runtime_project() {
 
     # Commands compatibility artifacts
     if [[ "${RUNTIME_SUPPORTS_COMMANDS[${rt}]}" == "true" ]]; then
-        restore_runtime_commands_compat "$rt" "$rt_target" "$backup_dir" "$commands_namespace"
+        restore_runtime_commands_compat "$rt" "$rt_target" "$backup_dir" "$commands_namespace" ""
     fi
 
     # Agents

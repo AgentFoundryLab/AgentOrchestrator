@@ -24,7 +24,7 @@ parse_common() {
     PERMISSION_MODE=$(echo "$HOOK_INPUT" | jq -r '.permission_mode // empty')
 
     # Derived paths - sanitize PROJECT_NAME to prevent command injection
-    PROJECT_NAME="$(basename "$CWD" | sed 's/[^a-zA-Z0-9_-]//g')"
+    PROJECT_NAME="$(basename "$CWD" | tr -cd '[:alnum:]_-' | head -c 32)"
     SESSION_LOG_DIR="${CWD}/logs/sessions/${SESSION_ID}"
 }
 

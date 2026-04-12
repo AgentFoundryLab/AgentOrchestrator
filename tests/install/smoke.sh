@@ -631,6 +631,74 @@ test_qwen_commands_frontmatter_and_args_transform() {
 }
 run_test "conformance-qwen-commands-frontmatter-and-args-transform" test_qwen_commands_frontmatter_and_args_transform
 
+# Codex commands profile should keep project-scoped installs inside target project
+test_codex_project_commands_stay_project_scoped() {
+    local tmp project
+    tmp=$(mktemp -d)
+    project="${tmp}/project"
+    mkdir -p "$project"
+    HOME="$tmp" bash "${INSTALL}" --project "$project" --codex --profile commands >/dev/null 2>&1
+    local ok=0
+    assert_dir_exists "${project}/.agents/prompts" || ok=1
+    assert_any_file_in "${project}/.agents/prompts" || ok=1
+    assert_dir_absent "${tmp}/.codex/prompts" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-codex-project-commands-stay-project-scoped" test_codex_project_commands_stay_project_scoped
+
+# Codex agent transform should lowercase multiline YAML tool lists
+test_codex_agent_multiline_tools_lowercased() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --codex >/dev/null 2>&1
+    local ok=0
+    local architect_md="${tmp}/.agents/agents/architect.md"
+    assert_file_exists "$architect_md" || ok=1
+    if [ -f "$architect_md" ]; then
+        if awk '
+            BEGIN { in_fm = 0; bad = 0 }
+            /^---$/ { in_fm = !in_fm; next }
+            in_fm && /^[[:space:]]*-[[:space:]]*(Read|Write|Edit|Bash|Glob|Grep|WebSearch)$/ { bad = 1 }
+            END { exit bad ? 0 : 1 }
+        ' "$architect_md"; then
+            echo "  [assert] found unnormalized Codex multiline tool names in: $architect_md" >&2
+            ok=1
+        fi
+        assert_file_contains "$architect_md" '  - read' || ok=1
+        assert_file_contains "$architect_md" '  - websearch' || ok=1
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-codex-agent-multiline-tools-lowercased" test_codex_agent_multiline_tools_lowercased
+
+# OpenCode agent transform should emit wildcard permission block correctly
+test_opencode_agent_wildcard_permission_mapping() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --opencode >/dev/null 2>&1
+    local ok=0
+    local developer_md="${tmp}/.config/opencode/agents/developer.md"
+    assert_file_exists "$developer_md" || ok=1
+    if [ -f "$developer_md" ]; then
+        assert_file_contains "$developer_md" 'permission:' || ok=1
+        assert_file_contains "$developer_md" '  "*": allow' || ok=1
+        if awk '
+            BEGIN { in_fm = 0; bad = 0 }
+            /^---$/ { in_fm = !in_fm; next }
+            in_fm && $0 == "0" { bad = 1 }
+            END { exit bad ? 0 : 1 }
+        ' "$developer_md"; then
+            echo "  [assert] unexpected standalone 0 in OpenCode agent frontmatter: $developer_md" >&2
+            ok=1
+        fi
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-opencode-agent-wildcard-permission-mapping" test_opencode_agent_wildcard_permission_mapping
+
 # ---------------------------------------------------------------------------
 # T-089: Restore/cleanup regression tests for namespaced installs
 # ---------------------------------------------------------------------------
