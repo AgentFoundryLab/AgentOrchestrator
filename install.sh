@@ -1111,10 +1111,22 @@ strip_claude_agent_frontmatter() {
 # map_tool_names — Map Claude tool names to target runtime format.
 # Input: tools list line from frontmatter (e.g., "tools: [Read, Write, Edit]")
 # Output: transformed tools list with mapped names
+map_tool_name() {
+    local tool="$1"
+    local rt="$2"
+
+    case "$rt" in
+        codex) echo "${TOOL_MAP_CLAUDE_TO_CODEX[$tool]:-$tool}" ;;
+        gemini) echo "${TOOL_MAP_CLAUDE_TO_GEMINI[$tool]:-$tool}" ;;
+        opencode) echo "${TOOL_MAP_CLAUDE_TO_OPENCODE[$tool]:-$tool}" ;;
+        qwen) echo "${TOOL_MAP_CLAUDE_TO_QWEN[$tool]:-$tool}" ;;
+        *) echo "$tool" ;;
+    esac
+}
+
 map_tool_names() {
     local tools_line="$1"
     local rt="$2"
-    local map_name="TOOL_MAP_CLAUDE_TO_$(echo "$rt" | tr '[:lower:]' '[:upper:]')"
     
     # Get the tools array content
     local tools_content
@@ -1131,19 +1143,74 @@ map_tool_names() {
         tool=$(echo "$tool" | sed 's/^"//;s/"$//')
         
         local mapped=""
-        case "$rt" in
-            codex) mapped="${TOOL_MAP_CLAUDE_TO_CODEX[$tool]:-$tool}" ;;
-            gemini) mapped="${TOOL_MAP_CLAUDE_TO_GEMINI[$tool]:-$tool}" ;;
-            opencode) mapped="${TOOL_MAP_CLAUDE_TO_OPENCODE[$tool]:-$tool}" ;;
-            qwen) mapped="${TOOL_MAP_CLAUDE_TO_QWEN[$tool]:-$tool}" ;;
-            *) mapped="$tool" ;;
-        esac
+        mapped="$(map_tool_name "$tool" "$rt")"
         
         [ -n "$mapped_tools" ] && mapped_tools+=", "
         mapped_tools+="$mapped"
     done
     
     echo "tools: [$mapped_tools]"
+}
+
+map_agent_tools_in_place() {
+    local f="$1"
+    local rt="$2"
+    [ -f "$f" ] || return 0
+
+    local tmp
+    tmp="$(mktemp)"
+
+    local in_fm=false
+    local in_tools=false
+    local line mapped indent tool
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [[ "$line" == "---" ]]; then
+            if $in_fm; then
+                in_fm=false
+                in_tools=false
+            else
+                in_fm=true
+            fi
+            printf '%s\n' "$line" >> "$tmp"
+            continue
+        fi
+
+        if $in_fm; then
+            if [[ "$line" =~ ^tools:[[:space:]]*\[.*\][[:space:]]*$ ]]; then
+                printf '%s\n' "$(map_tool_names "$line" "$rt")" >> "$tmp"
+                continue
+            fi
+
+            if [[ "$line" =~ ^tools:[[:space:]]*$ ]]; then
+                in_tools=true
+                printf '%s\n' "$line" >> "$tmp"
+                continue
+            fi
+
+            if $in_tools; then
+                if [[ "$line" =~ ^([[:space:]]*)-[[:space:]]*(.+)$ ]]; then
+                    indent="${BASH_REMATCH[1]}"
+                    tool="${BASH_REMATCH[2]}"
+                    tool="$(printf '%s' "$tool" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//')"
+                    mapped="$(map_tool_name "$tool" "$rt")"
+                    printf '%s- %s\n' "$indent" "$mapped" >> "$tmp"
+                    continue
+                fi
+
+                if [[ "$line" =~ ^[[:space:]]+ ]]; then
+                    printf '%s\n' "$line" >> "$tmp"
+                    continue
+                fi
+
+                in_tools=false
+            fi
+        fi
+
+        printf '%s\n' "$line" >> "$tmp"
+    done < "$f"
+
+    mv "$tmp" "$f"
 }
 
 # transform_agent_to_opencode_permission — Transform tools list to permission object for OpenCode.
@@ -1299,43 +1366,7 @@ normalize_agent_markdown_in_place() {
     # Runtime-specific transformations
     case "$rt" in
         codex)
-            # Lowercase tool names in frontmatter, supporting both inline arrays and YAML lists.
-            awk '
-                BEGIN { in_fm = 0; in_tools = 0 }
-                /^---$/ { in_fm = !in_fm; print; next }
-                in_fm && /^tools:/ {
-                    if ($0 ~ /\[/) {
-                        line = $0
-                        gsub(/tools:[[:space:]]*\[/, "tools: [", line)
-                        prefix = "tools:"
-                        idx = index(line, prefix)
-                        if (idx > 0) {
-                            before = substr(line, 1, idx + length(prefix) - 1)
-                            after = substr(line, idx + length(prefix))
-                            print before tolower(after)
-                            next
-                        }
-                    }
-                    in_tools = 1
-                    print
-                    next
-                }
-                in_fm && in_tools {
-                    if ($0 ~ /^[[:space:]]*-[[:space:]]/) {
-                        match($0, /^[[:space:]]*-[[:space:]]*/)
-                        prefix = substr($0, 1, RLENGTH)
-                        tool = substr($0, RLENGTH + 1)
-                        print prefix tolower(tool)
-                        next
-                    }
-                    if ($0 ~ /^[[:space:]]+/) {
-                        print
-                        next
-                    }
-                    in_tools = 0
-                }
-                { print }
-            ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+            map_agent_tools_in_place "$f" "$rt"
             ;;
         gemini)
             # Map tool names and add kind: local if absent
@@ -1352,7 +1383,7 @@ normalize_agent_markdown_in_place() {
             transform_agent_to_opencode_permission "$f"
             ;;
         qwen)
-            # Map tool names (same as gemini mapping)
+            map_agent_tools_in_place "$f" "$rt"
             ;;
     esac
 }

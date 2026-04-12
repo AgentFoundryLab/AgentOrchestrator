@@ -647,8 +647,8 @@ test_codex_project_commands_stay_project_scoped() {
 }
 run_test "conformance-codex-project-commands-stay-project-scoped" test_codex_project_commands_stay_project_scoped
 
-# Codex agent transform should lowercase multiline YAML tool lists
-test_codex_agent_multiline_tools_lowercased() {
+# Codex agent transform should map multiline YAML tool lists to runtime names
+test_codex_agent_multiline_tools_mapped() {
     local tmp
     tmp=$(mktemp -d)
     HOME="$tmp" bash "${INSTALL}" --global --codex >/dev/null 2>&1
@@ -666,12 +666,39 @@ test_codex_agent_multiline_tools_lowercased() {
             ok=1
         fi
         assert_file_contains "$architect_md" '  - read' || ok=1
-        assert_file_contains "$architect_md" '  - websearch' || ok=1
+        assert_file_contains "$architect_md" '  - web_search' || ok=1
     fi
     rm -rf "$tmp"
     return $ok
 }
-run_test "conformance-codex-agent-multiline-tools-lowercased" test_codex_agent_multiline_tools_lowercased
+run_test "conformance-codex-agent-multiline-tools-mapped" test_codex_agent_multiline_tools_mapped
+
+# Qwen agent transform should map multiline YAML tool lists to runtime names
+test_qwen_agent_multiline_tools_mapped() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --qwen >/dev/null 2>&1
+    local ok=0
+    local architect_md="${tmp}/.qwen/agents/architect.md"
+    assert_file_exists "$architect_md" || ok=1
+    if [ -f "$architect_md" ]; then
+        if awk '
+            BEGIN { in_fm = 0; bad = 0 }
+            /^---$/ { in_fm = !in_fm; next }
+            in_fm && /^[[:space:]]*-[[:space:]]*(Read|Write|Edit|Bash|Glob|Grep|WebSearch)$/ { bad = 1 }
+            END { exit bad ? 0 : 1 }
+        ' "$architect_md"; then
+            echo "  [assert] found unnormalized Qwen multiline tool names in: $architect_md" >&2
+            ok=1
+        fi
+        assert_file_contains "$architect_md" '  - read_file' || ok=1
+        assert_file_contains "$architect_md" '  - run_shell_command' || ok=1
+        assert_file_contains "$architect_md" '  - web_search' || ok=1
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-qwen-agent-multiline-tools-mapped" test_qwen_agent_multiline_tools_mapped
 
 # OpenCode agent transform should emit wildcard permission block correctly
 test_opencode_agent_wildcard_permission_mapping() {
