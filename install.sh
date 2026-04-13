@@ -2365,8 +2365,8 @@ init_serena_project() {
     # Create .serena directory
     mkdir -p "${target}/.serena"
 
-    # Run serena project create (auto-detects languages) - properly quote project name to prevent command injection
-    if (cd "$target" && uvx --from git+https://github.com/oraios/serena serena project create --name "${project_name@Q}" 2>/dev/null); then
+    # Run Serena using normal argv quoting so the runtime sees the raw project name.
+    if (cd "$target" && uvx --from git+https://github.com/oraios/serena serena project create --name "$project_name" 2>/dev/null); then
         log_success "Created: ${target}/.serena/project.yml"
         touch "${target}/.serena/.orchestrator-created-project-yml"
         ((++CREATED))
