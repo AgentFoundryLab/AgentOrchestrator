@@ -86,7 +86,7 @@ assert_no_file_matching() {
 assert_file_contains() {
     local file="$1"
     local needle="$2"
-    if grep -qF "$needle" "$file" 2>/dev/null; then
+    if grep -qF -- "$needle" "$file" 2>/dev/null; then
         return 0
     else
         echo "  [assert] expected '${needle}' in: $file" >&2
@@ -97,7 +97,7 @@ assert_file_contains() {
 assert_file_not_contains() {
     local file="$1"
     local needle="$2"
-    if grep -qF "$needle" "$file" 2>/dev/null; then
+    if grep -qF -- "$needle" "$file" 2>/dev/null; then
         echo "  [assert] unexpected '${needle}' in: $file" >&2
         return 1
     else
@@ -725,6 +725,36 @@ test_opencode_agent_wildcard_permission_mapping() {
     return $ok
 }
 run_test "conformance-opencode-agent-wildcard-permission-mapping" test_opencode_agent_wildcard_permission_mapping
+
+# Serena project init should pass the raw project name as a normal argv value
+test_serena_project_name_not_shell_quoted() {
+    local tmp project bindir args_file
+    tmp=$(mktemp -d)
+    project="${tmp}/my project"
+    bindir="${tmp}/bin"
+    args_file="${tmp}/uvx.args"
+    mkdir -p "$project" "$bindir"
+    cat > "${bindir}/uvx" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$@" > "${args_file}"
+mkdir -p .serena
+printf 'name: ok\n' > .serena/project.yml
+EOF
+    chmod +x "${bindir}/uvx"
+
+    local ok=0
+    HOME="$tmp" PATH="${bindir}:$PATH" bash "${INSTALL}" --project "$project" --claude >/dev/null 2>&1
+    assert_file_exists "${project}/.serena/project.yml" || ok=1
+    assert_file_exists "$args_file" || ok=1
+    if [ -f "$args_file" ]; then
+        assert_file_contains "$args_file" '--name' || ok=1
+        assert_file_contains "$args_file" 'my project' || ok=1
+        assert_file_not_contains "$args_file" "'my project'" || ok=1
+    fi
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-serena-project-name-not-shell-quoted" test_serena_project_name_not_shell_quoted
 
 # ---------------------------------------------------------------------------
 # T-089: Restore/cleanup regression tests for namespaced installs
