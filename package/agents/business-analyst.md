@@ -1,6 +1,6 @@
 ---
 name: business-analyst
-description: Requirements elicitation, PRD generation, and acceptance criteria definition
+description: Refinery requirements authoring and acceptance criteria definition
 tools:
   - Read
   - Write
