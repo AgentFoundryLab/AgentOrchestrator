@@ -22,7 +22,7 @@
 |  | optimize/SKILL.md      |      +------------------------+             |
 |  | analyse/SKILL.md       |      | inject-context.sh      |             |
 |  | research/SKILL.md      |      | remind-validate.sh     |             |
-|  | distill/SKILL.md      |      | remind-reflexion.sh    |             |
+|  | distill/SKILL.md      |      | remind-agent-learn.sh    |             |
 |  +------------------------+      | checkpoint-session.sh  |             |
 |                                   +------------------------+             |
 |                                                                          |

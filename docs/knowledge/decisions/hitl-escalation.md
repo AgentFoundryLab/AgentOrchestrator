@@ -2,11 +2,18 @@
 
 ## Status
 
-Accepted
+Superseded
 
 ## Date
 
 2026-02-19
+
+## Superseded
+
+Superseded when the agent set adopted direct `AskUserQuestion` calls. Sub-agents now ask the user
+directly; the `QUESTIONS FOR USER` relay block and the `hitl` skill that defined it were removed.
+`/orchestrate` owns the list of decision points that require a user answer. This record is retained
+for history — the protocol it describes is not live.
 
 ## Context
 
@@ -27,6 +34,6 @@ Task-spawned sub-agents need a consistent human-in-the-loop escalation path when
 
 ## References
 
-- `package/skills/hitl/SKILL.md`
+- `package/skills/orchestrate/SKILL.md` — current decision points
 - `package/workflows/SWE.md`
 - `AGENTS.md`

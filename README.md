@@ -11,8 +11,8 @@ Inspired by SuperClaude.
 
 AgentOrchestrator transforms Claude Code from a single-turn assistant into an orchestrated multi-agent system with:
 
-- **7 Specialized Agents**: Business Analyst, Architect, Project Manager, Developer, Validator, Deployer, Tech Writer
-- **15 Skills**: Workflow commands from `/spec` to `/deploy` plus shared HITL protocol
+- **9 Specialized Agents**: Business Analyst, Architect, Planner, Developer, Validator, Security, Scout, Deployer, Tech Writer
+- **23 Skills**: Workflow stages from `/spec` to `/status-update`, plus retrieval, research, audit, and session-learning support
 - **3 Workflow Depths**: Full, Medium, Light based on complexity
 - **Hook System**: Lifecycle events for validation and learning
 - **Memory Integration**: Serena MCP for persistent knowledge
@@ -116,8 +116,8 @@ claude
 
 # Or use individual skills directly
 /spec Build a task management CLI
-/design
-/plan
+/architect
+/planner
 /implement T-001
 ```
 
@@ -130,24 +130,33 @@ claude
 | Skill | Agent | Purpose | Output |
 |-------|-------|---------|--------|
 | `/spec` | Business Analyst | Requirements elicitation | `docs/architecture/PRD.md` |
-| `/design` | Architect | System architecture | `docs/architecture/ARCHITECTURE.md`, ADRs |
-| `/plan` | Project Manager | Task decomposition | `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`, optional `docs/development/tasks/*.md` |
+| `/architect` | Architect | System architecture | `docs/architecture/ARCHITECTURE.md`, ADRs, diagrams |
+| `/planner` | Planner | Task decomposition | `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`, optional `docs/development/tasks/*.md` |
+| `/review` | Tech Writer | Cross-surface consistency review | Findings, `reports/analysis/`, ISSUES rows |
 | `/implement` | Developer | Code implementation | Source files, tests |
-| `/validate` | Validator | Testing and verification | Validation report |
+| `/validate` | Validator | Testing and verification | `reports/validation/`, ISSUES rows |
+| `/security-review` | Security | Adversarial security gate | Verdict, ISSUES rows |
+| `/status-update` | Validator | Implementation assessment | Status in BACKLOG / ISSUES / ROADMAP |
 | `/deploy` | Deployer | Build and deployment | Deployment artifacts |
 | `/document` | Tech Writer | Documentation | `docs/`, `README.md` |
+| `/onboard` | Architect | Project policy bootstrap | `docs/policy/`, `docs/INDEX.md` |
+| `/scout` | Scout | Bounded docs/code research | Scout report |
 
 ### Utility Skills (Inline)
 
 | Skill | Purpose | Output |
 |-------|---------|--------|
-| `/orchestrate` | Guided workflow orchestration | Coordinates agents |
-| `/reflexion` | Error learning capture | Serena memory |
-| `/reflect` | Session meta-learning | Serena memory |
-| `/optimize` | System improvement proposals | Meta-opt plan |
+| `/orchestrate` | Delegated multi-agent orchestration | Coordinates agents, owns lane lifecycle |
+| `/reconcile` | Route downstream findings to the right stage | Routing decision, `reports/analysis/` |
+| `/context-compiler` | Compact persisted context bundles | `context/<area>/<task>.md` |
+| `/meta-learn` | Session analysis and instruction-rule fixes | `reports/meta-optimization/`, `reports/analysis/` |
+| `/cleanup` | Prune stale worktrees, branches, runtime stacks | Triage table, removals |
+| `/anneal` | Complexity, duplication, and drift audit | Ranked simplification plan |
 | `/analyse` | Code investigation | `reports/analysis/` |
-| `/research` | Documentation lookup | `reports/research/` |
-| `/distill` | Content distillation (5-level granularity) | Replace original |
+| `/research` | External documentation lookup | `reports/research/` |
+| `/qmd` | Local markdown/doc retrieval | Cited doc text |
+| `/codebase-memory` | Structural code-graph retrieval | Symbols, call paths, snippets |
+| `/distill` | Lossless document compression | Distillate |
 
 ---
 
@@ -155,11 +164,13 @@ claude
 
 | Agent | Domain | Key Tools | Boundaries |
 |-------|--------|-----------|------------|
-| **Business Analyst** | Requirements | Read, Grep, Glob, WebSearch | No code, no architecture |
-| **Architect** | Design | Read, Grep, Glob, WebSearch | No implementation |
-| **Project Manager** | Planning | Read, Write, TaskCreate | No code, no design |
-| **Developer** | Implementation | Read, Write, Edit, Bash, Task | No architecture decisions |
-| **Validator** | Testing | Read, Grep, Glob, Bash | No fixes, no writes |
+| **Business Analyst** | Requirements | Read, Write, Edit, Grep, Glob, WebSearch | No code, no architecture, no Bash |
+| **Architect** | Design | Read, Write, Edit, Grep, Glob, Bash, WebSearch | No implementation, no product scope |
+| **Planner** | Planning | Read, Write, Grep, Glob, TaskCreate | No code, no design, no Edit, never sets status |
+| **Developer** | Implementation | All tools | No architecture decisions, no scope changes |
+| **Validator** | Testing | Read, Write, Grep, Glob, Bash | No fixes, no relaxed criteria, never sets status during validation |
+| **Security** | Security gate | Read, Write, Grep, Glob, Bash, WebSearch | No fixes, no downgraded findings, never sets status |
+| **Scout** | Research | All tools | No source edits unless assigned a write task |
 | **Deployer** | Deployment | Read, Write, Bash | No code changes, `permissionMode: plan` |
 | **Tech Writer** | Documentation | Read, Write, Grep, Glob, AskUserQuestion | No code, no Edit |
 
@@ -177,25 +188,35 @@ claude
 
 Orchestrator assesses complexity and recommends appropriate workflow depth:
 
+Delivery (`/implement` -> `/validate` -> `/security-review` -> `/status-update`) runs in every depth; the
+depth selects only which planning stages precede it.
+
 ### Full Workflow
 **Use when**: New product, complex system, multiple components
 
 ```
-/spec -> /design -> /plan -> /implement -> /validate -> /deploy -> /document
+/onboard -> /spec -> /architect -> /planner -> /review -> delivery
 ```
 
 ### Medium Workflow
 **Use when**: New feature, moderate complexity
 
 ```
-/spec -> /plan -> /implement -> /validate
+/spec -> /planner -> /review -> delivery
 ```
 
 ### Light Workflow
-**Use when**: Simple change, bug fix
+**Use when**: Simple change, clear task
 
 ```
-/plan -> /implement
+/planner -> delivery
+```
+
+### Direct Fix
+**Use when**: Diagnosed, bounded defect with no new planning need
+
+```
+delivery only, against an existing I-nnn / G-nnn
 ```
 
 ---
@@ -221,9 +242,13 @@ your-project/
 │   ├── architecture/     # PRD.md, ARCHITECTURE.md, adr/
 │   ├── development/      # BACKLOG.md, ISSUES.md, tasks/
 │   └── knowledge/        # Project knowledge base
-└── reports/
-    ├── analysis/         # /analyse outputs
-    └── research/         # /research outputs
+├── reports/
+│   ├── analysis/         # /analyse, /review, /reconcile outputs
+│   ├── research/         # /research outputs
+│   ├── validation/       # /validate outputs
+│   └── meta-optimization/ # /meta-learn instruction-fix memos
+└── context/
+    └── <area>/<task>.md  # /context-compiler bundles
 ```
 
 ---
@@ -278,8 +303,8 @@ Installed to `~/.claude/settings.json` when `--hooks` is passed:
 |-------|--------|---------|
 | SessionStart | `inject-context.sh` | Inject context, log session start |
 | SubagentStart | `inject-context.sh` | Inject context, log agent start |
-| SubagentStop | `remind-validate.sh`, `remind-reflexion.sh` | Validation + reflexion prompt |
-| Stop | `remind-reflect.sh` | Prompt /reflect for session learning |
+| SubagentStop | `remind-validate.sh`, `remind-agent-learn.sh` | Validation + `$meta-learn` prompt |
+| Stop | `remind-session-learn.sh` | Prompt `$meta-learn` for session learning |
 | SessionEnd | `checkpoint-session.sh` | Cleanup and logging |
 
 ### Project Hooks (prompt-based)

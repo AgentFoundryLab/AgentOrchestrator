@@ -202,7 +202,7 @@ hooks:
         - type: command
           command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-validate.sh"
         - type: command
-          command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-reflexion.sh"
+          command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-agent-learn.sh"
 ---
 
 You are a Business Analyst responsible for requirements elicitation
@@ -311,8 +311,8 @@ Hooks provide lifecycle event handling through reminder scripts.
 |------------|---------|----------|--------|---------|
 | **SessionStart** | Session begins | No | `inject-context.sh` | Inject `PROJECT_NAME`, `SESSION_ID` |
 | **Stop** (agent) | Agent finishes | **Yes** | `remind-validate.sh` | Agent self-validation |
-| **Stop** (agent) | Agent finishes | **Yes** | `remind-reflexion.sh` | Agent invokes `/reflexion` if errors |
-| **Stop** (main) | Claude finishes responding | **Yes** | `remind-reflect.sh` | Orchestrator checklist, invoke `/reflect` |
+| **Stop** (agent) | Agent finishes | **Yes** | `remind-agent-learn.sh` | Agent invokes `/reflexion` if errors |
+| **Stop** (main) | Claude finishes responding | **Yes** | `remind-session-learn.sh` | Orchestrator checklist, invoke `/reflect` |
 | **SessionEnd** | Session closes | No | `checkpoint-session.sh` | Cleanup, logging, checkpoint state |
 
 > **Note**: Agent frontmatter only supports `PreToolUse`, `PostToolUse`, and `Stop` hooks. Settings-level hooks support additional events like `SubagentStop`, `UserPromptSubmit`, etc.
@@ -340,7 +340,7 @@ Hook scripts are located in `package/hooks/scripts/` (source) and deployed to `.
         "hooks": [
           {
             "type": "command",
-            "command": "\"$HOME\"/.claude/hooks/scripts/remind-reflect.sh"
+            "command": "\"$HOME\"/.claude/hooks/scripts/remind-session-learn.sh"
           }
         ]
       }
@@ -357,7 +357,7 @@ hooks:
         - type: command
           command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-validate.sh"
         - type: command
-          command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-reflexion.sh"
+          command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-agent-learn.sh"
 ```
 
 #### 4.3 Hook Script Interface
@@ -413,7 +413,7 @@ The SubagentStop hook fires twice per agent completion, controlled by `stop_hook
 | Phase | `stop_hook_active` | Script | Action |
 |-------|-------------------|--------|--------|
 | 1 (Validation) | `false` | `remind-validate.sh` | Self-validation checklist |
-| 2 (Reflexion) | `true` | `remind-reflexion.sh` | Reflexion prompt if errors |
+| 2 (Reflexion) | `true` | `remind-agent-learn.sh` | Reflexion prompt if errors |
 
 ---
 
@@ -683,8 +683,8 @@ orchestrator/
 │   │       ├── lib/hook-utils.sh
 │   │       ├── inject-context.sh
 │   │       ├── remind-validate.sh
-│   │       ├── remind-reflexion.sh
-│   │       ├── remind-reflect.sh
+│   │       ├── remind-agent-learn.sh
+│   │       ├── remind-session-learn.sh
 │   │       ├── checkpoint-session.sh
 │   │       └── setup-project.sh
 │   │
@@ -867,7 +867,7 @@ Full Architecture Decision Records are maintained in the [adr/](adr/) directory:
 | Agents | 7 | business-analyst, architect, project-manager, developer, validator, deployer, tech-writer |
 | Skills (user-invocable) | 16 | orchestrate, spec, design, plan, implement, validate, deploy, document, onboard, review, reflexion, reflect, optimize, analyse, research, distill |
 | Skills (protocol) | 1 | hitl |
-| Hooks | 7 | inject-context.sh, remind-validate.sh, remind-reflexion.sh, remind-reflect.sh, checkpoint-session.sh, setup-project.sh, hook-utils.sh |
+| Hooks | 7 | inject-context.sh, remind-validate.sh, remind-agent-learn.sh, remind-session-learn.sh, checkpoint-session.sh, setup-project.sh, hook-utils.sh |
 | Policy | 2 | RULES.md, PRINCIPLES.md |
 | Workflows | 2 | SWE.md, meta-learning.md |
 | Templates | 11 | vision.md, blueprint.md, prd.md, architecture.md, adr.md, roadmap.md, backlog.md, issues.md, standards.md, guidelines.md, knowledge.md |

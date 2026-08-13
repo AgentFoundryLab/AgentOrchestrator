@@ -108,7 +108,7 @@ hooks:                                    # Optional: lifecycle hooks
     - type: command
       command: "./.claude/hooks/scripts/remind-validate.sh"
     - type: command
-      command: "./.claude/hooks/scripts/remind-reflexion.sh"
+      command: "./.claude/hooks/scripts/remind-agent-learn.sh"
 ---
 
 You are [agent role]. Your task is to invoke the [skill-name] skill and...
@@ -259,8 +259,8 @@ Five lifecycle hook events for v0 (implemented via 5 scripts):
 | ---------- | ------- | -------- | ------ | -------------- |
 | **SessionStart** | Session begins | No | Inject project context, session-id | `settings.json` → `hooks.SessionStart` → `inject-context.sh` |
 | **SubagentStart** | Subagent spawned | No | Log agent_id, agent_type to session logs | `settings.json` → `hooks.SubagentStart` → `inject-context.sh` |
-| **SubagentStop** | Agent completes | **Yes** | Agent-specific validation and `/reflexion` | Agent `hooks.SubagentStop` → `remind-validate.sh`, `remind-reflexion.sh` |
-| **Stop** | Claude finishes responding | **Yes** | Orchestrator checklist, `/reflect` | `settings.json` → `hooks.Stop` → `remind-reflect.sh` |
+| **SubagentStop** | Agent completes | **Yes** | Agent-specific validation and `/reflexion` | Agent `hooks.SubagentStop` → `remind-validate.sh`, `remind-agent-learn.sh` |
+| **Stop** | Claude finishes responding | **Yes** | Orchestrator checklist, `/reflect` | `settings.json` → `hooks.Stop` → `remind-session-learn.sh` |
 | **SessionEnd** | Session closes | No | Cleanup, logging, checkpoint state | `settings.json` → `hooks.SessionEnd` → `checkpoint-session.sh` |
 
 > **Note**: Stop ≠ SessionEnd. Stop fires when Claude finishes responding (can block, can invoke skills). SessionEnd fires when session actually closes (cannot block).
@@ -268,8 +268,8 @@ Five lifecycle hook events for v0 (implemented via 5 scripts):
 **Session Logging**: Hooks write to `logs/sessions/<session_id>/` with nested `<agent_id>/` subdirectories for subagent artifacts.
 
 **FR3.1**: SessionStart/SubagentStart hooks run `inject-context.sh` (non-blocking, logs to `logs/sessions/`)
-**FR3.2**: SubagentStop hook runs `remind-validate.sh` and `remind-reflexion.sh` (blocking, agent-scoped)
-**FR3.3**: Stop hook runs `remind-reflect.sh` (blocking, can invoke `/reflect`)
+**FR3.2**: SubagentStop hook runs `remind-validate.sh` and `remind-agent-learn.sh` (blocking, agent-scoped)
+**FR3.3**: Stop hook runs `remind-session-learn.sh` (blocking, can invoke `/reflect`)
 **FR3.4**: SessionEnd hook runs `checkpoint-session.sh` (non-blocking, cleanup only)
 **FR3.5**: Hooks output reminders; agent/orchestrator decides whether to invoke skills
 

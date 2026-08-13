@@ -43,7 +43,7 @@ SESSION START
 +--------+---------+
          |
          | remind-validate.sh
-         | remind-reflexion.sh
+         | remind-agent-learn.sh
          v
 +------------------+
 | <system-reminder>|
@@ -72,7 +72,7 @@ SESSION START
 | (BLOCKING)       |
 +--------+---------+
          |
-         | remind-reflect.sh
+         | remind-session-learn.sh
          v
 +------------------+
 | <system-reminder>|

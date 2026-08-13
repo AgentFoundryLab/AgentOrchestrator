@@ -33,7 +33,7 @@
      |                   |   | Self-validation                         |
      |                   |<--+                                         |
      |                   |                                             |
-     |                   | remind-reflexion.sh                         |
+     |                   | remind-agent-learn.sh                         |
      |                   |---+                                         |
      |                   |   | Maybe /reflexion                        |
      |                   |<--+                                         |

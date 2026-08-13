@@ -20,7 +20,7 @@
 |  |     - type: command                                                 | |
 |  |       command: "./.claude/hooks/scripts/remind-validate.sh"         | |
 |  |     - type: command                                                 | |
-|  |       command: "./.claude/hooks/scripts/remind-reflexion.sh"        | |
+|  |       command: "./.claude/hooks/scripts/remind-agent-learn.sh"        | |
 |  +--------------------------------------------------------------------+ |
 |                                                                          |
 |  BODY (minimal - skill provides full instructions)                      |
