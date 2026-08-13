@@ -4,6 +4,7 @@ description: Post-validation security gate — adversarial code review, threat m
 tools:
   - Read
   - Write
+  - Edit
   - Grep
   - Glob
   - Bash
@@ -72,6 +73,8 @@ Delegate bounded parallel research lanes via `$scout` when the scope is non-triv
 - **Findings**: Each with severity, file:line, title, attack path (exploitability evidence), and copy-paste remediation
 - **Artifacts**: finding-to-record mapping (`ISS`/`REG`/`TD` ids + their document paths)
 - **Blockers**: Anything that prevented completing the review
+
+If blocked by missing user input, ask the user directly with `AskUserQuestion`.
 
 ## Policies
 

@@ -1,11 +1,12 @@
-# Install CI — T-091: CI guardrail for runtime/path drift and install smoke tests.
+# Install CI — WO-091: CI guardrail for runtime/path drift and install smoke tests.
 #
-# Triggers on any push or PR that modifies installer-related files.
-# Two jobs:
+# Triggers on any push or PR that modifies the distributed package or its tests.
+# Three jobs:
 #   drift-check   — validates registry paths vs package layout (no writes)
 #   smoke-tests   — runs all install smoke, conformance, restore, and idempotency tests
+#   vocabulary    — fails the build if pre-migration vocabulary re-enters a surface
 #
-# Both jobs run in an isolated environment; no real ~/.claude/ or peer dirs are touched.
+# All jobs run in an isolated environment; no real ~/.claude/ or peer dirs are touched.
 
 name: Install CI
 
@@ -13,19 +14,15 @@ on:
   push:
     paths:
       - 'install.sh'
-      - 'package/install/**'
-      - 'package/skills/**'
-      - 'package/agents/**'
-      - 'package/hooks/**'
-      - 'tests/install/**'
+      - 'package/**'
+      - 'tests/**'
+      - '.github/workflows/install-ci.yml'
   pull_request:
     paths:
       - 'install.sh'
-      - 'package/install/**'
-      - 'package/skills/**'
-      - 'package/agents/**'
-      - 'package/hooks/**'
-      - 'tests/install/**'
+      - 'package/**'
+      - 'tests/**'
+      - '.github/workflows/install-ci.yml'
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -55,3 +52,18 @@ jobs:
 
       - name: Run install smoke tests
         run: bash tests/install/smoke.sh
+
+  # ---------------------------------------------------------------------------
+  # vocabulary: guard the package against pre-migration vocabulary regressions.
+  # Covers retired identifiers and — separately — retired concepts, which carry
+  # no retired token and are invisible to an identifier sweep.
+  # ---------------------------------------------------------------------------
+  vocabulary:
+    name: Package Vocabulary Conformance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check package vocabulary
+        run: bash tests/package/vocabulary.sh

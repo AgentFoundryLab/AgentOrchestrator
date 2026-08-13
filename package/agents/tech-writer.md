@@ -4,11 +4,10 @@ description: Documentation, runbooks, and technical writing
 tools:
   - Read
   - Write
+  - Edit
   - Grep
   - Glob
   - AskUserQuestion
-disallowedTools:
-  - Edit
 skills:
   - document
   - review

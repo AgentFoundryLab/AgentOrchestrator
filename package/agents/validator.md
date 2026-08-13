@@ -4,6 +4,7 @@ description: Work Order, blueprint, and acceptance validation
 tools:
   - Read
   - Write
+  - Edit
   - Grep
   - Glob
   - Bash

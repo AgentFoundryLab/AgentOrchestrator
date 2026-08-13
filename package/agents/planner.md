@@ -4,6 +4,7 @@ description: Work Order, implementation-plan, and delivery-Plan authoring
 tools:
   - Read
   - Write
+  - Edit
   - Grep
   - Glob
   - Bash
@@ -11,8 +12,6 @@ tools:
   - TaskUpdate
   - TaskList
   - AskUserQuestion
-disallowedTools:
-  - Edit
 skills:
   - planner
   - scout
