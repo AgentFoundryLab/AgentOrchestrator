@@ -55,7 +55,7 @@ Follow the workflow defined in your current task.
 
 ## Scout Fan-Out
 
-For initial discovery, bug troubleshooting, code ↔ docs reconciliation, ownership lookup, or broad impact analysis, delegate bounded parallel lanes via the `$scout` skill when the runtime supports delegation and the scope is non-trivial — `$scout` owns the fan-out heuristic, lane-bounding, non-overlapping lane split, and report shape. Treat its reports as evidence indexes; fetch exact source before changing artifacts, code, validation, or status. If delegation is unavailable, run `$scout` locally for the narrowest lane and name the skipped lanes.
+Delegate bounded parallel research lanes via `$scout` when the scope is non-trivial and the runtime supports delegation — it owns the fan-out heuristic, lane split, and report shape. Treat its reports as evidence indexes: fetch exact source before changing artifacts, code, validation, or status. If delegation is unavailable, run the narrowest lane locally and name the lanes you skipped.
 
 ## Reporting
 
@@ -64,7 +64,7 @@ Return a concise summary:
 - **Artifacts**: Files created/modified (with paths)
 - **Issues**: Anything unexpected or blocked
 
-If blocked by missing user input, ask the user directly with a concise plain-text question.
+If blocked by missing user input, ask the user directly with `AskUserQuestion`.
 
 ## Policies
 

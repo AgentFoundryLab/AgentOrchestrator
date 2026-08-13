@@ -26,7 +26,7 @@ Perform an adversarial security review of the assigned task's delivered code by:
 - checking all changed files against the vulnerability checklist below;
 - classifying each finding by severity with exploitability evidence and blast radius;
 - determining a verdict: PASS | FAIL | FINDINGS;
-- logging Critical/High findings in `docs/development/ISSUES.md` so they re-enter the workflow via `$reconcile`.
+- recording Critical/High findings as `ISS`/`REG` records so they re-enter the workflow via `$reconcile`.
 
 ## OWASP Top 10 2025 Gate
 
@@ -211,13 +211,13 @@ Map trust boundaries (Internet → WAF/Gateway → App → Service → DB → Ex
    - Any Critical or High → **FAIL**; route back to implement.
    - No Critical/High, but Medium/Low/Info present → **FINDINGS**; proceed to status.
    - No findings → **PASS**.
-8. For each Critical or High finding, log durable feedback in `docs/development/ISSUES.md`:
-   - Read the existing table first and inspect active security rows for the same root cause. Similar wording is not proof of a shared cause, but a duplicate row costs more than a moment's reading.
+8. For each Critical or High finding, record durable feedback as records under `docs/development/issues/`, then refresh the `ISSUES.md` index:
+   - Read the index first and inspect active security records for the same root cause. Similar wording is not proof of a shared cause, but a duplicate record costs more than a moment's reading.
    - If no record owns the cause, author a generalized `ISS` with `issueType: security`, its severity, and its root-cause state, then record the concrete symptom as a `REG` under it. A missing control with no exploitable symptom is a `TD` instead. `Priority` derives from severity (Critical/High → `P0`). **Under `$orchestrate`, ids come from the brief**; if this slice needs one the brief did not provide, report the finding with its evidence and let the orchestrator allocate.
-   - Add an `Active Issue Details` section for it carrying: `Type: Security`, `Discovered`, `Affects`, `Task`, then the finding's file:line, attack path (exactly how an attacker triggers it), remediation, CVSS estimate, and the verification evidence a fix must produce.
-   - If a row already owns the cause, add the concrete finding to its detail section instead of minting a second id. Never renumber or recycle an id.
+   - The `REG` document carries: `Type: Security`, `Discovered`, `Affects`, the delivery record it was found under, then the finding's file:line, attack path (exactly how an attacker triggers it), remediation, CVSS estimate, and the verification evidence a fix must produce.
+   - If an `ISS` already owns the cause, record the finding as a `REG` under it instead of minting a second `ISS`. Never renumber or recycle an id.
 9. For Medium findings, record feedback the same way; Low/Info may stay in the report only.
-10. Commit the scoped `docs/development/ISSUES.md` change with explicit staging; do not commit product code or validation reports.
+10. Commit the scoped record documents and their index rows with explicit staging; do not commit product code or validation reports.
 11. Return the verdict, the finding-to-issue mapping, the commit SHA, and blockers.
 
 ## Delegated-Slice Rules
@@ -234,6 +234,6 @@ Map trust boundaries (Internet → WAF/Gateway → App → Service → DB → Ex
 - **Verdict**: PASS | FAIL | FINDINGS
 - **Findings**: Each entry — severity, file:line, title, attack path, remediation
 - **Artifacts**: `ISS`/`REG`/`TD` ids authored + their document paths under `docs/development/`
-- **Commit**: SHA of the scoped `ISSUES.md` commit, or `none` if nothing was committed
+- **Commit**: SHA of the scoped record commit, or `none` if nothing was committed
 - **Blockers**: Missing context, inaccessible files, ambiguous trust model
 - **Residual risk**: Medium/Low/Info findings logged but not blocking

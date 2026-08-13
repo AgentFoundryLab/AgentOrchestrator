@@ -43,7 +43,7 @@ Keep orchestrator turns focused on: assess → delegate → checkpoint → proce
 
 ## Workflow Depths
 
-Select the smallest chain that preserves traceability and validation. Delivery (`$implement` → `$validate` → `$security-review` → `$status-update`) runs in every chain; the depth selects only which planning stages precede it.
+Select the smallest chain that preserves traceability and validation. The delivery chain that runs at every depth is defined in the `RULES.md` stage map; the depth below selects only which planning stages precede it.
 
 | Depth | Chain | Use when |
 |---|---|---|
@@ -141,7 +141,7 @@ Delegated agents run in parallel worktrees against the same record index. If eac
   - The orchestrator owns only the allocation: at worktree setup, write the lane a gitignored `.orchestrator.env` carrying `ORCHESTRATOR_WT` (the record id, a stable naming prefix) and `ORCHESTRATOR_SHIFT_INDEX` (a small integer, unique across the concurrent set so indices never collide). It fixes no ports, DB names, or ranges.
   - The active repo owns the mechanism: its launch path sources `.orchestrator.env`, shifts each of its own service ports by `ORCHESTRATOR_SHIFT_INDEX`, and prefixes each ephemeral store with `ORCHESTRATOR_WT`, creating/dropping them per run. It owns the matching stop path, since only the repo knows its process/DB/cache topology.
   - Example: with `ORCHESTRATOR_WT=WO-042`, `ORCHESTRATOR_SHIFT_INDEX=7`, a repo might bind web `3000+7` / api `4000+7`, use Postgres schema `app_WO_042`, and prefix Redis keys `WO-042:`.
-  - A vendor's or framework's own start command is not that launch path and never substitutes for it: its defaults bind fixed ports and one shared instance, so running it inside a worktree silently rejoins the lane the isolation exists to separate and corrupts the neighbour's data. If the repo's isolated path is missing or broken, fix it or raise a blocker.
+  - Boot a lane only through that `.orchestrator.env`-aware path, never a vendor's or framework's own start command — `RULES.md` carries the rule and why it corrupts a neighbour's lane.
 
 ## Lane teardown: stack, worktree, branch
 
