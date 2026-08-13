@@ -1,4 +1,4 @@
-# ADR-012: Governance Rationalization
+# ADR-FND-012: Governance Rationalization
 
 **Status**: Accepted
 **Date**: 2026-02-19

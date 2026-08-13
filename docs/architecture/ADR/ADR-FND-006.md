@@ -1,4 +1,4 @@
-# ADR-006: Policy Modularization
+# ADR-FND-006: Policy Modularization
 
 **Status**: Accepted
 **Version**: 1.1

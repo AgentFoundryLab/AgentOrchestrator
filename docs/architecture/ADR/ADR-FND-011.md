@@ -1,4 +1,4 @@
-# ADR-011: Coordination Level Strategy (Progressive L1→L2→L3)
+# ADR-FND-011: Coordination Level Strategy (Progressive L1→L2→L3)
 
 **Status**: Accepted
 **Date**: 2026-02-05

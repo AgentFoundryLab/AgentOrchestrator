@@ -1,4 +1,4 @@
-# ADR-010: Observability Architecture (OpenTelemetry Trace Propagation)
+# ADR-FND-010: Observability Architecture (OpenTelemetry Trace Propagation)
 
 **Status**: Accepted
 **Date**: 2026-02-05

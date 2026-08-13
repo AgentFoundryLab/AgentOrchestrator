@@ -1,4 +1,4 @@
-# ADR-003: Minimal MCP Footprint
+# ADR-FND-003: Minimal MCP Footprint
 
 **Status**: Accepted
 **Version**: 1.0

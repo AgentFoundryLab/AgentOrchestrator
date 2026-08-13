@@ -1,4 +1,4 @@
-# ADR-002: Four-Tier Memory System
+# ADR-FND-002: Four-Tier Memory System
 
 **Status**: Accepted
 **Version**: 1.0

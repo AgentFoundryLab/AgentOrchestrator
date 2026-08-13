@@ -1,4 +1,4 @@
-# ADR-008: Multi-Provider Integration Strategy (Hybrid MCP + A2A)
+# ADR-FND-008: Multi-Provider Integration Strategy (Hybrid MCP + A2A)
 
 **Status**: Accepted
 **Date**: 2026-02-05

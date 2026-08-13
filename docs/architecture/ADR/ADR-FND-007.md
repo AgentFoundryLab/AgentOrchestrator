@@ -1,4 +1,4 @@
-# ADR-007: Multi-Agent Protocol Selection (A2A over ACP)
+# ADR-FND-007: Multi-Agent Protocol Selection (A2A over ACP)
 
 **Status**: Accepted
 **Date**: 2026-02-05

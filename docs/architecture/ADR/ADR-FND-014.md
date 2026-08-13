@@ -1,4 +1,4 @@
-# ADR-014: Multi-Agent Installer v0.2 Design Decisions
+# ADR-FND-014: Multi-Agent Installer v0.2 Design Decisions
 
 **Status**: Accepted
 **Date**: 2026-02-20

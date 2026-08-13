@@ -1,4 +1,4 @@
-# ADR-004: Skill-Agent Invocation Paths
+# ADR-FND-004: Skill-Agent Invocation Paths
 
 **Status**: Accepted
 **Version**: 1.0

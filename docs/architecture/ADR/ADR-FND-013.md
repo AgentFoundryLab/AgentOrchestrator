@@ -1,4 +1,4 @@
-# ADR-013: Extended Skill Additions (onboard, review, hitl)
+# ADR-FND-013: Extended Skill Additions (onboard, review, hitl)
 
 **Status**: Accepted
 **Date**: 2026-02-19
