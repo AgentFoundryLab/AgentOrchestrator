@@ -1,0 +1,4 @@
+interface:
+  display_name: "Anneal"
+  short_description: "Find complexity, source-of-truth drift, and simplification targets"
+  default_prompt: "Use $anneal to audit this scope for duplicated code, complexity clusters, source-of-truth drift, caller-side patches, contradictions, and safe simplification opportunities."

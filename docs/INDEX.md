@@ -12,19 +12,24 @@ orchestrator/
 ├── install.sh                 # Installer (--global, --project, --namespace)
 ├── package/                   # Framework source — deployed by install.sh
 │   ├── agents/                # 7 agent definitions
-│   ├── skills/                # 17 skill directories
+│   ├── skills/                # 23 skill directories
 │   ├── hooks/scripts/         # 5 lifecycle hook scripts + lib
 │   ├── policy/                # PRINCIPLES.md, RULES.md (global source)
 │   ├── workflows/             # SWE.md, meta-learning.md
-│   ├── templates/             # 11 artifact templates
+│   ├── templates/             # per-record-type artifact templates
 │   └── settings.json / mcp.json
 ├── docs/                      # Orchestrator's own project docs
-│   ├── objectives/            # VISION.md, BLUEPRINT.md, ROADMAP.md
-│   ├── architecture/          # PRD.md, ARCHITECTURE.md, adr/, diagrams/
-│   ├── development/           # BACKLOG.md, ISSUES.md
+│   ├── objectives/            # VISION.md, BLUEPRINT.md
+│   ├── requirements/          # FRD-*, TRD-*, REQUIREMENTS.md
+│   ├── architecture/          # foundation/, feature/, system/, ADR/
+│   ├── development/           # ROADMAP.md, plans/, workorders/, issues/,
+│   │                          #   debt/, feedback/, status/, + indexes
+│   ├── validation/            # AC/TRC coverage documents
 │   ├── policy/                # STANDARDS.md, GUIDELINES.md (project tier)
-│   └── knowledge/             # decisions/ + README.md
-└── reports/                   # analysis/, research/ outputs
+│   ├── knowledge/             # decisions/ (TDR), domain/, patterns/, runbooks/
+│   ├── analysis/              # review, reconcile, meta-learn memos
+│   └── archive/development/   # closed + decommissioned records
+└── reports/                   # research/ outputs
 ```
 
 ## Artifact Ownership
@@ -32,26 +37,31 @@ orchestrator/
 | Artifact | Path | Owner Skill |
 |----------|------|-------------|
 | VISION.md, BLUEPRINT.md | `docs/objectives/` | `/spec` |
-| ROADMAP.md | `docs/objectives/ROADMAP.md` | `/plan` |
-| PRD.md | `docs/architecture/PRD.md` | `/spec` |
-| ARCHITECTURE.md, ADRs | `docs/architecture/` | `/design` |
-| BACKLOG.md | `docs/development/BACKLOG.md` | `/plan` |
-| ISSUES.md | `docs/development/ISSUES.md` | `/review`, `/validate` |
+| ROADMAP.md | `docs/development/ROADMAP.md` | `/planner` |
+| FRD / TRD + REQUIREMENTS.md | `docs/requirements/` | `/spec` |
+| FBP blueprints, ADRs, diagrams | `docs/architecture/{foundation,feature,system,ADR}/` | `/architect` |
+| PLANs, WOs + WORKORDERS.md | `docs/development/{plans,workorders}/` | `/planner` |
+| ISS/REG, TD, FB + indexes | `docs/development/{issues,debt,feedback}/` | `/review`, `/validate`, `/security-review` |
 | STANDARDS.md, GUIDELINES.md | `docs/policy/` | `/onboard` |
 | INDEX.md | `docs/INDEX.md` | `/onboard` |
-| TDRs (operational/policy decisions) | `docs/knowledge/decisions/` | `/design` |
-| Review / analysis reports | `reports/analysis/` | `/review`, `/analyse` |
+| TDRs (operational/policy decisions) | `docs/knowledge/decisions/` | `/architect` |
+| Review / analysis reports | `docs/analysis/` | `/review`, `/analyse` |
 | Research reports | `reports/research/` | `/research` |
+| Coverage documents | `docs/validation/` | `/validate` |
+| Context bundles | `context/<area>/<task>.md` | `/context-compiler` |
+| Instruction-fix memos | `docs/analysis/` | `/meta-learn` |
 
 ## Canonical References
 
 | Topic | Canonical Source |
 |-------|-----------------|
-| Workflow depth and mechanics | `package/workflows/SWE.md` |
-| HITL escalation protocol | `package/skills/hitl/SKILL.md` + `docs/knowledge/decisions/hitl-escalation.md` |
-| Skill interface contract | `docs/architecture/ARCHITECTURE.md` §1.2 |
-| Hook behavior | `docs/architecture/ARCHITECTURE.md` §4 + ADR-001 |
-| Memory architecture | `docs/architecture/ARCHITECTURE.md` §5 + ADR-002 |
-| Policy loading flow | `docs/architecture/ARCHITECTURE.md` §6.2 |
+| Record schema — id grammars, identity fields, vocabularies, statuses | `package/policy/RULES.md` |
+| Model tier → model bindings per harness | `package/skills/orchestrate/SKILL.md` |
+| Workflow depth and mechanics | `package/skills/orchestrate/SKILL.md` + `package/workflows/SWE.md` |
+| HITL escalation (superseded by `AskUserQuestion`) | `docs/knowledge/decisions/hitl-escalation.md` |
+| Skill interface contract | the governing `FBP-FND-*` blueprint |
+| Hook behavior | the governing `FBP-FND-*` blueprint + `ADR-FND-001` |
+| Memory architecture | the governing `FBP-FND-*` blueprint + `ADR-FND-002` |
+| Policy loading flow | the governing `FBP-FND-*` blueprint |
 | Installation behavior | `README.md` + `install.sh` |
-| All ADRs | `docs/architecture/adr/` |
+| All ADRs | `docs/architecture/ADR/` (+ generated `README.md` index) |

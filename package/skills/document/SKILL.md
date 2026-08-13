@@ -46,53 +46,27 @@ Maintain quality documentation by:
 
 Documentation updates organized by impact area with propagation paths.
 
-## Artifact Boundary Rules (CRITICAL)
+## Artifact Layers
 
-- **Strategic** (`VISION`, `BLUEPRINT`): product intent, capability scope, and success direction.
-- **Specification** (`PRD`): high-level requirements (FR/NFR), user stories, acceptance criteria; no install/runtime implementation detail.
-- **Architecture** (`ARCHITECTURE`, `ADR`): component design and decision rationale; no execution tracking/status content.
-- **Knowledge** (`docs/knowledge/*`, TDR/runbooks/research): operational patterns, runtime semantics, investigations, and learnings.
-- **Execution** (`ROADMAP`, `BACKLOG`, `ISSUES`): delivery sequencing, atomic tasks, blockers, and status.
-- **Entry Docs** (`README`, `CLAUDE`): quick entrypoint, constraints summary, and pointers to deeper docs.
+`policy/RULES.md` owns the upstream → downstream flow, and `$reconcile` owns the routing taxonomy. This
+skill does not restate either — a second copy drifts the moment the schema changes. What `/document`
+needs is only *which artifact owns which detail level*:
 
-Placement principle: write content to the artifact that owns that decision/detail level; use cross-references instead of duplicating detail across layers.
+| Layer | Artifacts | Owns |
+|---|---|---|
+| Strategic | `docs/objectives/{VISION,BLUEPRINT}.md` | product intent, capability scope, success direction |
+| Requirements | `docs/requirements/{FRD,TRD}-*.md` | `REQ`/`AC` behavior, `TR`/`TRC` constraints |
+| Architecture | `docs/architecture/**` (`FBP-*`, `ADR-*`) | component design and decision rationale |
+| Knowledge | `docs/knowledge/**` (TDRs, runbooks, patterns, domain) | operational patterns, runtime semantics, investigations |
+| Execution | `docs/development/**` (`ROADMAP`, `PLAN-*`, `WO-*`, `ISS`/`REG`/`TD`/`FB`, `status/`) | sequencing, deliverables, blockers, status |
+| Validation | `docs/validation/**` | `AC`/`TRC` coverage and evidence |
+| Entry | `README.md`, `CLAUDE.md`, `AGENTS.md` | quick entrypoint, constraints summary, pointers |
 
----
+**Placement principle:** write content to the artifact that owns that decision level; cross-reference
+instead of duplicating detail across layers.
 
-## Impact Classification (Orthogonal Dimensions)
-
-### Areas (What Changed)
-
-| Area | Boundary | Entry Point |
-|------|----------|-------------|
-| **System** | Core functionality broken (hooks, MCP, install, agents) | ISSUES |
-| **Product** | Vision, goals, target users, success metrics | VISION |
-| **Solution** | Capabilities, feature matrix, technical scope | BLUEPRINT |
-| **Specification** | Features, requirements, user stories, acceptance criteria | PRD |
-| **Architecture** | Components, patterns, dependencies, decisions | ARCHITECTURE |
-| **Development** | Task organization, priorities, status | ROADMAP/BACKLOG |
-| **Documentation** | All docs: arch docs, policies, knowledge, runbooks | Varies |
-
-### Criticality (Severity - Independent of Area)
-
-| Level | Definition | Response |
-|-------|------------|----------|
-| **CRITICAL** | Blocking, broken functionality, data loss risk | Immediate |
-| **HIGH** | Significant impact, major feature affected | Current session |
-| **MEDIUM** | Moderate impact, standard priority | Current sprint |
-| **LOW** | Minor, cosmetic, can defer | Backlog |
-
-### Propagation Paths by Area
-
-```
-SYSTEM        → ISSUES → BACKLOG
-PRODUCT       → VISION → BLUEPRINT → PRD → ARCHITECTURE → ADR → ROADMAP → BACKLOG
-SOLUTION      → BLUEPRINT → PRD → ARCHITECTURE → ADR → ROADMAP → BACKLOG
-SPECIFICATION → PRD → ARCHITECTURE → ADR → ROADMAP → BACKLOG
-ARCHITECTURE  → ARCHITECTURE → ADR → ROADMAP → BACKLOG
-DEVELOPMENT   → ROADMAP → BACKLOG (or BACKLOG only)
-DOCUMENTATION → Direct to target doc
-```
+When a change must propagate across layers, follow the flow in `RULES.md` and route anything ambiguous
+through `$reconcile`. Do not maintain a propagation table here.
 
 ---
 
@@ -176,13 +150,13 @@ For each changed file/feature, determine BOTH dimensions:
 
 | Area | Triggers | Outputs |
 |------|---------|---------|
-| **System** | hooks/MCP/install broken; agents/skills fail | `ISSUES.md`, `BACKLOG.md` |
+| **System** | hooks/MCP/install broken; agents/skills fail | an `ISS` + `REG`, then a `WO` |
 | **Product** | `VISION.md`, goals, OKRs, target users | `VISION.md` |
 | **Solution** | `BLUEPRINT.md`, capabilities, feature matrix | `BLUEPRINT.md` |
-| **Specification** | `PRD.md` high-level requirements/capability definitions, user stories, acceptance criteria | `PRD.md` |
-| **Architecture** | `ARCHITECTURE.md`, `adr/`, `DESIGN-PRINCIPLES.md`, hooks/agents structure | `ARCHITECTURE.md`, `DESIGN-PRINCIPLES.md`, `adr/NNN-*.md` |
-| **Development** | `ROADMAP.md`, `docs/development/` | `ROADMAP.md`, `BACKLOG.md` |
-| **Documentation** | `README.md`, `CLAUDE.md`, `docs/policy/`, `docs/knowledge/`, `docs/architecture/technical/` | `README.md`, `CLAUDE.md`, `docs/policy/{STANDARDS,GUIDELINES}.md`, `docs/architecture/{PRD,ARCHITECTURE,DESIGN-PRINCIPLES}.md`, `docs/architecture/{api/,technical/{data-model,contracts}.md}`, `docs/knowledge/{domain,patterns,decisions,runbooks}/`, `docs/development/{BACKLOG,ISSUES}.md` |
+| **Requirements** | requirement or acceptance-criteria definitions | `docs/requirements/{FRD,TRD}-*.md` + `REQUIREMENTS.md` |
+| **Architecture** | blueprints, ADRs, `DESIGN-PRINCIPLES.md`, hooks/agents structure | `docs/architecture/{foundation,feature,system}/FBP-*`, `ADR/ADR-*`, `DESIGN-PRINCIPLES.md` |
+| **Development** | `ROADMAP.md`, Plans, Work Orders | `ROADMAP.md`, `plans/PLAN-*`, `workorders/WO-*`, `WORKORDERS.md` |
+| **Documentation** | `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/policy/`, `docs/knowledge/` | `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/policy/{STANDARDS,GUIDELINES}.md`, `docs/knowledge/{domain,patterns,decisions,runbooks}/` |
 
 #### Criticality Assessment
 
@@ -204,29 +178,29 @@ Group by Area, sort by Criticality within each area:
 │                                                                      │
 │ SYSTEM                                                               │
 │ └── [CRITICAL] Hooks broken after settings change                    │
-│     Path: ISSUES → BACKLOG                                           │
+│     Path: ISS + REG → WO                                             │
 │                                                                      │
 │ PRODUCT                                                              │
 │ └── [HIGH] New target user segment                                   │
-│     Path: VISION → BLUEPRINT → PRD → ARCHITECTURE → BACKLOG          │
+│     Path: VISION → BLUEPRINT → FRD → FBP → WO                        │
 │                                                                      │
 │ SOLUTION                                                             │
 │ └── [HIGH] New /document skill capability                            │
-│     Path: BLUEPRINT → PRD → ARCHITECTURE → BACKLOG                   │
+│     Path: BLUEPRINT → FRD → FBP → WO                                 │
 │     Skip: ADR (no decision needed), ROADMAP (no milestone change)    │
 │                                                                      │
-│ SPECIFICATION                                                        │
+│ REQUIREMENTS                                                         │
 │ └── [MEDIUM] Skill behavior change                                   │
-│     Path: PRD → ARCHITECTURE → BACKLOG                               │
+│     Path: FRD → FBP → WO                                             │
 │                                                                      │
 │ ARCHITECTURE                                                         │
 │ └── [MEDIUM] New hook-utils.sh shared library                        │
-│     Path: ARCHITECTURE → BACKLOG                                     │
+│     Path: FBP → WO                                                   │
 │     Skip: ADR (minor structural), ROADMAP (no milestone)             │
 │                                                                      │
 │ DEVELOPMENT                                                          │
 │ └── [LOW] Task status updates                                        │
-│     Path: BACKLOG                                                    │
+│     Path: WO                                                         │
 │                                                                      │
 │ DOCUMENTATION                                                        │
 │ └── [MEDIUM] BLUEPRINT refs moved to objectives/                     │
@@ -246,53 +220,49 @@ Group by Area, sort by Criticality within each area:
 Detect conflicts between:
 - **Doc ↔ Doc**: Docs contradict each other
 - **Code ↔ Doc**: Implementation differs from documented behavior
-- **New ↔ Old**: Recent changes contradict earlier decisions (ADRs, PRD)
+- **New ↔ Old**: Recent changes contradict earlier decisions (ADRs, requirements)
 
 #### Inconsistency Types
 
 | Type | Example | Severity |
 |------|---------|----------|
 | **Decision Conflict** | New code contradicts ADR decision | HIGH |
-| **Specification Drift** | Implementation differs from PRD | HIGH |
+| **Requirement Drift** | Implementation differs from its `REQ`/`AC` | HIGH |
 | **Cross-Doc Mismatch** | ARCHITECTURE says X, README says Y | MEDIUM |
 | **Stale Reference** | Doc references removed component | MEDIUM |
 | **Version Mismatch** | Changelog vs actual version | LOW |
 
 #### When Inconsistencies Found
 
-**NEVER silently overwrite.** Return a QUESTIONS block to the Orchestrator:
+**NEVER silently overwrite.** Ask the user directly with `AskUserQuestion`:
 
-```
-## QUESTIONS FOR USER
-
-Q1: Inconsistency detected: [describe conflict]. How should we resolve? *(blocking)*
-- Option A: Update old to match new — the new change is correct
-- Option B: Keep old, flag new — the prior decision stands, new change needs review
-- Option C: Document both (tentative) — record conflict in ISSUES for later resolution
-- Option D: Pause for full review — stop and escalate to appropriate agent
-```
+- question: `Inconsistency detected: [describe conflict]. How should we resolve?`
+- **Update old to match new** — the new change is correct
+- **Keep old, flag new** — the prior decision stands; the new change needs review
+- **Document both (tentative)** — record the conflict in `ISSUES.md` for later resolution
+- **Pause for full review** — stop and route through `$reconcile` to the owning stage
 
 #### If Decision Conflicts with ADR
 
-```
-## QUESTIONS FOR USER
+Ask with `AskUserQuestion`:
 
-Q1: Change contradicts ADR-XXX: [summary]. This is a significant decision reversal. *(blocking)*
-- Option A: Supersede ADR — create new ADR explaining why decision changed
-- Option B: Revert approach — the ADR decision stands, flag change for revision
-- Option C: Document conflict — record in ISSUES as unresolved architectural debt
-```
+- question: `Change contradicts ADR-XXX: [summary]. This is a significant decision reversal.`
+- **Supersede the ADR** — route to `$architect` to author a new ADR explaining why the decision changed
+- **Revert the approach** — the ADR decision stands; flag the change for revision
+- **Document the conflict** — record in `ISSUES.md` as unresolved architectural debt
+
+A decision reversal is an `$architect` change, not a docs edit. `/document` records the conflict; it never authors or supersedes an ADR itself.
 
 ### 5. Handle Tentative or Rejected Decisions
 
 If user selects "tentative", "pause", or rejects a proposed update:
 
-#### Log to ISSUES.md
+#### Log as an ISS record
 
 ```markdown
 ## [DATE] Documentation Inconsistency - PENDING REVIEW
 
-**Type**: [Decision Conflict | Specification Drift | Cross-Doc Mismatch]
+**Type**: [Decision Conflict | Requirement Drift | Cross-Doc Mismatch]
 **Severity**: [HIGH | MEDIUM | LOW]
 **Session**: ${CLAUDE_SESSION_ID}
 
@@ -314,25 +284,25 @@ If user selects "tentative", "pause", or rejects a proposed update:
 
 #### Suggest Appropriate Agent
 
-| Conflict Type | Suggested Agent | Reason |
+| Conflict Type | Suggested Route | Reason |
 |---------------|-----------------|--------|
-| ADR contradiction | `/design` (Architect) | Architectural decision needed |
-| PRD specification drift | `/spec` (Business Analyst) | Requirements clarification needed |
+| ADR contradiction | `/architect` (Architect) | Architectural decision needed |
+| Requirement drift | `/spec` (Business Analyst) | Requirements clarification needed |
 | Implementation mismatch | `/implement` (Developer) | Code review needed |
 | Cross-doc inconsistency | `/review` (Tech Writer) | Cross-artifact consistency review |
+| Status claims not proven by code/tests | `/status-update` (Validator) | Implementation assessment, not a docs edit |
+| Unclear which stage owns the fix | `/reconcile` | Classifies the finding and names the owning stage |
+
+`/reconcile` owns the upstream→downstream flow model and the routing taxonomy. This table is the docs-facing shortcut; when a conflict does not map cleanly to one row, route through `$reconcile` rather than guessing.
 
 ### 6. Present to User for Confirmation
 
-After resolving all conflicts, return update plan to the Orchestrator:
+After resolving all conflicts, confirm the update plan with `AskUserQuestion`:
 
-```
-## QUESTIONS FOR USER
-
-Q1: Proceed with documentation updates? [N resolved, M logged to ISSUES] *(blocking)*
-- Option A: Proceed — update docs following propagation paths
-- Option B: Modify selection — specify which items to include/exclude
-- Option C: Critical only — address only CRITICAL items now
-```
+- question: `Proceed with documentation updates? [N resolved, M logged to ISSUES]`
+- **Proceed** — update docs following the propagation paths
+- **Modify selection** — specify which items to include or exclude
+- **Critical only** — address only CRITICAL items now
 
 ### 7. Execute Updates
 
@@ -393,22 +363,22 @@ Check documentation quality:
 ### SOLUTION
 | Change | Criticality | Path | Skip |
 |--------|-------------|------|------|
-| /document skill capability | HIGH | BLUEPRINT→PRD→ARCH→BACKLOG | ADR, ROADMAP |
+| /document skill capability | HIGH | BLUEPRINT→FRD→FBP→WO | ADR, PLAN |
 
-### SPECIFICATION
+### REQUIREMENTS
 | Change | Criticality | Path | Skip |
 |--------|-------------|------|------|
-| Skill behavior change | MEDIUM | PRD→ARCH→BACKLOG | ADR, ROADMAP |
+| Skill behavior change | MEDIUM | FRD→FBP→WO | ADR, PLAN |
 
 ### ARCHITECTURE
 | Change | Criticality | Path | Skip |
 |--------|-------------|------|------|
-| hook-utils.sh library | MEDIUM | ARCH→BACKLOG | ADR, ROADMAP |
+| hook-utils.sh library | MEDIUM | FBP→WO | ADR, PLAN |
 
 ### DEVELOPMENT
 | Change | Criticality | Path | Skip |
 |--------|-------------|------|------|
-| Task completions | LOW | BACKLOG | |
+| Work Order completions | LOW | WO | |
 
 ### DOCUMENTATION
 | Change | Criticality | Path | Skip |
@@ -418,11 +388,11 @@ Check documentation quality:
 
 ## Recommended Update Order
 1. [HIGH] BLUEPRINT.md - new capability
-2. [HIGH] PRD.md - /document skill description
-3. [MEDIUM] PRD.md - skill behavior change
-4. [MEDIUM] ARCHITECTURE.md - hook utils section
+2. [HIGH] FRD-DOC-001 - /document skill description
+3. [MEDIUM] FRD-DOC-001 - skill behavior change
+4. [MEDIUM] FBP-FND-002 - hook utils section
 5. [MEDIUM] Various docs - BLUEPRINT refs
-6. [LOW] BACKLOG.md - task tracking
+6. [LOW] WORKORDERS.md - status tracking
 7. [LOW] README.md - typo fix
 ```
 

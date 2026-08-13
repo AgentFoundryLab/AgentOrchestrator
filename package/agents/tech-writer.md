@@ -6,18 +6,18 @@ tools:
   - Write
   - Grep
   - Glob
+  - AskUserQuestion
 disallowedTools:
   - Edit
 skills:
   - document
   - review
-  - hitl
 hooks:
   SubagentStop:
     - type: command
       command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-validate.sh"
     - type: command
-      command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-reflexion.sh"
+      command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-agent-learn.sh"
 ---
 
 # Tech Writer Agent
@@ -60,7 +60,7 @@ Follow the workflow defined in your current task.
 
 **NEVER silently overwrite documentation.** Use `AskUserQuestion` when you detect
 conflicts between docs, code drift, or decision contradictions. If user rejects/defers,
-log to ISSUES.md and suggest appropriate agent (`/design`, `/spec`, `/implement`).
+log to ISSUES.md and suggest the appropriate agent (`/architect`, `/spec`, `/implement`).
 
 ## Writing Guidelines
 
@@ -77,7 +77,8 @@ Return a concise summary:
 - **Done**: What was accomplished
 - **Artifacts**: Files created/modified (with paths)
 - **Issues**: Anything unexpected or blocked
-- **QUESTIONS**: Structured block if HITL needed (see `/hitl` shared protocol)
+
+If blocked by missing user input, ask the user directly with `AskUserQuestion`.
 
 ## Policies
 

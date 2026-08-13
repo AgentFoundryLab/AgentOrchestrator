@@ -1,0 +1,4 @@
+interface:
+  display_name: "Distill"
+  short_description: "Lossless LLM-oriented document compression"
+  default_prompt: "Use $distill to compress these source documents into a lossless, high-signal distillate for downstream LLM work."

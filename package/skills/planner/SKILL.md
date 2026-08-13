@@ -85,7 +85,7 @@ Every Work Order carries its identity fields at allocation — **`Phase`, `Miles
 ### 1. Read upstream artifacts
 - Load relevant requirements from `docs/requirements/` first
 - Load the governing blueprints and their ADRs
-- Ignore any legacy PRD/BACKLOG/task-detail flow
+- Ignore any legacy PRD/BACKLOG/task-detail flow — those artifacts are retired, not renamed
 
 ### 2. Extract the right Work Order set
 - Start from updated blueprints and requirements, not ad hoc task guesses

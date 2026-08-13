@@ -1,19 +1,24 @@
 # Software Engineering Workflow
 
-**Version**: 0.1.1
+**Version**: 0.2.0
 **Purpose**: Guide development from idea to deployment
 
 ---
 
 ## Workflow Overview
 
-Three workflow depths based on project complexity:
+Delivery — `implement → validate → security-review → status-update` — runs in every depth. The depth
+selects only which planning stages precede it.
 
-| Depth | Phases | Use When |
-|-------|--------|----------|
-| **Full** | spec → design → plan → **review** → implement → validate → deploy → document | New product, complex system |
-| **Medium** | spec → plan → implement → validate | New feature, moderate complexity |
-| **Light** | plan → implement | Simple change, bug fix |
+| Depth | Planning stages | Use When |
+|-------|-----------------|----------|
+| **Full** | onboard → spec → architect → planner → **review** | New product, complex system |
+| **Medium** | spec → planner → **review** | New feature, moderate complexity |
+| **Light** | planner | Simple change, clear task |
+| **Direct fix** | none — runs against an existing `ISS`/`TD` | Diagnosed, bounded defect |
+
+`/orchestrate` owns depth selection, delegation, and lane lifecycle. `/deploy` and `/document` follow
+delivery when the work ships or needs docs.
 
 ---
 
@@ -22,63 +27,85 @@ Three workflow depths based on project complexity:
 ### Full Workflow
 
 ```
-┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌───────────┐
-│  /spec  │───▶│ /design │───▶│  /plan  │───▶│ /review │───▶│/implement │
-└─────────┘    └─────────┘    └─────────┘    └─────────┘    └───────────┘
-     │              │              │               │               │
-     ▼              ▼              ▼               ▼               ▼
-   PRD.md      ARCH.md +      ROADMAP.md      review-        Code +
-               ADRs           BACKLOG.md      YYYY-MM-DD     Tests
-                                                   │               │
-                                            [blocking gate]        ▼
-                                                        ┌──────────┐    ┌─────────┐    ┌──────────┐
-                                                        │/validate │───▶│ /deploy │───▶│/document │
-                                                        └──────────┘    └─────────┘    └──────────┘
-                                                             │               │               │
-                                                             ▼               ▼               ▼
-                                                        Validation      Deployed         README +
-                                                         Report         Artifacts         Runbooks
+┌─────────┐   ┌───────────┐   ┌──────────┐   ┌─────────┐   ┌───────────┐
+│  /spec  │──▶│/architect │──▶│ /planner │──▶│ /review │──▶│/implement │
+└─────────┘   └───────────┘   └──────────┘   └─────────┘   └───────────┘
+     │             │               │              │              │
+     ▼             ▼               ▼              ▼              ▼
+   FRD/TRD     FBP-* +        PLAN-* +        review-        Code +
+               ADR-* +        WO-* +          YYYY-MM-DD     Tests
+               diagrams       plans               │              │
+                                          [blocking gate]        ▼
+                    ┌──────────┐   ┌──────────────────┐   ┌────────────────┐
+                    │/validate │──▶│ /security-review │──▶│ /status-update │
+                    └──────────┘   └──────────────────┘   └────────────────┘
+                         │                  │                     │
+                         ▼                  ▼                     ▼
+                   reports/           PASS | FAIL |         Status in
+                   docs/validation/     FINDINGS         record indexes
+                                                                  │
+                                          ┌─────────┐   ┌──────────┐
+                                          │ /deploy │──▶│/document │
+                                          └─────────┘   └──────────┘
+                                               │              │
+                                               ▼              ▼
+                                           Deployed       README +
+                                           Artifacts      Runbooks
 ```
 
 **Phases**:
 
 1. **Specification** (`/spec` → Business Analyst)
    - Input: Idea or feature description
-   - Output: `docs/architecture/PRD.md`
+   - Output: `docs/requirements/FRD-<SCOPE>-NNN.md`, `TRD-<SCOPE>-NNN.md`
    - Activities: Requirements elicitation, acceptance criteria definition
 
-2. **Design** (`/design` → Architect)
-   - Input: PRD
-   - Output: `docs/architecture/ARCHITECTURE.md`, `docs/architecture/adr/`
-   - Activities: System design, component definition, trade-off analysis
+2. **Architecture** (`/architect` → Architect)
+   - Input: `FRD`/`TRD` requirements
+   - Output: `docs/architecture/{foundation,feature}/FBP-<TIER>-NNN.md`, `ADR/ADR-<TIER>-NNN.md`, `system/`
+   - Activities: System design, component definition, trade-off analysis, ADR authoring
+   - Note: Domain/data model changes require an explicit adversarial-validation pass before planning.
 
-3. **Planning** (`/plan` → Project Manager)
+3. **Planning** (`/planner` → Planner)
    - Input: Architecture
-   - Output: `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`, optional `docs/development/tasks/*.md`
-   - Activities: Task decomposition, prioritization, dependency mapping, canonical task-detail generation for complex work
+   - Output: `docs/development/ROADMAP.md`, `plans/PLAN-NNN-*.md`, `workorders/WO-NNN.md`, optional `WO-NNN-implementation-plan.md`
+   - Activities: Work Order decomposition, prioritization, dependency mapping, implementation-plan authoring for complex work
 
 4. **Review** (`/review` → Tech Writer)
-   - Input: ROADMAP, BACKLOG, PRD, ARCHITECTURE, ADRs
+   - Input: Roadmap, Plans, Work Orders, requirements, blueprints, ADRs
    - Output: `reports/analysis/review-YYYY-MM-DD.md`, blocking issues in `docs/development/ISSUES.md`
-   - Activities: Cross-artifact consistency, FR coverage, BACKLOG traceability
+   - Activities: Cross-artifact consistency, `REQ` coverage, Work Order traceability
    - Note: **Blocking gate** — halt if blocking issues found. Skip for medium/light workflows.
 
 5. **Implementation** (`/implement` → Developer)
-   - Input: Task from backlog plus canonical task-detail refs when present
+   - Input: Work Order plus its implementation plan when present
    - Output: Code, tests
    - Activities: Coding, testing, code review prep
 
 6. **Validation** (`/validate` → Validator)
-   - Input: Implementation plus canonical task-detail refs when present
-   - Output: Validation report (Serena memory)
-   - Activities: Testing, AC verification, quality checks
+   - Input: Implementation plus the Work Order's implementation plan when present
+   - Output: `docs/validation/` coverage keyed on `AC`/`TRC`, plus `ISS`/`REG`/`TD` records
+   - Activities: Testing, acceptance-criteria verification, quality checks, regression evidence matrix
+   - Note: Fails closed. A missing, stale, or partial evidence row is `NOT VALIDATED`.
 
-7. **Deployment** (`/deploy` → Deployer)
+7. **Security Gate** (`/security-review` → Security)
+   - Input: Implementation commit and the validator handoff
+   - Output: Verdict (PASS | FAIL | FINDINGS), issue rows for Critical/High findings
+   - Activities: OWASP Top 10 + LLM Top 10 assessment, threat modeling, CI gate alignment
+   - Note: Any Critical or High finding is FAIL and routes back to `/implement`.
+
+8. **Status Update** (`/status-update` → Validator)
+   - Input: Validation evidence and the security verdict
+   - Output: Assessed status in each record's index, plus `status/STATUS.md`
+   - Activities: Implementation assessment, authored-doc drift reconciliation, status commit
+   - Note: Sole owner of status values. No other stage sets them.
+
+9. **Deployment** (`/deploy` → Deployer)
    - Input: Validated code
    - Output: Deployed artifacts
    - Activities: Build, deploy, release verification
 
-8. **Documentation** (`/document` → Tech Writer)
+10. **Documentation** (`/document` → Tech Writer)
    - Input: Deployed feature
    - Output: `docs/`, `README.md`
    - Activities: User docs, API docs, runbooks
@@ -88,51 +115,69 @@ Three workflow depths based on project complexity:
 ### Medium Workflow
 
 ```
-┌─────────┐    ┌─────────┐    ┌───────────┐    ┌──────────┐
-│  /spec  │───▶│  /plan  │───▶│/implement │───▶│/validate │
-└─────────┘    └─────────┘    └───────────┘    └──────────┘
-     │              │               │               │
-     ▼              ▼               ▼               ▼
-   PRD.md      BACKLOG.md      Code + Tests    Validation
+┌─────────┐   ┌──────────┐   ┌─────────┐   ┌──────────────────────┐
+│  /spec  │──▶│ /planner │──▶│ /review │──▶│      delivery        │
+└─────────┘   └──────────┘   └─────────┘   └──────────────────────┘
+     │             │              │                    │
+     ▼             ▼              ▼                    ▼
+   FRD/TRD    WO-* +          review-          Code + Tests +
+              tasks/*.md    YYYY-MM-DD        evidence + status
 ```
 
 **Phases**:
 
 1. **Specification** (`/spec` → Business Analyst)
-   - Streamlined PRD with focus on acceptance criteria
+   - Streamlined requirements with focus on acceptance criteria
    - Skip detailed user personas if obvious
 
-2. **Planning** (`/plan` → Project Manager)
-   - Direct to BACKLOG (skip formal ROADMAP)
+2. **Planning** (`/planner` → Planner)
+   - Direct to Work Orders (skip a formal Plan)
    - Focus on task breakdown
 
-3. **Implementation** (`/implement` → Developer)
-   - Standard implementation with tests
+3. **Review** (`/review` → Tech Writer)
+   - Cross-artifact consistency gate before implementation starts
 
-4. **Validation** (`/validate` → Validator)
-   - AC verification, test execution
+4. **Delivery** (`/implement` → `/validate` → `/security-review` → `/status-update`)
+   - Full delivery chain, same gates as the Full workflow
 
 ---
 
 ### Light Workflow
 
 ```
-┌─────────┐    ┌───────────┐
-│  /plan  │───▶│/implement │
-└─────────┘    └───────────┘
-     │               │
-     ▼               ▼
-  Task def      Code + Tests
+┌──────────┐   ┌──────────────────────┐
+│ /planner │──▶│      delivery        │
+└──────────┘   └──────────────────────┘
+     │                    │
+     ▼                    ▼
+  Task def         Code + Tests +
+                  evidence + status
 ```
 
 **Phases**:
 
-1. **Planning** (`/plan` → Project Manager)
+1. **Planning** (`/planner` → Planner)
    - Quick task definition with acceptance criteria
-   - May be single task, no epic structure needed
+   - May be a single task, no epic structure needed
 
-2. **Implementation** (`/implement` → Developer)
-   - Straightforward implementation
+2. **Delivery** (`/implement` → `/validate` → `/security-review` → `/status-update`)
+   - The chain never shortens below this; only the planning stages drop out
+
+---
+
+### Direct Fix
+
+For a defect whose remediation is already diagnosed and bounded, run delivery against the existing
+`ISS`/`TD` with no new Work Order minted and no planning run:
+
+```
+┌──────────────────────┐
+│      delivery        │  against ISS / TD    
+└──────────────────────┘
+```
+
+Mint a task and run a fuller depth instead when the fix needs decomposition, or touches a requirement,
+architecture, domain/data model, or security boundary — route those through `/reconcile`.
 
 ---
 
@@ -170,7 +215,7 @@ The orchestrator should consult the user at these points:
 4. **Blockers**: When unable to proceed without guidance
 
 ### Optional Checkpoints
-1. **Phase Transitions**: "PRD complete. Ready to proceed to design?"
+1. **Phase Transitions**: "Requirements complete. Ready to proceed to blueprints?"
 2. **Implementation Choices**: "Two approaches possible: A or B. Preference?"
 3. **Validation Failures**: "Tests failing. Should I fix or investigate further?"
 
@@ -182,27 +227,34 @@ Each phase produces artifacts consumed by subsequent phases:
 
 ```
 /spec
-  └─▶ PRD.md
-        └─▶ /design
-              └─▶ ARCHITECTURE.md, ADRs
-                    └─▶ /plan
-                          └─▶ ROADMAP.md, BACKLOG.md
+  └─▶ FRD / TRD
+        └─▶ /architect
+              └─▶ FBP blueprints, ADRs, diagrams
+                    └─▶ /planner
+                          └─▶ ROADMAP.md, PLAN-*, WO-*
                                 └─▶ /review
                                       └─▶ review-YYYY-MM-DD.md
                                             └─▶ /implement
                                                   └─▶ Code, Tests
                                                         └─▶ /validate
-                                                              └─▶ Report
-                                                                    └─▶ /deploy
-                                                                          └─▶ /document
+                                                              └─▶ docs/validation/
+                                                                    └─▶ /security-review
+                                                                          └─▶ Verdict
+                                                                                └─▶ /status-update
+                                                                                      └─▶ Status
+                                                                                            └─▶ /deploy
+                                                                                                  └─▶ /document
 ```
 
+Feedback runs the other way through `/reconcile`, which classifies a downstream finding and routes it
+to the stage that owns the fix. Downstream artifacts never rewrite upstream ones directly.
+
 **Traceability**: Each artifact should reference its source:
-- PRD → User request
-- Architecture → PRD requirements
-- Tasks → Architecture components
-- Code → Task IDs
-- Commits → Task IDs
+- Requirements → User request
+- Blueprints → requirements
+- Work Orders → blueprint components
+- Code → record ids
+- Commits → record ids
 
 ---
 
@@ -216,7 +268,7 @@ If a phase fails or is blocked:
    - High: Needs resolution before next phase
    - Medium: Can proceed with caveat
    - Low: Note for later
-3. **Invoke /reflexion** if significant learning
+3. **Invoke `$meta-learn`** if the failure reveals an instruction or process gap
 4. **Consult user** for critical/high blockers
 5. **Continue or halt** based on guidance
 
@@ -228,8 +280,8 @@ Where dependencies allow, phases can run in parallel:
 
 ```
 /spec ────────────────────────┐
-                              ├──▶ /design
-/analyse (existing code) ─────┘
+                              ├──▶ /architect
+/scout (existing code) ───────┘
 ```
 
 ```
@@ -238,7 +290,9 @@ Where dependencies allow, phases can run in parallel:
 /implement (task 2) ──────────┘
 ```
 
-Use the Wave → Checkpoint → Wave pattern for parallel tasks.
+Use the Wave → Checkpoint → Wave pattern for parallel tasks. Each parallel implementation lane runs in
+its own isolated worktree with shifted ports and namespaced stores — see `/orchestrate` for lane
+provisioning and teardown.
 
 ---
 
@@ -251,4 +305,5 @@ Use the Wave → Checkpoint → Wave pattern for parallel tasks.
 | "Implement dark mode toggle" | +1 (UI) = 1 | Medium |
 | "Fix typo in error message" | -2 (simple fix) = -2 | Light |
 | "Add retry logic to API calls" | 0 | Light |
+| "Fix the null deref in ISS-014" | n/a — diagnosed defect | Direct fix |
 | "Build analytics dashboard" | +3 (new) +1 (UI) +1 (API) = 5 | Full |

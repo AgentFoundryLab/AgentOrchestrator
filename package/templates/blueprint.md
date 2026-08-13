@@ -41,4 +41,4 @@
 
 - [VISION.md](../objectives/VISION.md)
 - [PRD.md](PRD.md)
-- [ARCHITECTURE.md](ARCHITECTURE.md)
+- Blueprints: [`docs/architecture/foundation/`](../architecture/foundation/), [`docs/architecture/feature/`](../architecture/feature/)

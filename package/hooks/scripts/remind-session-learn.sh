@@ -1,6 +1,6 @@
 #!/bin/bash
-# remind-reflect.sh - Stop hook
-# Prompts orchestrator to invoke /reflect for session meta-learning
+# remind-session-learn.sh - Stop hook
+# Prompts the orchestrator to invoke $meta-learn for session analysis
 # Blocking execution - includes orchestrator checklist
 
 source "$(dirname "$0")/lib/hook-utils.sh"
@@ -20,15 +20,15 @@ fi
 
 cat << EOF
 <system-reminder>
-[Stop:reflect] session=${SESSION_ID:-unknown} agents_spawned=${AGENT_COUNT}
+[Stop:session-learn] session=${SESSION_ID:-unknown} agents_spawned=${AGENT_COUNT}
 
 SESSION REFLECTION PROMPT:
-Before session ends, consider invoking /reflect to capture:
+Before session ends, consider invoking \$meta-learn to capture:
 - Lessons learned from this session
 - Patterns that worked well
 - Errors and their resolutions
 - Blockers encountered
-- Suggestions for workflow improvement
+- Instruction/rule changes that would prevent a recurrence
 
 ORCHESTRATOR CHECKLIST:
 - [ ] All planned tasks completed or documented as pending
@@ -36,7 +36,7 @@ ORCHESTRATOR CHECKLIST:
 - [ ] No uncommitted changes (if applicable)
 - [ ] Next steps documented if work is incomplete
 
-Use /reflect to persist session insights for future reference.
+Use \$meta-learn to persist session insights and rule fixes.
 
 Session log: ${SESSION_LOG_DIR:-n/a}
 Transcript: ${TRANSCRIPT_PATH:-n/a}

@@ -5,18 +5,18 @@ tools:
   - Read
   - Write
   - Bash
+  - AskUserQuestion
 disallowedTools:
   - Edit
 permissionMode: plan
 skills:
   - deploy
-  - hitl
 hooks:
   SubagentStop:
     - type: command
       command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-validate.sh"
     - type: command
-      command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-reflexion.sh"
+      command: "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scripts/remind-agent-learn.sh"
 ---
 
 # Deployer Agent
@@ -61,7 +61,8 @@ Return a concise summary:
 - **Done**: What was accomplished
 - **Artifacts**: Files created/modified (with paths)
 - **Issues**: Anything unexpected or blocked
-- **QUESTIONS**: Structured block if HITL needed (see `/hitl` shared protocol)
+
+If blocked by missing user input, ask the user directly with `AskUserQuestion`.
 
 ## Policies
 

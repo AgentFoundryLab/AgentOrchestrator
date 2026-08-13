@@ -200,12 +200,12 @@ Log: logs/sessions/<session_id>/<agent_id>/
 
 ---
 
-### remind-reflect.sh
+### remind-session-learn.sh
 
 **Event**: `Stop`
 **Blocking**: Yes
 
-Prompts the orchestrator to invoke `/reflect` for session meta-learning before session ends. Includes orchestrator checklist:
+Prompts the orchestrator to invoke `$meta-learn` for session analysis and rule fixes before the session ends. Includes orchestrator checklist:
 - All tasks completed or documented
 - Artifacts in correct locations
 - No uncommitted changes
@@ -230,13 +230,13 @@ Writes first entry to `agent-stop.jsonl`.
 
 ---
 
-### remind-reflexion.sh
+### remind-agent-learn.sh
 
 **Event**: `SubagentStop`
 **Blocking**: Yes
 **Condition**: Only fires when `stop_hook_active=true` (second phase)
 
-Prompts agent to invoke `/reflexion` if errors were encountered during the task:
+Prompts agent to invoke `$meta-learn` if errors were encountered during the task:
 - Errors that required debugging
 - Wrong assumptions that needed correction
 - Missing dependencies or unexpected behaviors
@@ -267,7 +267,7 @@ The SubagentStop event fires twice per agent completion, controlled by the `stop
 | Phase | `stop_hook_active` | Script | Action |
 |-------|-------------------|--------|--------|
 | 1 (Validation) | `false` | `remind-validate.sh` | Self-validation checklist |
-| 2 (Reflexion) | `true` | `remind-reflexion.sh` | Reflexion prompt if errors |
+| 2 (Reflexion) | `true` | `remind-agent-learn.sh` | Reflexion prompt if errors |
 
 **Flow**:
 1. Agent completes task and attempts to stop
@@ -275,8 +275,8 @@ The SubagentStop event fires twice per agent completion, controlled by the `stop
 3. `remind-validate.sh` outputs validation checklist, writes to `agent-stop.jsonl`
 4. Agent responds to validation (may continue or complete)
 5. SubagentStop fires again with `stop_hook_active=true`
-6. `remind-reflexion.sh` outputs reflexion prompt, appends to `agent-stop.jsonl`
-7. Agent decides whether to invoke `/reflexion`
+6. `remind-agent-learn.sh` outputs reflexion prompt, appends to `agent-stop.jsonl`
+7. Agent decides whether to invoke `$meta-learn`
 
 Both phases are logged to `agent-stop.jsonl` as separate JSONL entries.
 
@@ -407,7 +407,7 @@ Each line is a complete JSON object. This allows:
           },
           {
             "type": "command",
-            "command": "\"$HOME\"/.claude/hooks/scripts/remind-reflexion.sh"
+            "command": "\"$HOME\"/.claude/hooks/scripts/remind-agent-learn.sh"
           }
         ]
       }
@@ -417,7 +417,7 @@ Each line is a complete JSON object. This allows:
         "hooks": [
           {
             "type": "command",
-            "command": "\"$HOME\"/.claude/hooks/scripts/remind-reflect.sh"
+            "command": "\"$HOME\"/.claude/hooks/scripts/remind-session-learn.sh"
           }
         ]
       }
@@ -591,5 +591,5 @@ All event files use JSONL format for consistency and append support:
 
 ## References
 
-- [ADR-001: Hook Reminder Pattern](../../docs/architecture/adr/001-hook-reminder-pattern.md)
+- [ADR-FND-001: Hook Reminder Pattern](../../docs/architecture/ADR/ADR-FND-001.md)
 - [Claude Code Hooks Documentation](https://docs.anthropic.com/claude-code/hooks)

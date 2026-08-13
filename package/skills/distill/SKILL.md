@@ -1,112 +1,116 @@
 ---
 name: distill
-description: Distill content with 5-level granularity, showing quality loss estimation before execution
-argument-hint: <path|type> [level]
-user-invocable: true
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
+description: Lossless LLM-oriented document compression based on the BMAD distillator pattern. Use when asked to distill documents, dry up bloated docs, preserve dense high-signal context, remove managerial prose, create a distillate, compress requirements/architecture/tasks/notes for downstream agents, or produce a semantically split lossless context bundle.
 ---
 
-# /distill - Content Distillation
+# Distill
 
-Reduce content size while preserving critical information. Shows quality loss estimation before execution.
+Produce lossless, LLM-optimized distillates from source documents. This is **compression**, not summarization: preserve every fact, decision, constraint, relationship, scope boundary, rationale, conflict, and open question while removing human-oriented overhead.
 
-**Out of scope**: Conversation context (use built-in `/compact`)
+Baseline adapted from BMAD Method distillator at commit `ee47e30cf6bffb00eddfba4f4943df40071a3388`.
 
-## Granularity Levels
+## Inputs
 
-| Level | Name | Target Reduction | Preserves | May Remove |
-|-------|------|------------------|-----------|------------|
-| 1 | `essence` | 85-95% | Identity only | Everything except core purpose |
-| 2 | `summary` | 70-80% | + Behavior | Reasoning, examples, context |
-| 3 | `condensed` | 45-60% | + Reasoning | Verbose examples, redundant explanations |
-| 4 | `detailed` | 25-40% | + Context | Redundant phrasing, verbose wording |
-| 5 | `minimal` | 10-20% | All facts, rules, examples, structure | Filler words, redundant phrasing, excessive formatting |
+Accept:
 
-## Criticality Heuristics
+- one or more source file paths, folder paths, or glob patterns;
+- optional downstream consumer, e.g. `for architecture`, `for planner`, `for review`;
+- optional token budget;
+- optional output path;
+- optional explicit request for independent round-trip validation.
 
-Priority order for preservation (highest → lowest):
-
-| Content Type | Criticality Order |
-|--------------|-------------------|
-| policy | Rules > Priority > Rationale > Examples > Detection |
-| code | Signatures > Logic > Types > Comments > Formatting |
-| memory | Facts > Decisions > Reasoning > Timestamps > Verbose |
-| artifacts | Requirements > Criteria > Rationale > Background > Examples |
-| default | Critical > Important > Helpful > Context > Lossy |
-
+If output path is omitted, write next to the primary source as `<base>-distillate.md`, or a `<base>-distillate/` folder for split output.
 
 ## Workflow
 
-### 1. Run Estimation Script
+1. **Analyze sources.** Run the bundled helper; run it from this skill directory or resolve `scripts/analyze_sources.py` relative to this `SKILL.md` (do not assume a fixed install root):
+   ```bash
+   python3 scripts/analyze_sources.py <sources...>
+   ```
+   Use the routing and split prediction. If the script finds no files, stop and report the unresolved inputs.
+2. **Read only the needed sources.** For small inputs, read sources directly. For large/fan-out inputs, process groups from the analysis output sequentially unless the user explicitly asked for subagents/parallelism.
+3. **Extract losslessly.** Pull every discrete item:
+   - facts, numbers, dates, versions;
+   - requirements, constraints, acceptance criteria;
+   - decisions and rationale;
+   - rejected alternatives and reasons;
+   - relationships, dependencies, ordering;
+   - named entities;
+   - open questions and unresolved conflicts;
+   - scope in/out/deferred;
+   - risks, success criteria, validation methods.
+4. **Compress.** Apply `references/compression-rules.md`. Remove managerial bloat, repeated intros, rhetoric, hedging, filler, and decorative formatting.
+5. **Deduplicate and preserve nuance.** Keep the most specific version of repeated information. If sources disagree, preserve the conflict explicitly instead of resolving it silently.
+6. **Format.** Use `references/distillate-format.md`: frontmatter plus dense `##` sections and self-contained bullets. No prose paragraphs.
+7. **Split semantically when needed.** If analysis predicts splitting or token budget requires it, use `references/splitting-strategy.md`; create `_index.md` plus self-contained section files.
+8. **Verify.** Check that all source headings, named entities, IDs, decisions, constraints, and conflicts appear in the distillate. Run at most 2 targeted fix passes for gaps.
+9. **Report JSON.** End with the file/folder path, source token estimate, distillate token estimate, compression ratio, and completeness status.
 
-The estimator is bundled with the distill skill package. Resolve it relative to this `SKILL.md` file, not relative to the current working directory.
+## Losslessness Rules
 
-Typical locations:
-- Repo source: `package/skills/distill/scripts/estimate_distill.py`
-- Codex global install: `~/.agents/skills/distill/scripts/estimate_distill.py`
-- Claude global install: `~/.claude/skills/distill/scripts/estimate_distill.py`
-- Gemini global install: `~/.gemini/skills/distill/scripts/estimate_distill.py`
+- Never drop details because they look verbose if they encode requirement nuance, rationale, history, or risk.
+- Never collapse conflicting statements into one reconciled statement; mark the conflict.
+- Never remove immutable IDs, statuses, dates, names, quantities, acceptance criteria, file paths, commands, or source references.
+- Preserve reasoning, but compress it: `Decision: X; rationale: Y; rejected: Z because W`.
+- Preserve user-stated invariants and explicit requirements at higher priority than implementation guesses.
+- If downstream consumer is provided, drop only information clearly irrelevant to that consumer. When uncertain, keep it.
 
-Run the resolved estimator path:
+## Independent Round-Trip Validation
 
-```bash
-"$DISTILL_ESTIMATOR" "$FILE" [content_type]
+A meaningful round-trip check requires an independent context that has not read the originals. Only use subagents if the user explicitly asks for independent round-trip validation/subagents and the runtime permits it. Otherwise report: `round_trip_validation: skipped_requires_independent_context`.
+
+When explicitly requested and available:
+
+1. Give the validator only the distillate path, not the original files.
+2. Ask it to reconstruct likely source content and flag possible gaps.
+3. Compare reconstruction with originals for missing facts, altered relationships, or hallucinated filler.
+4. Save `<distillate>-validation-report.md` with PASS/PASS_WITH_WARNINGS/FAIL.
+5. Delete temporary reconstructions unless the user asks to keep them.
+
+## Output Shapes
+
+Single distillate frontmatter:
+
+```yaml
+---
+type: bmad-distillate
+sources:
+  - "relative/source.md"
+downstream_consumer: "general"
+created: "YYYY-MM-DD"
+token_estimate: 1200
+parts: 1
+---
 ```
 
-### 2. Present Results & Confirm
+Split folder:
 
-```
-/distill README.md
-
-Tokens: ~4364
-
-| Level        | After | Reduction | Critical Loss |
-|--------------|-------|-----------|---------------|
-| 1. essence   | ~654  | 85%       | ~35%          |
-| 2. summary   | ~1527 | 65%       | ~15%          |
-| 3. condensed | ~2400 | 45%       | ~5%           |
-| 4. detailed  | ~3273 | 25%       | ~2%           |
-| 5. minimal   | ~3709 | 15%       | ~0%           |
-----------------------------------------------------
-
-Select level [1-5/cancel]:
+```text
+<base>-distillate/
+├── _index.md
+├── 01-<topic>.md
+└── 02-<topic>.md
 ```
 
-### 3. Execute Distillation
+Final response:
 
-Remove ONLY what "May Remove" permits for selected level.
-
-**Self-check**: If removing content not in "May Remove" column → STOP, wrong level.
-
-### 4. Verify & Report
-
-After writing, measure actual tokens:
-
-```bash
-"$DISTILL_ESTIMATOR" "$FILE" [content_type]
+```json
+{
+  "status": "complete",
+  "distillate": "path-or-folder",
+  "section_distillates": null,
+  "source_total_tokens": 0,
+  "distillate_total_tokens": 0,
+  "compression_ratio": "0:1",
+  "source_documents": [],
+  "completeness_check": "pass"
+}
 ```
-
-Report (compare against initial estimation, not generic range):
-```
-Before: 4434 tokens → Estimated: 2858 tokens (35% reduction)
-Actual: 2621 tokens (41%) | Variance: +6%
-```
-
-If variance >10%, warn and offer git restore.
-
-### 5. Output Location
-
-- **Git-versioned files**: Replace original (git tracks history)
-- **Serena memories**: Archive old as `<name>_archived_<timestamp>`, write new
 
 ## Anti-Patterns
 
-- Distilling without estimation first
-- Assuming `scripts/estimate_distill.py` exists relative to the current working directory
-- Removing content not permitted by level's "May Remove"
-- Not verifying actual vs target reduction
-- Skipping user confirmation
+- Summarizing instead of preserving source information.
+- Keeping managerial bloat because it sounds important.
+- Removing rationale, rejected alternatives, or conflicts.
+- Arbitrary size-based splits that break semantic coherence.
+- Running round-trip validation in the same context that read originals and calling it independent.

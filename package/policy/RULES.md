@@ -160,7 +160,7 @@ Preserve upstream → downstream flow:
 ## Planning, Implementation, and Scope [HIGH]
 
 - Identify concurrent operations and separate dependency-ordered from parallelizable work; record the split as the task's dependency refs so a milestone run fans out independent items automatically. A shared dependency (schema, contract, interface touched by multiple items) is a sequencing barrier, not a parallel slice.
-- Keep task-detail docs sequence-oriented and file/surface-level; include delegation candidates for non-trivial work.
+- Keep implementation plans sequence-oriented and file/surface-level; include delegation candidates for non-trivial Work Orders.
 - Choose the smallest chain that preserves traceability and validation: enter at the latest planning stage the work justifies; never drop `$implement` → `$validate` → `$status-update`.
 - An `ISS`/`TD` whose remediation is already diagnosed and bounded takes the direct-fix chain against its own record — a scoped `$implement` → `$validate` → `$status-update` — with no new `WO` minted and no full planning run. The direct-fix path drops only the planning ceremony, never the scoped commit, focused validation, or status record. Mint a `WO` and run a fuller chain when the fix needs decomposition or touches a requirement, blueprint, domain/data model, or security/trust boundary; route those through `$reconcile`. Linked `REG` remediation stays TDD-first.
 - The orchestrator must execute or explicitly reject each delegation candidate.

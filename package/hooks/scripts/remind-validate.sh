@@ -27,14 +27,24 @@ Started: ${AGENT_START_TIME}
 
 SELF-VALIDATION CHECKLIST:
 Before completing, verify:
-1. [ ] All acceptance criteria from requirements are met
-2. [ ] Artifact schema is valid (check templates if applicable)
+1. [ ] All acceptance criteria in scope are met
+2. [ ] Artifact follows its template sections (if applicable)
 3. [ ] No assumptions made without evidence (verify via docs/code)
-4. [ ] Tests pass (if applicable)
+4. [ ] Focused tests for the touched surface pass (if applicable)
 5. [ ] Output stored in correct location
 
+HANDOFF CHECKLIST (a slice is complete only at an explicit checkpoint):
+6. [ ] Scoped commit made — explicit staging, citing the record id
+7. [ ] Every service and store this lane booted is stopped via the repo's
+       stop path, or named as still live with its port/store
+8. [ ] Status left to \$status-update — this stage did not set it
+9. [ ] Evidence recorded only at the scope actually exercised;
+       'configured' or 'inspected' reported as neither executed nor passed
+10.[ ] Final report names: changed files, checks run, last checkpoint SHA,
+       done vs remaining, blockers, skipped scope, residual risk
+
 If any item fails, address before completing.
-If unable to verify, note the gap explicitly.
+If unable to verify, note the gap explicitly — silence is not a pass.
 
 Agent log: ${AGENT_LOG_DIR:-n/a}
 </system-reminder>
