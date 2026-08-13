@@ -129,12 +129,12 @@ claude
 
 | Skill | Agent | Purpose | Output |
 |-------|-------|---------|--------|
-| `/spec` | Business Analyst | Requirements elicitation | `docs/architecture/PRD.md` |
-| `/architect` | Architect | System architecture | `docs/architecture/ARCHITECTURE.md`, ADRs, diagrams |
-| `/planner` | Planner | Task decomposition | `docs/objectives/ROADMAP.md`, `docs/development/BACKLOG.md`, optional `docs/development/tasks/*.md` |
+| `/spec` | Business Analyst | Requirements elicitation | `docs/requirements/FRD-*`, `TRD-*` |
+| `/architect` | Architect | Blueprints and decisions | `docs/architecture/{foundation,feature,system,ADR}/` |
+| `/planner` | Planner | Work Order decomposition | `docs/development/{ROADMAP.md,plans/,workorders/}` |
 | `/review` | Tech Writer | Cross-surface consistency review | Findings, `reports/analysis/`, ISSUES rows |
 | `/implement` | Developer | Code implementation | Source files, tests |
-| `/validate` | Validator | Testing and verification | `reports/validation/`, ISSUES rows |
+| `/validate` | Validator | Testing and verification | `docs/validation/`, `ISS`/`REG`/`TD` |
 | `/security-review` | Security | Adversarial security gate | Verdict, ISSUES rows |
 | `/status-update` | Validator | Implementation assessment | Status in BACKLOG / ISSUES / ROADMAP |
 | `/deploy` | Deployer | Build and deployment | Deployment artifacts |
@@ -239,7 +239,8 @@ your-project/
 │   └── project.yml       # Auto-generated Serena project config
 ├── docs/
 │   ├── objectives/       # VISION.md, BLUEPRINT.md, ROADMAP.md
-│   ├── architecture/     # PRD.md, ARCHITECTURE.md, adr/
+│   ├── requirements/     # FRD-*, TRD-*, REQUIREMENTS.md
+│   ├── architecture/     # foundation/, feature/, system/, ADR/
 │   ├── development/      # BACKLOG.md, ISSUES.md, tasks/
 │   └── knowledge/        # Project knowledge base
 ├── reports/
@@ -264,7 +265,7 @@ Strategic (locked after PRD)
 
 Specification (changes with approval)
 ├── PRD.md           # Features, user stories, acceptance criteria
-├── ARCHITECTURE.md  # System design, risks, dependencies
+├── architecture/    # FBP blueprints, ADRs, system diagrams
 └── adr/             # Decision rationale, alternatives, consequences
 
 Execution (changes frequently)
@@ -366,11 +367,11 @@ Orchestrator template source lives in `package/templates/` and is installed to `
 |----------|---------|-----------------|
 | `vision.md` | Project vision and OKRs | `docs/objectives/VISION.md` |
 | `blueprint.md` | Technical scope and capabilities | `docs/objectives/BLUEPRINT.md` |
-| `prd.md` | Product requirements document | `docs/architecture/PRD.md` |
-| `architecture.md` | System architecture | `docs/architecture/ARCHITECTURE.md` |
-| `adr.md` | Architectural decision records | `docs/architecture/adr/` |
-| `roadmap.md` | Milestones, phases, epics | `docs/objectives/ROADMAP.md` |
-| `backlog.md` | Prioritized task list | `docs/development/BACKLOG.md` |
+| `frd.md` / `trd.md` | Feature / technical requirements | `docs/requirements/` |
+| `fbp-*.md` | Foundation / container / component / feature blueprints | `docs/architecture/{foundation,feature}/` |
+| `adr.md` | Architecture decision records | `docs/architecture/ADR/` |
+| `roadmap.md` / `plan.md` | Phase ordering / delivery Plan | `docs/development/{ROADMAP.md,plans/}` |
+| `work-order.md` / `implementation-plan.md` | Work Orders | `docs/development/workorders/` |
 | `issues.md` | Bugs, blockers, tech debt | `docs/development/ISSUES.md` |
 
 ---
@@ -399,11 +400,11 @@ Milestone (v0, v1)     -> Git Tag
 
 - [Vision](docs/objectives/VISION.md) - Project vision and goals
 - [Blueprint](docs/objectives/BLUEPRINT.md) - Technical scope
-- [PRD](docs/architecture/PRD.md) - Product requirements
-- [Architecture](docs/architecture/ARCHITECTURE.md) - System design
-- [ADRs](docs/architecture/adr/) - Architectural decisions
-- [Roadmap](docs/objectives/ROADMAP.md) - Milestones and phases
-- [Backlog](docs/development/BACKLOG.md) - Task tracking
+- [Requirements](docs/requirements/REQUIREMENTS.md) - REQ/AC and TR/TRC index
+- [Blueprints](docs/architecture/) - Foundation, container, component, feature
+- [ADRs](docs/architecture/ADR/README.md) - Architecture decisions
+- [Roadmap](docs/development/ROADMAP.md) - Phase ordering and rationale
+- [Work Orders](docs/development/WORKORDERS.md) - Delivery index
 - [Serena Integration](.serena/README.md) - Memory system guide
 - [Hook System](package/hooks/README.md) - Hook documentation
 - [Principles](package/policy/PRINCIPLES.md) - Software engineering principles

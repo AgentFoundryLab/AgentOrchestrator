@@ -2,7 +2,7 @@
 
 **Version**: 0.1.0
 **Date**: 2026-02-19
-**Source**: [ARCHITECTURE.md](../ARCHITECTURE.md)
+**Source**: decomposed from the retired `ARCHITECTURE.md`. Governing blueprint: [FBP-FND-001](FBP-FND-001.md).
 
 ---
 
@@ -76,11 +76,12 @@ Abstract entity representing the output of a skill/agent invocation.
 
 | Artifact Type | Location | Storage |
 |---------------|----------|---------|
-| PRD | `docs/architecture/PRD.md` | File |
-| Architecture | `docs/architecture/ARCHITECTURE.md` | File |
-| ADR | `docs/architecture/adr/NNN-name.md` | File |
-| ROADMAP | `docs/objectives/ROADMAP.md` | File |
-| BACKLOG | `docs/development/BACKLOG.md` | File |
+| FRD / TRD | `docs/requirements/{FRD,TRD}-<SCOPE>-NNN.md` | File |
+| FBP | `docs/architecture/{foundation,feature}/FBP-<TIER>-NNN.md` | File |
+| ADR | `docs/architecture/ADR/ADR-<TIER>-NNN.md` | File |
+| ROADMAP / PLAN | `docs/development/ROADMAP.md`, `plans/PLAN-NNN-*.md` | File |
+| WO | `docs/development/workorders/WO-NNN.md` | File |
+| ISS / REG / TD | `docs/development/{issues,debt}/` | File |
 | ISSUES | `docs/development/ISSUES.md` | File |
 | STANDARDS | `docs/policy/STANDARDS.md` | File |
 | GUIDELINES | `docs/policy/GUIDELINES.md` | File |

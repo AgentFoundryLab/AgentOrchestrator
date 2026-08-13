@@ -2,7 +2,7 @@
 
 **Version**: 0.1.0
 **Date**: 2026-02-19
-**Source**: [ARCHITECTURE.md](../ARCHITECTURE.md)
+**Source**: decomposed from the retired `ARCHITECTURE.md`. Governing blueprint: [FBP-FND-001](FBP-FND-001.md).
 
 ---
 
@@ -129,11 +129,13 @@ Templates are the source of truth for artifact structure. They live in `package/
 
 | Artifact | Output Path | Template | Hydrated By |
 |----------|-------------|----------|-------------|
-| PRD | `docs/architecture/PRD.md` | `package/templates/prd.md` | `/spec` |
-| ARCHITECTURE | `docs/architecture/ARCHITECTURE.md` | `package/templates/architecture.md` | `/design` |
-| ADR | `docs/architecture/adr/NNN-*.md` | `package/templates/adr.md` | `/design` |
-| ROADMAP | `docs/objectives/ROADMAP.md` | `package/templates/roadmap.md` | `/plan` |
-| BACKLOG | `docs/development/BACKLOG.md` | `package/templates/backlog.md` | `/plan` |
+| FRD | `docs/requirements/FRD-<SCOPE>-NNN.md` | `package/templates/frd.md` | `/spec` |
+| TRD | `docs/requirements/TRD-<SCOPE>-NNN.md` | `package/templates/trd.md` | `/spec` |
+| FBP | `docs/architecture/{foundation,feature}/FBP-<TIER>-NNN.md` | `package/templates/fbp-*.md` | `/architect` |
+| ADR | `docs/architecture/ADR/ADR-<TIER>-NNN.md` | `package/templates/adr.md` | `/architect` |
+| ROADMAP | `docs/development/ROADMAP.md` | `package/templates/roadmap.md` | `/planner` |
+| PLAN | `docs/development/plans/PLAN-NNN-<slug>.md` | `package/templates/plan.md` | `/planner` |
+| WO | `docs/development/workorders/WO-NNN.md` | `package/templates/work-order.md` | `/planner` |
 | ISSUES | `docs/development/ISSUES.md` | `package/templates/issues.md` | `/review`, various |
 | STANDARDS.md | `docs/policy/STANDARDS.md` | `package/templates/standards.md` | `/onboard` |
 | GUIDELINES.md | `docs/policy/GUIDELINES.md` | `package/templates/guidelines.md` | `/onboard` |

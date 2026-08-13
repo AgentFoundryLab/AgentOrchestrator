@@ -12,6 +12,6 @@
 
 ## Rules
 
-- `docs/development/BACKLOG.md` is the canonical task index (IDs, priority, status, traceability).
+- **Historical.** `docs/development/WORKORDERS.md` is now the canonical index; `../ID-MAP.md` resolves the `T-nnn` ids used below.
 - `docs/development/tasks/` stores active per-milestone task details only.
 - Completed task details are moved to `docs/development/archive/`.

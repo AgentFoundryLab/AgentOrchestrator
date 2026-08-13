@@ -39,5 +39,5 @@ Re-open this decision only if all are true:
 ## Related
 
 - `docs/development/ISSUES.md` (`G-001`)
-- `docs/architecture/adr/014-multi-agent-installer.md` — D-1A capability table documents native hook support per runtime; this policy intentionally does not implement it for non-Claude targets in v0.x
+- `docs/architecture/ADR/ADR-FND-014.md` — D-1A capability table documents native hook support per runtime; this policy intentionally does not implement it for non-Claude targets in v0.x
 - `reports/research/2026-02-22-agent-capability-report.md`

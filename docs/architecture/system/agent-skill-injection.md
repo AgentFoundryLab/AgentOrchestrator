@@ -69,7 +69,7 @@
 |  | 7. Flag open questions for user                                     | |
 |  |                                                                      | |
 |  | ## Output                                                            | |
-|  | Write PRD to: docs/architecture/PRD.md                              | |
+|  | Write to: docs/requirements/FRD-<SCOPE>-NNN.md                      | |
 |  +--------------------------------------------------------------------+ |
 |                                                                          |
 +-------------------------------------------------------------------------+

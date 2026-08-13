@@ -25,7 +25,7 @@ Sensible defaults reduce configuration burden.
 **Rationale**: Most projects follow similar patterns. Configuration should be optional, not required.
 
 **Application**:
-- Default artifact locations (`docs/architecture/PRD.md`)
+- Default artifact locations (`docs/requirements/FRD-*`)
 - Standard workflow depths (Full/Medium/Light)
 - Automatic hook registration
 

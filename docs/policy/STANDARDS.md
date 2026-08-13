@@ -25,8 +25,9 @@
 ## Naming
 
 - Skill dirs: `package/skills/<skill>/SKILL.md`; agent files: kebab-case (`business-analyst.md`)
-- ADR files MUST use numeric prefix: `docs/architecture/adr/NNN-slug.md`
-- Artifact files MUST use SCREAMING_SNAKE_CASE: `STANDARDS.md`, `BACKLOG.md`, `ARCHITECTURE.md`
+- ADR files MUST use the tier-scoped id as filename: `docs/architecture/ADR/ADR-<TIER>-NNN.md`
+- Record documents MUST be named for their id: `FRD-<SCOPE>-NNN.md`, `FBP-<TIER>-NNN.md`, `WO-NNN.md`, `ISS-NNN.md`, `REG-NNN.md`, `TD-NNN.md`, `PLAN-NNN-<slug>.md`
+- Index files MUST use SCREAMING_SNAKE_CASE: `STANDARDS.md`, `WORKORDERS.md`, `REQUIREMENTS.md`, `ISSUES.md`, `TECH_DEBT.md`
 - Hook scripts MUST use kebab-case with `.sh` suffix
 
 ## Commit Conventions

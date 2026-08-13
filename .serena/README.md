@@ -247,6 +247,6 @@ Link to code and docs rather than copying content into memory.
 
 ## References
 
-- [ADR-002: Four-Tier Memory](../docs/architecture/adr/002-four-tier-memory.md)
-- [ADR-003: Minimal MCP Footprint](../docs/architecture/adr/003-minimal-mcp-footprint.md)
+- [ADR-FND-002: Four-Tier Memory](../docs/architecture/ADR/ADR-FND-002.md)
+- [ADR-FND-003: Minimal MCP Footprint](../docs/architecture/ADR/ADR-FND-003.md)
 - [Serena MCP Documentation](https://github.com/oraios/serena)
