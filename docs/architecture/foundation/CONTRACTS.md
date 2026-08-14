@@ -144,7 +144,7 @@ Templates are the source of truth for artifact structure. They live in `package/
 | Knowledge index | `docs/knowledge/README.md` | `package/templates/knowledge.md` | `/onboard` |
 | Review Report | `docs/analysis/review-YYYY-MM-DD.md` | — (free-form) | `/review` |
 
-> **BACKLOG structure**: see [ADR-005](../adr/005-task-decomposition-hierarchy.md) for Milestone → Phase → Epic → Task hierarchy.
+> **Execution structure**: `ROADMAP` orders phases, a `PLAN` holds Milestones, and a `WO` is the unit of delivery. [ADR-FND-005](../ADR/ADR-FND-005.md) records the superseded Milestone → Phase → Epic → Task hierarchy it replaced.
 
 ---
 

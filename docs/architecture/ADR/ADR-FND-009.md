@@ -304,10 +304,10 @@ os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://collector:4318"
 
 ### Related ADRs
 
-- [ADR-007](007-multi-agent-protocol-selection.md): A2A protocol for orchestrator-agent communication
-- [ADR-008](008-multi-provider-integration-strategy.md): Hybrid MCP + A2A for multi-provider OAuth
-- [ADR-010](010-observability-architecture.md): OTEL trace propagation (Strands native support)
-- [ADR-011](011-coordination-level-strategy.md): L1→L2→L3 progressive implementation
+- [ADR-007](ADR-FND-007.md): A2A protocol for orchestrator-agent communication
+- [ADR-008](ADR-FND-008.md): Hybrid MCP + A2A for multi-provider OAuth
+- [ADR-010](ADR-FND-010.md): OTEL trace propagation (Strands native support)
+- [ADR-011](ADR-FND-011.md): L1→L2→L3 progressive implementation
 
 ### Related Requirements
 

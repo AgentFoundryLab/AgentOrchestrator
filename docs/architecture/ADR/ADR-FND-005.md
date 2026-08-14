@@ -130,5 +130,5 @@ Epic: <feature-name>
 
 ## Related
 
-- [ROADMAP.md](../../objectives/ROADMAP.md) — applies this hierarchy
-- [ARCHITECTURE.md](../ARCHITECTURE.md) — system specification
+- [ROADMAP.md](../../development/ROADMAP.md) — applies this hierarchy
+- [ARCHITECTURE.md](../foundation/) — system specification

@@ -217,4 +217,4 @@ Keep policies as documentation only.
 - [PRINCIPLES.md](../../../package/policy/PRINCIPLES.md)
 - [RULES.md](../../../package/policy/RULES.md)
 - [GUIDELINES.md](../../../package/templates/guidelines.md)
-- [PRD.md](../PRD.md)
+- [PRD.md](../../requirements/REQUIREMENTS.md)

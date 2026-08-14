@@ -345,9 +345,9 @@ result = swarm.coordinate("Research and implement real-time collaboration")
 
 ### Related ADRs
 
-- [ADR-007](007-multi-agent-protocol-selection.md): A2A for orchestrator-agent (used in all levels)
-- [ADR-009](009-orchestration-framework-selection.md): Strands Agents (supports L1/L2/L3)
-- [ADR-010](010-observability-architecture.md): OTEL trace propagation (complexity increases per level)
+- [ADR-007](ADR-FND-007.md): A2A for orchestrator-agent (used in all levels)
+- [ADR-009](ADR-FND-009.md): Strands Agents (supports L1/L2/L3)
+- [ADR-010](ADR-FND-010.md): OTEL trace propagation (complexity increases per level)
 
 ### Related Requirements
 

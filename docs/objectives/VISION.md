@@ -1,7 +1,7 @@
 # AgentOrchestrator Vision
 
-**Version**: 0.1.0
-**Updated**: 2026-01-24
+**Version**: 0.2.0
+**Updated**: 2026-08-14
 
 ---
 
@@ -13,11 +13,12 @@ AI coding assistants operate in single-turn mode: no persistent memory, no struc
 
 **"From assistant to orchestrator"**
 
-Orchestrator transforms Claude Code into an autonomous software engineering orchestrator that:
-- Coordinates specialized agents through defined workflows
-- Validates its own work through hooks
-- Learns from mistakes via reflexion
-- Persists knowledge across sessions
+Orchestrator turns a single-turn coding assistant into an autonomous software engineering
+orchestrator that:
+- Coordinates specialized agents through defined workflows, on any of five runtimes
+- Gates its own work at a validation stage the implementing agent does not own
+- Learns from what actually happened, by reading its own session transcripts
+- Persists knowledge across sessions as versioned files
 
 ## Technical Architecture Vision
 
@@ -44,14 +45,16 @@ Solo developers and small teams who want AI-assisted development with standardiz
 **Initiatives**:
 - Multi-agent orchestration with specialized roles
 - Hook-based validation at workflow boundaries
-- Reflexion-driven error pattern learning
+- Session-transcript-driven error pattern learning
 
 ## Principles
 
-1. **Minimal** - Ship smallest useful system (7 agents, 14 skills, hooks)
+1. **Minimal** - Ship the smallest useful system (9 agents, 23 skills)
 2. **Self-contained** - No external services beyond MCPs
-3. **Self-validating** - Every agent output passes validation
-4. **Self-learning** - Errors captured, patterns extracted
+3. **Self-validating** - Delivery always passes through validation and a security gate, owned by
+   agents that cannot edit the code they judge. Hooks remind; they do not enforce (`ADR-FND-001`).
+4. **Self-learning** - Failures are read back from session transcripts and turned into instruction
+   changes, applied only on approval
 
 ---
 

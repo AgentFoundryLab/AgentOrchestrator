@@ -9,22 +9,22 @@
        [FULL]          [MEDIUM]          [LIGHT]
           |                |                |
           v                v                v
-    BA Agent           BA Agent         PM Agent
-    (+/spec)           (+/spec)         (+/plan)
+    BA Agent           BA Agent         Planner 
+    (+/spec)           (+/spec)         (+/planner)
           |                |                |
           v                v                v
-        PRD              PRD             Tasks
+     FRD/TRD          FRD/TRD           WO/plan
           |                |                |
           v                v                v
-    Arch Agent         PM Agent         Dev Agent
-    (+/design)         (+/plan)         (+/implement)
+    Arch Agent         Planner          Dev Agent
+    (+/architect)      (+/planner)      (+/implement)
           |                |                |
           v                v                v
     Architecture       Tasks             Code
           |                |                |
           v                v                |
     PM Agent           Dev Agent            |
-    (+/plan)           (+/implement)        |
+    (+/planner)        (+/implement)        |
           |                |                |
           v                v                |
        Tasks            Code               |

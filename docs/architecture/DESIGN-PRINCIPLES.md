@@ -58,9 +58,9 @@ Every artifact connects to its source.
 **Rationale**: Understanding "why" requires following the chain from requirement to implementation.
 
 **Application**:
-- PRD → Architecture → Task → Commit
-- Explicit references (Refs: T-001)
-- Consistent ID schemes
+- `REQ`/`AC` → `FBP`/`ADR` → `WO` → commit
+- Explicit references by immutable id (`Serves WO-101`)
+- One id grammar, never recycled
 
 ---
 
@@ -97,10 +97,13 @@ Different persistence for different needs.
 **Rationale**: Not all information has the same lifetime or access pattern.
 
 **Application**:
-- Session: Automatic (Claude JSONL)
-- Semantic: Project knowledge (Serena)
-- Reflexion: Error learnings (Serena)
-- Transient: Validation records (Serena)
+- Session: automatic, the runtime's own JSONL transcripts
+- Semantic: project knowledge — `docs/knowledge/`
+- Learning: failure modes and instruction fixes — `docs/analysis/`, `reports/meta-optimization/`
+- Coverage: `AC`/`TRC` evidence — `docs/validation/`
+
+The Serena-backed tiering in `ADR-FND-002` is designed, not built; the principle holds today through
+versioned files.
 
 ### A4: Workflow Flexibility
 
@@ -127,7 +130,7 @@ Each agent owns one area of expertise.
 **Application**:
 - Business Analyst: Requirements
 - Architect: Design
-- Project Manager: Planning
+- Planner: Planning
 - Developer: Implementation
 
 ### AG2: Explicit Boundaries
@@ -186,8 +189,8 @@ Re-running produces consistent results.
 **Rationale**: Safe to retry, predictable behavior.
 
 **Application**:
-- /spec on same input → same PRD structure
-- /plan on same architecture → same task breakdown
+- /spec on same input → same `FRD`/`TRD` structure
+- /planner on same blueprint → same Work Order breakdown
 - Note: /implement may vary based on existing code
 
 ---

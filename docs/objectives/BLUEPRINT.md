@@ -1,11 +1,22 @@
 # Orchestrator Design Blueprint
 
-**Version**: 0.3.2
+**Version**: 0.4.0
 **Status**: Accepted
+**Updated**: 2026-08-14
+
+Solution scope and capability matrix. Distinct from an `FBP-*` Foundry blueprint, which specifies
+technical structure.
+
+**Two halves, and the split is the point.** *Delivered Capability* is what the package installs and
+runs today. *Target Architecture* is `PLAN-003` scope: designed, not built, and not a description of
+current behavior. The two used to be one undivided list, which is how this document came to assert
+a 7-agent, 14-skill system with a live four-tier memory store — none of which was true.
 
 ---
 
-## Core Design
+## Target Architecture — `PLAN-003`, not built
+
+### Core Design
 
 ### Protocol Stack
 **Active Protocols:**
@@ -36,33 +47,47 @@
 
 ---
 
-## Core System Architecture
+## Delivered Capability
 
-### Agents (7)
-- Business Analyst, Architect, Project Manager, Developer, Validator, Deployer, Tech Writer
+Counts derived from `package/` on 2026-08-14.
 
-### Skills (14)
-- Agent-backed (7): spec, design, plan, implement, validate, deploy, document
-- Orchestration (1): orchestrate
-- Utility (6): reflexion, reflect, optimize, analyse, research, distill
+### Agents (9)
+Business Analyst, Architect, Planner, Developer, Validator, Security, Scout, Deployer, Tech Writer.
+Each profile constrains its own tool grant; the boundaries are the product, not the count.
 
-### Hooks (Lifecycle Events)
-- **SessionStart** → Context injection & initialization
-- **SubagentStop** → Agent validation & reflexion (blocking)
-- **Stop** → Orchestrator checklist & reflection (blocking)
-- **SessionEnd** → Cleanup, logging & state checkpoint (non-blocking)
+### Skills (23)
+- **Agent-backed (12)**: spec, architect, planner, review, implement, validate, security-review,
+  status-update, deploy, document, onboard, scout
+- **Support (11)**: orchestrate, reconcile, context-compiler, meta-learn, cleanup, anneal, analyse,
+  research, qmd, codebase-memory, distill
 
-### Memory (4-tier)
-- Session (Claude JSONL logs)
-- Semantic (Serena project memories)
-- Reflexion (Serena: known_issues/solutions)
-- Transient (Serena: validation records)
+`$reflexion`, `$reflect`, and `$optimize` no longer exist — `$meta-learn` absorbed all three, and
+`REQ-007` is `Decommissioned` in favor of `REQ-008`.
+
+### Runtimes (5)
+Claude Code, Codex CLI, Gemini CLI, OpenCode, Qwen Code — one package, per-runtime transforms driven
+by the registry in `package/install/runtimes.sh`.
+
+### Hooks (Claude Code only, opt-in via `--hooks`)
+- **SessionStart** → inject session id, `PROJECT_NAME`, and the project knowledge index
+- **SubagentStart** → inject agent identity
+- **SubagentStop** → validation reminder, then a prompt to report the learning signal
+- **Stop** → prompt `$meta-learn` for session learning
+- **SessionEnd** → cleanup and logging
+
+**Hooks remind; they never enforce** (`ADR-FND-001`). No hook blocks. Any capability described here
+as gated is gated by a stage agent, not by a hook.
+
+### Memory
+Durable state is versioned files: `docs/knowledge/`, `docs/analysis/`, `docs/validation/`,
+`reports/`. The tiered memory store in `ADR-FND-002` is **designed, not implemented** — no skill
+issues `write_memory` or `read_memory`. `WO-128`/`WO-129`/`WO-130` own building it.
 
 ### MCP (5)
 
 | Server | Purpose | Use When |
 |--------|---------|----------|
-| **Serena** | Memory, symbolic code ops | Always (required) |
+| **Serena** | Memory, symbolic code ops | Recommended — no skill currently invokes it |
 | **Context7** | Library/framework API docs | Need versioned lib docs, code examples |
 | **DeepWiki** | GitHub repo documentation | Need to understand external repo architecture |
 | **Parallel** | Search (web research), Task (deep research, data enrichment) | Web lookups, analyst reports, batch processing |
@@ -72,7 +97,9 @@
 
 ---
 
-## Advanced Component Reference
+## Target Architecture — component reference
+
+Everything below is `PLAN-003` scope.
 
 ### Runtime Engine
 1. Devcontainer (local)
@@ -116,33 +143,27 @@
   - Persistent & shared state (A2A task history + Strands durable agent)
   - Failure management (A2A FAILED/CANCELED states)
 2. Workflow templates
-  - SWE: Spec -> PRD -> Architecture -> Plan -> Backlog -> Epic/Milestone/Task
-  - Meta-Learning: Session Log -> Reflection -> Meta-Opt Plan -> Assessment -> Rollout
+  - SWE: spec -> architect -> planner -> review -> delivery (`FRD`/`TRD` -> `FBP`/`ADR` -> `PLAN`/`WO` -> code/evidence/status)
+  - Meta-Learning: session transcripts -> failure modes -> instruction patch plan -> approval -> apply -> re-validate
   - Background: Sensor Agents -> Background routines
   - Autonomous: Ambient Agents -> Goal-oriented Research -> Meta-Opt Plan, Implementation
 
 ### Workflow Services
 1. Data Connectors (MCP for tools, A2A-MCP for agents)
 2. Context Manager
-3. Agents
-  - Architect
-  - Project Manager
-  - Developer
-  - Validator
-  - Deployer
-  - Tech Writer
+3. Agents — see **Delivered Capability** above for the current nine; this list is the target set
 4. Commands/Skills/MCP
   - Orchestrate (default Orchestrator instructions)
-  - Spec (requirements, acceptance criteria, PRD)
-  - Design (architecture/constraints/risks/trade-offs/ADR)
-  - Plan (dependencies, backlog, phases)
+  - Spec (requirements, acceptance criteria)
+  - Architect (blueprints/constraints/risks/trade-offs/ADR)
+  - Planner (Plans, Milestones, Work Orders, dependencies)
   - Implement (code, tests, build)
   - Validate (quality, acceptance criteria)
+  - Security-review (adversarial gate before status)
+  - Status-update (assessed status across record indexes)
   - Deploy (build, release)
   - Document (docs, runbooks)
-  - Reflexion (error patterns/known issues/solutions)
-  - Reflect (session meta-learning)
-  - Optimize (fine-tune orchestrator/agent/policy instructions)
+  - Meta-learn (session analysis, instruction fixes, re-validation)
   - Analyse (investigation/troubleshooting)
   - Research (parallel MCP)
   - Distill (compaction/distillation/adjustable granularity)
@@ -168,7 +189,7 @@
 
 ## Related Documents
 
-- [VISION.md](../objectives/VISION.md) - Why and for whom
+- [VISION.md](VISION.md) - Why and for whom
 - [REQUIREMENTS.md](../requirements/REQUIREMENTS.md) - REQ/AC and TR/TRC index
 - [Blueprints](../architecture/) - Foundation, container, component, and feature blueprints
 - [ROADMAP.md](../development/ROADMAP.md) - Phase ordering and rationale

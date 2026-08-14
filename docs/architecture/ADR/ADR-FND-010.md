@@ -396,9 +396,9 @@ def handle_mcp_command(mcp_cmd):
 
 ### Related ADRs
 
-- [ADR-007](007-multi-agent-protocol-selection.md): A2A protocol (requires `_meta` trace propagation)
-- [ADR-008](008-multi-provider-integration-strategy.md): MCP bridge (must propagate `traceparent`)
-- [ADR-009](009-orchestration-framework-selection.md): Strands Agents (native OTEL support)
+- [ADR-007](ADR-FND-007.md): A2A protocol (requires `_meta` trace propagation)
+- [ADR-008](ADR-FND-008.md): MCP bridge (must propagate `traceparent`)
+- [ADR-009](ADR-FND-009.md): Strands Agents (native OTEL support)
 
 ### Related Requirements
 

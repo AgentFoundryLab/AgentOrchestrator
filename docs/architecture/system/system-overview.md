@@ -34,10 +34,10 @@
 | Orchestration:    |     | Deployer,         |     |                   |
 | orchestrate       |     | Tech Writer       |     |                   |
 |                   |     |                   |     |                   |
-| Utility (6):      |     | (skill content    |     |                   |
-| reflexion,reflect,|     | injected, not     |     |                   |
-| optimize, analyse,|     | invoked)          |     |                   |
-| research, distill|     |                   |     |                   |
+| Support (11):     |     | (skill content    |     |                   |
+| meta-learn,anneal,|     | injected, not     |     |                   |
+| reconcile,analyse,|     | invoked)          |     |                   |
+| research, distill |     |                   |     |                   |
 +-------------------+     +-------------------+     +-------------------+
           |                           |                           |
           +---------------------------+---------------------------+
@@ -71,7 +71,7 @@
 | [Agent-Skill Injection](agent-skill-injection.md) | How skills are injected into agent context |
 | [Orchestrated Workflow](orchestrated-workflow.md) | Sequence diagram for orchestrator calling agents |
 | [Workflow Engine](workflow-engine.md) | Full/Medium/Light workflow depth selection |
-| [Memory System](memory-system.md) | Four-tier memory architecture (Session, Semantic, Reflexion, Transient) |
+| [Memory System](memory-system.md) | Memory tiers — session transcripts are implemented; the Serena-backed tiers are designed, not built |
 | [Hook System](hook-system.md) | Hook lifecycle flow from SessionStart to SessionEnd |
 | [Agent-Skill Mapping](agent-skill-mapping.md) | Mapping of agents to skills and artifacts |
 | [Installation Mapping](installation-mapping.md) | How Orchestrator files map to installation targets |

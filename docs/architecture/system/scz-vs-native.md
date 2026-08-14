@@ -10,16 +10,16 @@
 |  SKILLS (package/skills/)        AGENTS (package/agents/)               |
 |  +------------------------+      +------------------------+             |
 |  | spec/SKILL.md          |      | business-analyst.md    |             |
-|  | design/SKILL.md        |      | architect.md           |             |
-|  | plan/SKILL.md          |      | project-manager.md     |             |
+|  | architect/SKILL.md     |      | architect.md           |             |
+|  | planner/SKILL.md       |      | planner.md             |             |
 |  | implement/SKILL.md     |      | developer.md           |             |
 |  | validate/SKILL.md      |      | validator.md           |             |
 |  | deploy/SKILL.md        |      | deployer.md            |             |
 |  | document/SKILL.md      |      | tech-writer.md         |             |
 |  | orchestrate/SKILL.md   |      +------------------------+             |
-|  | reflexion/SKILL.md     |                                             |
-|  | reflect/SKILL.md       |      HOOKS (package/hooks/scripts/)         |
-|  | optimize/SKILL.md      |      +------------------------+             |
+|  | meta-learn/SKILL.md    |                                             |
+|  | review/SKILL.md        |      HOOKS (package/hooks/scripts/)         |
+|  | reconcile/SKILL.md     |      +------------------------+             |
 |  | analyse/SKILL.md       |      | inject-context.sh      |             |
 |  | research/SKILL.md      |      | remind-validate.sh     |             |
 |  | distill/SKILL.md      |      | remind-agent-learn.sh    |             |

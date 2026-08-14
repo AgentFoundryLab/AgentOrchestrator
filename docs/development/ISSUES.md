@@ -1,7 +1,12 @@
 # Issue Index
 
-Active issues and their concrete regression reports. Closed records move to
-[`../archive/development/ISSUES.md`](../archive/development/ISSUES.md).
+Active issues and their concrete regression reports. Closed records live in
+[`archive/issues-resolved-2026-02-24.md`](archive/issues-resolved-2026-02-24.md) and
+[`archive/issues-resolved-2026-02-25.md`](archive/issues-resolved-2026-02-25.md).
+
+The link this line used to carry — `../archive/development/ISSUES.md` — pointed at a file that was
+never created. `docs/INDEX.md` declares `docs/archive/development/` as the archive root and
+`WORKORDERS.md` moved there, but these issue archives did not; the move is half-finished.
 
 `ISS` is the generalized root-cause work item; `REG` is one concrete symptom with its own write-once
 report, always under exactly one current `ISS` parent. Record prose lives in `issues/`; this index is

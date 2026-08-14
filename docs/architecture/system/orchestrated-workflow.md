@@ -15,13 +15,13 @@
      |                   | Agent spawns with /spec                     |
      |                   | content INJECTED into context               |
      |                   |                                             |
-     |                   | Executes PRD generation                     |
+     |                   | Executes FRD/TRD authoring                  |
      |                   | (using injected instructions)               |
      |                   |----+                                        |
      |                   |    |                                        |
      |                   |<---+                                        |
      |                   |                                             |
-     |                   | PRD artifact created                        |
+     |                   | FRD/TRD artifacts created                   |
      |                   |                                             |
      |                   | Agent completes ---------------------------->|
      |                   |                                             |
@@ -35,10 +35,10 @@
      |                   |                                             |
      |                   | remind-agent-learn.sh                         |
      |                   |---+                                         |
-     |                   |   | Maybe /reflexion                        |
+     |                   |   | Report signal                           |
      |                   |<--+                                         |
      |                   |                                             |
-     |   Result + PRD    |                                             |
+     |   Result+FRD/TRD  |                                             |
      |<------------------|                                             |
      |                   |                                             |
      | Next: Task tool   |                                             |
@@ -49,4 +49,4 @@
 ## Related
 
 - [Workflow Engine](workflow-engine.md)
-- [ADR-001: Hook Behavior Pattern](../adr/001-hook-reminder-pattern.md)
+- [ADR-FND-001: Hook Behavior Pattern](../ADR/ADR-FND-001.md)

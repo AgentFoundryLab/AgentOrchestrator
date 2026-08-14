@@ -150,7 +150,7 @@ Document HITL protocol only in the `/orchestrate` skill instructions.
 
 ## Related
 
-- [ADR-004](004-skill-agent-invocation-paths.md) — Skill-Agent invocation patterns (context: fork)
-- [ADR-006](006-policy-modularization.md) — Policy modularization (extended by /onboard)
-- [ADR-012](012-governance-rationalization.md) — Governance rationalization (STANDARDS.md naming)
+- [ADR-004](ADR-FND-004.md) — Skill-Agent invocation patterns (context: fork)
+- [ADR-006](ADR-FND-006.md) — Policy modularization (extended by /onboard)
+- [ADR-012](ADR-FND-012.md) — Governance rationalization (STANDARDS.md naming)
 - `docs/knowledge/decisions/hitl-escalation.md` — HITL decision record

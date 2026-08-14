@@ -12,7 +12,7 @@
 |  FRONTMATTER (agent metadata)                                           |
 |  +--------------------------------------------------------------------+ |
 |  | name: business-analyst                                              | |
-|  | description: Requirements elicitation and PRD generation            | |
+|  | description: Refinery requirements authoring                        | |
 |  | skills:                                                              | |
 |  |   - spec                    # <- Skill content INJECTED at spawn    | |
 |  | hooks:                                                              | |
@@ -26,7 +26,7 @@
 |  BODY (minimal - skill provides full instructions)                      |
 |  +--------------------------------------------------------------------+ |
 |  | You are a Business Analyst responsible for requirements            | |
-|  | elicitation and PRD generation.                                    | |
+|  | authoring: FRD and TRD.                                            | |
 |  |                                                                      | |
 |  | ## Boundaries                                                        | |
 |  | - Will: Generate PRDs, define acceptance criteria, clarify reqs    | |
@@ -44,7 +44,7 @@
 |  FRONTMATTER (skill metadata)                                           |
 |  +--------------------------------------------------------------------+ |
 |  | name: spec                                                          | |
-|  | description: Generate PRD from idea or requirements                 | |
+|  | description: Generate FRD/TRD from an idea or gap                   | |
 |  | argument-hint: <idea or requirements>                               | |
 |  | context: fork                # <- Triggers agent spawn              | |
 |  | agent: business-analyst      # <- Target agent for injection        | |
@@ -54,7 +54,7 @@
 |  +--------------------------------------------------------------------+ |
 |  | # /spec Skill                                                        | |
 |  |                                                                      | |
-|  | Generate a Product Requirements Document (PRD) from the input.      | |
+|  | Generate feature and technical requirements from the input.        | |
 |  |                                                                      | |
 |  | ## Input                                                             | |
 |  | $ARGUMENTS - idea, requirements, or context                         | |
@@ -80,4 +80,4 @@ SKILL: Full instructions (INJECTED into agent, not invoked at runtime)
 
 ## Related
 
-- [ADR-004: Skill-Agent Invocation Paths](../adr/004-skill-agent-invocation-paths.md)
+- [ADR-FND-004: Skill-Agent Invocation Paths](../ADR/ADR-FND-004.md)

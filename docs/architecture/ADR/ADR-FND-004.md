@@ -286,4 +286,4 @@ For secondary skills targeting an agent:
 ## References
 
 - [Claude Code Skills - Run in Subagent](https://code.claude.com/docs/en/skills#run-skills-in-a-subagent)
-- [PRD.md FR1.5, FR2.3](../PRD.md)
+- [PRD.md FR1.5, FR2.3](../../requirements/REQUIREMENTS.md)
