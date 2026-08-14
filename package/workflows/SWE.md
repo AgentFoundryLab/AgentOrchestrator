@@ -268,7 +268,7 @@ If a phase fails or is blocked:
    - High: Needs resolution before next phase
    - Medium: Can proceed with caveat
    - Low: Note for later
-3. **Invoke `$meta-learn`** if the failure reveals an instruction or process gap
+3. **Invoke `$meta-learn`** if the failure reveals an instruction or process gap — inline, in the session that owns the workflow. Never delegate it to a lane agent; a lane reports the signal instead.
 4. **Consult user** for critical/high blockers
 5. **Continue or halt** based on guidance
 

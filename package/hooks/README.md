@@ -236,13 +236,17 @@ Writes first entry to `agent-stop.jsonl`.
 **Blocking**: Yes
 **Condition**: Only fires when `stop_hook_active=true` (second phase)
 
-Prompts agent to invoke `$meta-learn` if errors were encountered during the task:
+Asks the agent to report its learning signal — failure mode, observed cause, instruction finding —
+in its final message, if it hit any of:
 - Errors that required debugging
 - Wrong assumptions that needed correction
 - Missing dependencies or unexpected behaviors
 - Workarounds for undocumented issues
 
-High signal/noise threshold: Only significant learnings are recorded.
+The sub-agent does **not** invoke `$meta-learn`. That skill is `context: inline` and runs in the
+parent session, which holds the whole session graph and the user's approval for instruction edits.
+
+High signal/noise threshold: significant failures only. Silence is a valid report.
 
 Writes second entry to `agent-stop.jsonl`.
 
