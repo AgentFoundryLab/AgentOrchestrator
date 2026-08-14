@@ -169,7 +169,7 @@ write_agent_start_jsonl() {
     echo "${ts} AGENT_START agent=${AGENT_ID} type=${AGENT_TYPE}" >> "${SESSION_LOG_DIR}/events.log"
 }
 
-# Agent stop uses JSONL to capture both stop events (validation + reflexion)
+# Agent stop uses JSONL to capture both stop events (validation + learning)
 write_agent_stop_jsonl() {
     read_agent_start
     local ts

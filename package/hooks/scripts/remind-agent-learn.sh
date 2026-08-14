@@ -5,7 +5,7 @@
 source "$(dirname "$0")/lib/hook-utils.sh"
 parse_hook_input
 
-# Only trigger reflexion after validation has run (stop_hook_active=true)
+# Only prompt for learning after validation has run (stop_hook_active=true)
 if [ "$STOP_HOOK_ACTIVE" != "true" ]; then
     exit 0
 fi

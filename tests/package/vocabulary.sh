@@ -37,8 +37,9 @@ check_absent() {
     local name="$1"
     local desc="$2"
     local pattern="$3"
+    local allow="${4:-$ALLOW_RE}"
     local hits
-    hits=$(grep -rnE "$pattern" "${SCAN[@]}" 2>/dev/null | grep -vE "$ALLOW_RE" || true)
+    hits=$(grep -rnE "$pattern" "${SCAN[@]}" 2>/dev/null | grep -vE "$allow" || true)
     if [ -z "$hits" ]; then
         echo "PASS: $name"
         PASS=$((PASS + 1))
@@ -60,6 +61,16 @@ check_absent "retired-artifact-ids" \
 check_absent "retired-feedback-model" \
     "places record evidence in an index detail section instead of its own ISS/REG document" \
     'detail subsection|detail section|Active Issue Details'
+
+# $reflexion, $reflect, and $optimize were absorbed into $meta-learn (REQ-007 is
+# Decommissioned, superseded by REQ-008). A surface still naming one as a live skill
+# sends an agent to a skill that will not resolve. Lines that name it while framing it
+# as history -- absorbed, collapsed, superseded, retired, no longer exists -- are
+# documenting the change; the allowlist is keyed on that framing, never on a file path.
+check_absent "retired-learning-skills" \
+    "invokes a skill that \$meta-learn absorbed" \
+    '[/$]`?(reflexion|reflect|optimize)\b' \
+    'absorbed|collapsed|superseded|retired|no longer exist'
 
 check_absent "retired-task-vocabulary" \
     "refers to tasks where the record schema uses Work Orders and record ids" \

@@ -64,12 +64,11 @@ Do not duplicate ADR content in `docs/knowledge/decisions/`; link or summarize w
 
 ## Integration with Serena
 
-For persistent memory across sessions, use Serena MCP:
-- **Semantic Memory**: Project-level knowledge
-- **Reflexion Memory**: Error learnings
-- **Transient Memory**: Session artifacts
+Serena MCP provides persistent memory and symbolic code operations across sessions. The `Setup` hook creates `.serena/memories/` for it.
 
-See [.serena/README.md](../../.serena/README.md) for details.
+No skill writes Serena memories. Durable findings are files: knowledge here, analysis and instruction-fix memos under `reports/`. The tiered memory model in [`ADR-FND-002`](../architecture/ADR/ADR-FND-002.md) is the design, not observed behavior.
+
+See [.serena/README.md](../../.serena/README.md) for setup and tooling.
 
 ---
 

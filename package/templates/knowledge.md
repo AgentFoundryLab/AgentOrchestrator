@@ -55,12 +55,9 @@ knowledge/
 
 ## Integration with Serena
 
-For persistent memory across sessions, use Serena MCP:
-- **Semantic Memory**: Project-level knowledge
-- **Reflexion Memory**: Error learnings
-- **Transient Memory**: Session artifacts
+Serena MCP provides persistent memory and symbolic code operations across sessions. The `Setup` hook creates `.serena/memories/` for it.
 
-See [.serena/README.md](../../.serena/README.md) for details.
+No skill writes Serena memories. Durable findings are files: knowledge under `docs/knowledge/`, analysis and instruction-fix memos under `reports/`. Treat memory as a supplement you opt into, and keep the file record authoritative.
 
 ---
 
