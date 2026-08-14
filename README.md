@@ -1,21 +1,23 @@
 # AgentOrchestrator
 
-Minimalist multi-agent orchestration framework for Claude Code.
-Inspired by SuperClaude.
+Minimalist multi-agent orchestration framework for coding agents.
+Inspired by SuperClaude and 8090 SoftwareFactory.
 
-**Version**: 0.2.0  | **Status**: v0.2.0 Multi-Runtime Install
+**Installer version**: 0.2.0 · **Delivery state**: [ROADMAP](docs/development/ROADMAP.md) owns phase ordering, [STATUS](docs/development/status/STATUS.md) owns the current rollup.
 
 ---
 
 ## Overview
 
-AgentOrchestrator transforms Claude Code from a single-turn assistant into an orchestrated multi-agent system with:
+AgentOrchestrator turns a single-turn coding assistant into an orchestrated multi-agent system:
 
-- **9 Specialized Agents**: Business Analyst, Architect, Planner, Developer, Validator, Security, Scout, Deployer, Tech Writer
-- **23 Skills**: Workflow stages from `/spec` to `/status-update`, plus retrieval, research, audit, and session-learning support
-- **3 Workflow Depths**: Full, Medium, Light based on complexity
-- **Hook System**: Lifecycle events for validation and learning
-- **Memory Integration**: Serena MCP for persistent knowledge
+- **9 agents** with enforced role boundaries: Business Analyst, Architect, Planner, Developer, Validator, Security, Scout, Deployer, Tech Writer
+- **23 skills** covering the delivery chain plus retrieval, research, audit, and session-learning support
+- **5 runtimes** from one package: Claude Code, Codex CLI, Gemini CLI, OpenCode, Qwen Code
+- **Typed record schema** — immutable `REQ`/`AC`/`TR`/`TRC`/`FBP`/`ADR`/`PLAN`/`WO`/`ISS`/`REG`/`TD`/`FB` ids carry traceability from requirement to validation evidence
+- **Hook system** (Claude Code only, opt-in) for lifecycle reminders
+
+The value is not the agent count. It is that role boundaries are enforceable and that independent work runs in parallel without agents overwriting each other.
 
 ---
 
@@ -23,413 +25,306 @@ AgentOrchestrator transforms Claude Code from a single-turn assistant into an or
 
 ### Prerequisites
 
-- **uv**: Required for Python operations and Serena MCP (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- **jq**: Required for JSON merging during installation (`apt install jq` or `brew install jq`)
+- **bash 4.0+** — the installer uses associative arrays. macOS ships 3.2: `brew install bash`
+- **jq** — JSON merging during installation (`apt install jq` / `brew install jq`)
+- **uv** — Python operations and Serena MCP (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
-### Runtime Support Matrix
+### Runtime Support
 
-| Runtime     | Install flag  | SubAgents         | Skills | Hooks | Commands       |
-|-------------|---------------|-------------------|--------|-------|----------------|
-| Claude Code | `--claude`    | Yes               | Yes    | Yes   | Yes            |
-| Codex CLI   | `--codex`     | Yes (experimental)| Yes    | No    | Yes (compat)   |
-| Gemini CLI  | `--gemini`    | Partial (exp)     | Yes    | No (policy) | Yes (compat) |
-| OpenCode    | `--opencode`  | Yes               | Yes    | No    | Yes            |
-| Qwen Code   | `--qwen`      | Yes               | Yes    | No    | Yes            |
+| Runtime | Flag | Global root | Skills | Agents | Hooks | Commands (compat) |
+|---|---|---|---|---|---|---|
+| Claude Code | `--claude` (default) | `~/.claude/` | Yes | Yes | Yes, with `--hooks` | `commands/*.md` |
+| Codex CLI | `--codex` | `~/.agents/` | Yes | Yes | No | `~/.codex/prompts/*.md` |
+| Gemini CLI | `--gemini` | `~/.gemini/` | Yes | No | No | `commands/*.toml` |
+| OpenCode | `--opencode` | `~/.config/opencode/` | Yes | Yes, plus `orchestrator` | No | `commands/*.md` |
+| Qwen Code | `--qwen` | `~/.qwen/` | Yes | Yes | No | `commands/*.md` |
 
-`skills` is the default profile for all five runtimes. Hooks are disabled by default and installed only when `--hooks` is passed. `commands` remains available via `--profile commands` as compatibility mode. For Codex, skills/agents stay in `~/.agents/`, while compatibility commands are written to `~/.codex/prompts/`.
+Runtime flags compose; `--trio` is `--claude --codex --gemini` and `--all` is all five. With no runtime flag, `--claude` applies.
+
+`skills` is the default profile everywhere. Hooks are off unless `--hooks` is passed, and only Claude Code accepts them ([TD-001](docs/development/debt/TD-001.md) records why non-Claude hooks stay out of scope). `--profile commands` is a compatibility mode that emits command-format artifacts instead.
+
+Gemini receives no agent files — its capability profile and the installer's emitted artifacts are known to disagree, tracked as [ISS-002](docs/development/issues/ISS-002.md) with [REG-002](docs/development/issues/REG-002.md).
 
 ### Installation
 
 ```bash
-# Install globally to Claude Code (default runtime)
+# Default runtime (Claude Code), global
 ./install.sh --global
 
-# Install globally with hooks enabled
+# Global with hooks enabled
 ./install.sh --global --hooks
 
-# Install to multiple runtimes in one run
+# Several runtimes in one run
 ./install.sh --global --codex --qwen
 
-# Install to all five runtimes
-./install.sh --global --claude --codex --gemini --opencode --qwen
+# All five
+./install.sh --global --all
 
 # Namespaced install (runtime-aware namespace translation)
 ./install.sh --global --claude --namespace orchestrator
 
-# Install with commands compatibility profile
+# Commands compatibility profile
 ./install.sh --global --gemini --profile commands
 
-# Install project templates to a target project
+# Project scaffolding
 ./install.sh --project /path/to/your/project
 
-# Install both global and project in one run
-./install.sh --global --project /path/to/your/project
-
-# Overwrite existing markdown files during reinstall
+# Overwrite existing markdown on reinstall (backs up to .backup/)
 ./install.sh --global --overwrite
 
-# Validate registry paths against package layout (no writes)
+# Validate registry paths against package layout — no writes
 ./install.sh --check
 ```
 
-### What Gets Installed
-
-**`--global` installs per runtime (default: `--claude`):**
-
-| Artifact          | claude (`~/.claude/`) | codex (skills/agents: `~/.agents/`; commands compat: `~/.codex/prompts/`) | gemini (`~/.gemini/`) | opencode (`~/.config/opencode/`) | qwen (`~/.qwen/`) |
-|-------------------|-----------------------|-----------------------|-----------------------|----------------------------------|-------------------|
-| agents/           | Yes                   | Yes                   | No                    | Yes                              | Yes               |
-| skills/           | Yes (default)         | Yes (default)         | Yes (default)         | Yes (default)                    | Yes (default)     |
-| commands/         | Yes (`--profile commands`) | Yes (`~/.codex/prompts`, `--profile commands`) | Yes (`--profile commands`) | Yes (`--profile commands`) | Yes (`--profile commands`) |
-| hooks/            | Yes (`--hooks`)       | No                    | No                    | No                               | No                |
-| settings.json     | Yes                   | No                    | No                    | No                               | No                |
-| policy/           | Yes                   | No                    | No                    | No                               | No                |
-| workflows/        | Yes                   | No                    | No                    | No                               | No                |
-| templates/        | Yes                   | No                    | No                    | No                               | No                |
-
-Codex note: default install is skills-first under `~/.agents/skills`; `~/.codex/prompts` is written only with `--profile commands`.
-
-Pass `--namespace <name>` to enable runtime-aware namespace translation:
-- Skills/agents on flat runtimes use dash fallback naming (`<ns>-<name>`).
-- Gemini and Qwen commands use native directory namespaces (`commands/<ns>/<name>` => `/<ns>:<name>`).
-
-**`--project` installs to `<path>/`:**
-- `<runtime-root>/agents/` - Project-local agents for each selected runtime (`.claude/`, `.agents/`, `.gemini/`, `.opencode/`, `.qwen/` as applicable)
-- `<runtime-root>/skills/` - Project-local skills for each selected runtime
-- `<runtime-root>/templates/` - Project-local template copies for each selected runtime
-- `<runtime-root>/policy/` - Project-local policy copies for each selected runtime
-- `<runtime-root>/workflows/` - Project-local workflow copies for each selected runtime
-- `.serena/project.yml` - Auto-generated via `uvx` (language auto-detection)
-- `docs/policy/` - RULES.md, GUIDELINES.md templates
-- `docs/knowledge/` - Project knowledge base
-- `reports/` - Analysis and research directories
+`--restore` removes installed artifacts and restores settings from backup; `--uninstall` removes them and strips injected refs without restoring. `./install.sh --help` prints the full flag and per-runtime artifact reference.
 
 ### Basic Usage
 
 ```bash
-# Start a new Claude Code session in your project
 cd /path/to/your/project
-claude
 
-# Use the orchestrator for guided workflows
+# Delegated multi-agent delivery
 /orchestrate Build a CLI tool for managing tasks
 
-# Or use individual skills directly
+# Or drive stages directly
 /spec Build a task management CLI
 /architect
 /planner
-/implement T-001
+/implement WO-101
 ```
 
 ---
 
-## Skills Reference
+## What Gets Installed
 
-### Workflow Skills (Agent-Backed)
+### `--global`, per selected runtime
+
+| Artifact | Destination | Condition |
+|---|---|---|
+| `agents/` | `<root>/agents/` | Runtime declares an agents path (all but Gemini) |
+| `skills/` | `<root>/skills/<skill>/` | Default profile |
+| `policy/` | `<root>/policy/` | Always |
+| `workflows/` | `<root>/workflows/` | Always |
+| `templates/` | `<root>/templates/` | Always |
+| `commands/` | `<root>/commands/` (Codex: `~/.codex/prompts/`) | `--profile commands` |
+| `hooks/scripts/` | `~/.claude/hooks/scripts/` | `--hooks`, Claude only |
+| `settings.json` | `~/.claude/settings.json` | Claude only; hook entries merged only with `--hooks` |
+
+Two behaviors worth knowing before you debug an install:
+
+- **Policy refs are injected, not copied.** Each runtime's context doc (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `QWEN.md`, `opencode.json`) receives a sentinel-delimited `orchestrator:global-refs` block pointing at the installed policy. Re-running the installer never duplicates it.
+- **Gemini native skills are pruned when the Codex alias path exists.** Gemini also loads `~/.agents/skills`, so installing both runtimes would make its loader report a skill conflict. The installer keeps the alias copy and removes the duplicate under `~/.gemini/skills`.
+
+Pass `--namespace <name>` for namespace translation: skills and agents on flat runtimes take a `<ns>-<name>` prefix, while Gemini and Qwen commands use native directory namespaces (`commands/<ns>/<name>` → `/<ns>:<name>`).
+
+### `--project <path>`
+
+Runtime artifacts land under each selected runtime's project root (`.claude/`, `.agents/`, `.gemini/`, `.opencode/`, `.qwen/`): `agents/`, `skills/`, `templates/`, `policy/`, `workflows/`.
+
+Alongside them, runtime-agnostic scaffolding:
+
+```text
+your-project/
+├── docs/
+│   ├── policy/           # STANDARDS.md + GUIDELINES.md from template
+│   ├── objectives/       # VISION.md, BLUEPRINT.md land here
+│   ├── architecture/     # blueprints, ADRs, diagrams
+│   ├── development/      # plans, work orders, feedback records, indexes
+│   └── knowledge/        # README.md + decisions/, domain/, patterns/, runbooks/
+├── reports/              # analysis/, research/
+└── .serena/project.yml   # generated via uvx, language auto-detected
+```
+
+Empty directories carry a `.gitignore` placeholder so the tree survives a commit. Project `settings.json` is not written — projects inherit MCP and permissions from the global install.
+
+---
+
+## Skills
+
+### Delivery chain
 
 | Skill | Agent | Purpose | Output |
-|-------|-------|---------|--------|
-| `/spec` | Business Analyst | Requirements elicitation | `docs/requirements/FRD-*`, `TRD-*` |
+|---|---|---|---|
+| `/spec` | Business Analyst | Requirements elicitation | `docs/requirements/` `FRD-*`, `TRD-*` |
 | `/architect` | Architect | Blueprints and decisions | `docs/architecture/{foundation,feature,system,ADR}/` |
-| `/planner` | Planner | Work Order decomposition | `docs/development/{ROADMAP.md,plans/,workorders/}` |
-| `/review` | Tech Writer | Cross-surface consistency review | Findings, `reports/analysis/`, ISSUES rows |
+| `/planner` | Planner | Phase and Work Order decomposition | `docs/development/{ROADMAP.md,plans/,workorders/}` |
+| `/review` | Tech Writer | Cross-surface consistency review | `docs/analysis/`, `ISS`/`TD` records |
 | `/implement` | Developer | Code implementation | Source files, tests |
-| `/validate` | Validator | Testing and verification | `docs/validation/`, `ISS`/`REG`/`TD` |
-| `/security-review` | Security | Adversarial security gate | Verdict, ISSUES rows |
-| `/status-update` | Validator | Implementation assessment | Status in BACKLOG / ISSUES / ROADMAP |
+| `/validate` | Validator | Testing and verification | `docs/validation/`, `ISS`/`REG`/`TD` records |
+| `/security-review` | Security | Adversarial security gate | Verdict, `ISS`/`REG` records |
+| `/status-update` | Validator | Implementation assessment | Assessed status in every record index |
 | `/deploy` | Deployer | Build and deployment | Deployment artifacts |
 | `/document` | Tech Writer | Documentation | `docs/`, `README.md` |
 | `/onboard` | Architect | Project policy bootstrap | `docs/policy/`, `docs/INDEX.md` |
-| `/scout` | Scout | Bounded docs/code research | Scout report |
+| `/scout` | Scout | Bounded docs and code research | Scout report |
 
-### Utility Skills (Inline)
+### Support
 
 | Skill | Purpose | Output |
-|-------|---------|--------|
-| `/orchestrate` | Delegated multi-agent orchestration | Coordinates agents, owns lane lifecycle |
-| `/reconcile` | Route downstream findings to the right stage | Routing decision, `reports/analysis/` |
+|---|---|---|
+| `/orchestrate` | Delegated multi-agent delivery; owns depth selection and lane lifecycle | Coordination, handoff commits |
+| `/reconcile` | Route downstream findings back to the owning stage | Routing decision, `docs/analysis/` |
 | `/context-compiler` | Compact persisted context bundles | `context/<area>/<task>.md` |
 | `/meta-learn` | Session analysis and instruction-rule fixes | `reports/meta-optimization/`, `reports/analysis/` |
-| `/cleanup` | Prune stale worktrees, branches, runtime stacks | Triage table, removals |
+| `/cleanup` | Prune stale worktrees, branches, runtime stacks, claim leases | Triage table, removals |
 | `/anneal` | Complexity, duplication, and drift audit | Ranked simplification plan |
 | `/analyse` | Code investigation | `reports/analysis/` |
 | `/research` | External documentation lookup | `reports/research/` |
-| `/qmd` | Local markdown/doc retrieval | Cited doc text |
+| `/qmd` | Local markdown and doc retrieval | Cited doc text |
 | `/codebase-memory` | Structural code-graph retrieval | Symbols, call paths, snippets |
 | `/distill` | Lossless document compression | Distillate |
 
 ---
 
-## Agents Reference
+## Agents
 
-| Agent | Domain | Key Tools | Boundaries |
-|-------|--------|-----------|------------|
-| **Business Analyst** | Requirements | Read, Write, Edit, Grep, Glob, WebSearch | No code, no architecture, no Bash |
-| **Architect** | Design | Read, Write, Edit, Grep, Glob, Bash, WebSearch | No implementation, no product scope |
-| **Planner** | Planning | Read, Write, Grep, Glob, TaskCreate | No code, no design, no Edit, never sets status |
-| **Developer** | Implementation | All tools | No architecture decisions, no scope changes |
-| **Validator** | Testing | Read, Write, Grep, Glob, Bash | No fixes, no relaxed criteria, never sets status during validation |
-| **Security** | Security gate | Read, Write, Grep, Glob, Bash, WebSearch | No fixes, no downgraded findings, never sets status |
-| **Scout** | Research | All tools | No source edits unless assigned a write task |
-| **Deployer** | Deployment | Read, Write, Bash | No code changes, `permissionMode: plan` |
-| **Tech Writer** | Documentation | Read, Write, Grep, Glob, AskUserQuestion | No code, no Edit |
+| Agent | Domain | Boundaries |
+|---|---|---|
+| **Business Analyst** | Requirements | No code, no architecture, no Bash |
+| **Architect** | Design | No implementation, no product scope |
+| **Planner** | Planning | No code, no design, never sets status |
+| **Developer** | Implementation | No architecture decisions, no scope changes |
+| **Validator** | Testing | No fixes, no relaxed criteria, never sets status during validation |
+| **Security** | Security gate | No fixes, no downgraded findings, never sets status |
+| **Scout** | Research | No source edits unless assigned a write task |
+| **Deployer** | Deployment | No code changes; runs in `permissionMode: plan` |
+| **Tech Writer** | Documentation | No code |
 
-### Agent Details
+Boundaries are the point. The Validator reports findings and never fixes them, so a green verdict cannot come from the agent that wrote the code. The Deployer needs user approval for destructive operations. The Tech Writer raises conflicts through `AskUserQuestion` rather than silently overwriting a doc that disagrees with the code or an ADR.
 
-**Validator**: Runs tests, verifies acceptance criteria, checks code quality. Cannot modify code - reports findings only.
-
-**Deployer**: Manages build and deployment operations. Runs in `permissionMode: plan` requiring user approval for destructive operations.
-
-**Tech Writer**: Creates and maintains documentation. Uses `AskUserQuestion` for conflict detection - never silently overwrites docs when inconsistencies are detected between documents, code, or ADR decisions.
+Each agent's tool grant lives in its own profile under `package/agents/`.
 
 ---
 
 ## Workflow Depths
 
-Orchestrator assesses complexity and recommends appropriate workflow depth:
+Delivery — `/implement` → `/validate` → `/security-review` → `/status-update` — runs at every depth. The depth selects only which planning stages precede it.
 
-Delivery (`/implement` -> `/validate` -> `/security-review` -> `/status-update`) runs in every depth; the
-depth selects only which planning stages precede it.
+| Depth | Chain | Use when |
+|---|---|---|
+| **Full** | `/onboard` → `/spec` → `/architect` → `/planner` → `/review` → delivery | New product, complex system, multiple components |
+| **Medium** | `/spec` → `/planner` → `/review` → delivery | New feature, moderate complexity, clear scope |
+| **Light** | `/planner` → delivery | Simple change, clear task |
+| **Direct-fix** | delivery only, against an existing `ISS`/`TD` | Diagnosed, bounded defect needing no new planning |
 
-### Full Workflow
-**Use when**: New product, complex system, multiple components
-
-```
-/onboard -> /spec -> /architect -> /planner -> /review -> delivery
-```
-
-### Medium Workflow
-**Use when**: New feature, moderate complexity
-
-```
-/spec -> /planner -> /review -> delivery
-```
-
-### Light Workflow
-**Use when**: Simple change, clear task
-
-```
-/planner -> delivery
-```
-
-### Direct Fix
-**Use when**: Diagnosed, bounded defect with no new planning need
-
-```
-delivery only, against an existing I-nnn / G-nnn
-```
+Direct-fix drops the planning ceremony, never the scoped commit, focused validation, or status record. `package/skills/orchestrate/SKILL.md` owns depth scoring, delegation rules, and the model-tier table.
 
 ---
 
-## Project Structure
+## Record Model
 
-After installation, your project will have:
+Every artifact carries an immutable, never-recycled id, and citation runs one way: a downstream record names the requirement it serves, and the requirement stays silent about it.
 
-```
-your-project/
-├── .claude/
-│   ├── agents/
-│   │   └── *.md          # Project-local AgentOrchestrator agents
-│   ├── skills/
-│   │   └── <skill>/      # Project-local AgentOrchestrator skills
-│   ├── templates/        # Project-local templates
-│   ├── policy/           # Project-local policy copies
-│   └── workflows/        # Project-local workflow copies
-├── .serena/
-│   └── project.yml       # Auto-generated Serena project config
-├── docs/
-│   ├── objectives/       # VISION.md, BLUEPRINT.md, ROADMAP.md
-│   ├── requirements/     # FRD-*, TRD-*, REQUIREMENTS.md
-│   ├── architecture/     # foundation/, feature/, system/, ADR/
-│   ├── development/      # BACKLOG.md, ISSUES.md, tasks/
-│   └── knowledge/        # Project knowledge base
-├── reports/
-│   ├── analysis/         # /analyse, /review, /reconcile outputs
-│   ├── research/         # /research outputs
-│   ├── validation/       # /validate outputs
-│   └── meta-optimization/ # /meta-learn instruction-fix memos
-└── context/
-    └── <area>/<task>.md  # /context-compiler bundles
-```
+`AGENTS.md` holds the artifact layers, id grammars, and locations; `docs/INDEX.md` holds the directory layout and per-skill ownership. `package/policy/RULES.md` is the normative source for id grammars, identity fields, and status vocabularies — and it is installed globally, so every runtime reads it.
 
 ---
 
-## Artifact Hierarchy
-
-Orchestrator follows a layered artifact structure:
-
-```
-Strategic (locked after PRD)
-├── VISION.md        # Why, target users, success metrics
-└── BLUEPRINT.md     # Technical scope, capabilities, feature matrix
-
-Specification (changes with approval)
-├── PRD.md           # Features, user stories, acceptance criteria
-├── architecture/    # FBP blueprints, ADRs, system diagrams
-└── adr/             # Decision rationale, alternatives, consequences
-
-Execution (changes frequently)
-├── ROADMAP.md       # Milestones, phases, epics + dependencies
-├── BACKLOG.md       # Task index, status, traceability, refs
-├── tasks/*.md       # Canonical task-detail docs for complex work
-└── ISSUES.md        # Discovered bugs, blockers, tech debt
-```
-
----
-
-## MCP Requirements
+## MCP Servers
 
 | Server | Purpose | Status |
-|--------|---------|--------|
+|---|---|---|
 | **Serena** | Memory persistence, symbolic code ops | Required |
-| **Context7** | Documentation lookup | Recommended |
+| **Context7** | Library and framework documentation | Recommended |
 | **DeepWiki** | GitHub repository documentation | Recommended |
-| **Parallel Search** | Fast parallel web lookup for research workflows | Recommended |
-| **Parallel Task** | Deep research and batch enrichment task execution | Recommended |
+| **Parallel Search** | Fast parallel web lookup | Recommended |
+| **Parallel Task** | Deep research and batch enrichment | Recommended |
 | **Playwright** | Browser automation | Optional |
 
-MCP servers are pre-configured in `settings.json`. Serena requires `uvx` for dynamic project initialization.
+Definitions live in `package/mcp.json` and reach Claude Code through the installed `settings.json`. Serena needs `uvx`; both Parallel servers read `PARALLEL_API_KEY` from the environment.
 
 ---
 
 ## Hook System
 
-Orchestrator can use Claude Code hooks for lifecycle management when installed with `--hooks`.
-
-### Global Hooks (command-based)
-
-Installed to `~/.claude/settings.json` when `--hooks` is passed:
+Claude Code only, and only with `--hooks`. Without the flag the installer merges `package/settings.no-hooks.json` instead, so an install carries MCP and permissions but no hook entries.
 
 | Event | Script | Purpose |
-|-------|--------|---------|
+|---|---|---|
+| Setup | `setup-project.sh` | Provision project scaffolding |
 | SessionStart | `inject-context.sh` | Inject context, log session start |
 | SubagentStart | `inject-context.sh` | Inject context, log agent start |
-| SubagentStop | `remind-validate.sh`, `remind-agent-learn.sh` | Validation + `$meta-learn` prompt |
+| SubagentStop | `remind-validate.sh`, `remind-agent-learn.sh` | Validation and `$meta-learn` reminders |
 | Stop | `remind-session-learn.sh` | Prompt `$meta-learn` for session learning |
 | SessionEnd | `checkpoint-session.sh` | Cleanup and logging |
 
-### Project Hooks (prompt-based)
-
-Optional in `.claude/settings.json` (not auto-provisioned by `--project`):
-
-| Event | Type | Purpose |
-|-------|------|---------|
-| Stop | prompt | Evaluate task completion before stopping |
-| SubagentStop | prompt | Validate subagent completion |
-
-Prompt-based hooks use Claude to evaluate conditions and return JSON responses.
-
-Hooks provide **reminders**, not enforcement. Agents decide whether to act (ADR-001).
+Hooks provide **reminders, not enforcement** — agents decide whether to act ([ADR-FND-001](docs/architecture/ADR/ADR-FND-001.md)). Prompt-based project hooks are possible in a project `.claude/settings.json` but are never auto-provisioned. See `package/hooks/README.md`.
 
 ---
 
-## Configuration
+## Policy
 
-### Global Settings (`~/.claude/settings.json`)
+Two tiers, loaded from different places:
 
-Installed by `--global` flag. Contains:
-- Hook configurations (command-based, only when `--hooks` is passed)
-- MCP server definitions (Serena, Context7, DeepWiki, Parallel Search, Parallel Task, Playwright)
-- Default permissions
+| Tier | Source in this repo | Loaded from |
+|---|---|---|
+| Framework | `package/policy/PRINCIPLES.md`, `RULES.md` | `<runtime-root>/policy/` — global and project-local |
+| Project | `package/templates/{standards,guidelines}.md` | `<project>/docs/policy/STANDARDS.md`, `GUIDELINES.md` |
 
-### Project Settings (`.claude/settings.json`)
+Project policy supplements the framework tier; it never replaces it. This repository's own project policy is `docs/policy/`.
 
-Not auto-installed by `--project` (add manually if needed). Typical contents:
-- Project-specific hooks (prompt-based examples)
-- Inherits MCP and permissions from global
-
----
-
-## Policy Files
-
-Three-tier policy structure:
-
-| Location | Purpose | Installed To |
-|----------|---------|--------------|
-| `package/policy/` | Framework-wide policy source in this repo | `<runtime-root>/policy/` globally and project-locally for the selected runtime(s) |
-| `docs/policy/` | Orchestrator repo policy docs | In-repo only |
-| `<project>/docs/policy/` | Project template output (STANDARDS, GUIDELINES) | `<project>/docs/policy/` |
-
-**Policy files**:
-- `PRINCIPLES.md` - Core software engineering principles
-- `RULES.md` - Actionable behavioral rules with priorities
-- `GUIDELINES.md` - Usage guidance and best practices
-
-Projects can customize `<project>/docs/policy/` files to supplement (not replace) global policies.
+**Install context boundary**: `package/` is authoring context. Every instruction that must work after install has to be valid at the installed path, not the source path.
 
 ---
 
 ## Templates
 
-Orchestrator template source lives in `package/templates/` and is installed to `<runtime-root>/templates/` globally and project-locally for the selected runtime(s) (`~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`, and matching project-local roots):
+`package/templates/` is installed to `<runtime-root>/templates/` for every selected runtime. One template per record type:
 
-| Template | Purpose | Output Location |
-|----------|---------|-----------------|
-| `vision.md` | Project vision and OKRs | `docs/objectives/VISION.md` |
-| `blueprint.md` | Technical scope and capabilities | `docs/objectives/BLUEPRINT.md` |
-| `frd.md` / `trd.md` | Feature / technical requirements | `docs/requirements/` |
-| `fbp-*.md` | Foundation / container / component / feature blueprints | `docs/architecture/{foundation,feature}/` |
-| `adr.md` | Architecture decision records | `docs/architecture/ADR/` |
-| `roadmap.md` / `plan.md` | Phase ordering / delivery Plan | `docs/development/{ROADMAP.md,plans/}` |
-| `work-order.md` / `implementation-plan.md` | Work Orders | `docs/development/workorders/` |
-| `issues.md` | Bugs, blockers, tech debt | `docs/development/ISSUES.md` |
+| Templates | Output |
+|---|---|
+| `vision.md`, `blueprint.md` | `docs/objectives/` |
+| `frd.md`, `trd.md` | `docs/requirements/` |
+| `fbp-{foundation,container,component,feature}.md`, `fbp-system-diagram.md` | `docs/architecture/{foundation,feature,system}/` |
+| `adr.md` | `docs/architecture/ADR/` |
+| `roadmap.md`, `plan.md` | `docs/development/{ROADMAP.md,plans/}` |
+| `work-order.md`, `implementation-plan.md` | `docs/development/workorders/` |
+| `iss.md`, `reg.md`, `td.md`, `fb.md` | `docs/development/{issues,debt,feedback}/` |
+| `knowledge.md`, `index.md`, `standards.md`, `guidelines.md` | `docs/knowledge/`, `docs/INDEX.md`, `docs/policy/` |
 
 ---
 
 ## Development
 
-### Task Hierarchy (ADR-005)
+No build step and no package manager — this is bash and Markdown. `AGENTS.md` lists the commands, the CI gate, and how to exercise a single installer behavior.
 
+```bash
+bash install.sh --check          # registry-vs-package path drift
+bash tests/install/smoke.sh      # install, conformance, restore, idempotency
+bash tests/package/vocabulary.sh # retired vocabulary on instruction surfaces
+pre-commit run --all-files       # shellcheck, ruff, whitespace
 ```
-Milestone (v0, v1)     -> Git Tag
-└── Phase (Initial, Validation)
-    └── Epic (Hook System, Core Agents, ...)
-        └── Task (atomic, testable) -> Git Commit
-```
 
-### Contributing
+All three checks run in CI on any change to `install.sh`, `package/**`, or `tests/**`. Install tests use a temp `HOME`; never point one at your real one.
 
-1. Fork the repository
-2. Create a feature branch
-3. Use Orchestrator to plan and implement (`/orchestrate your feature`)
-4. Submit a pull request
+Contributions: fork, branch, plan and implement with the framework itself (`/orchestrate <your change>`), then open a pull request.
 
 ---
 
 ## Documentation
 
-- [Vision](docs/objectives/VISION.md) - Project vision and goals
-- [Blueprint](docs/objectives/BLUEPRINT.md) - Technical scope
-- [Requirements](docs/requirements/REQUIREMENTS.md) - REQ/AC and TR/TRC index
-- [Blueprints](docs/architecture/) - Foundation, container, component, feature
-- [ADRs](docs/architecture/ADR/README.md) - Architecture decisions
-- [Roadmap](docs/development/ROADMAP.md) - Phase ordering and rationale
-- [Work Orders](docs/development/WORKORDERS.md) - Delivery index
-- [Serena Integration](.serena/README.md) - Memory system guide
-- [Hook System](package/hooks/README.md) - Hook documentation
-- [Principles](package/policy/PRINCIPLES.md) - Software engineering principles
-- [Rules](package/policy/RULES.md) - Agent behavioral rules
-- [Standards](docs/policy/STANDARDS.md) - Project technical standards
-- [Guidelines](docs/policy/GUIDELINES.md) - User guidance
+- [Vision](docs/objectives/VISION.md) — goals and success metrics
+- [Blueprint](docs/objectives/BLUEPRINT.md) — solution scope and capability matrix
+- [Docs Index](docs/INDEX.md) — canonical layout and artifact ownership
+- [Requirements](docs/requirements/REQUIREMENTS.md) — `REQ`/`AC` and `TR`/`TRC` index
+- [Architecture](docs/architecture/) — foundation and feature blueprints, diagrams
+- [ADRs](docs/architecture/ADR/README.md) — architecture decisions
+- [Roadmap](docs/development/ROADMAP.md) — phase ordering and rationale
+- [Work Orders](docs/development/WORKORDERS.md) · [Issues](docs/development/ISSUES.md) · [Tech Debt](docs/development/TECH_DEBT.md) · [Status](docs/development/status/STATUS.md)
+- [Principles](package/policy/PRINCIPLES.md) · [Rules](package/policy/RULES.md) — framework policy
+- [Standards](docs/policy/STANDARDS.md) · [Guidelines](docs/policy/GUIDELINES.md) — project policy
+- [Hook System](package/hooks/README.md) · [Serena Integration](.serena/README.md)
 
 ---
 
 ## Current Constraints
 
-- Codex multi-agent flow follows official role-config model: enable `/experimental` (or `[features] multi_agent = true`), define `[agents.<role>]` in config, spawn via prompt, switch/check threads with `/agent`.
-- Codex default install is skills-first (`~/.agents/skills`); compatibility prompts are emitted to `~/.codex/prompts` only with explicit `--profile commands`.
-- Gemini default install is skills-first; `.toml` commands are emitted only with explicit `--profile commands`.
-- Non-Claude hook integration is intentionally out of scope (`docs/knowledge/decisions/non-claude-hooks-policy.md`).
-- `--profile commands` is a functional conversion mode that installs command-format artifacts for selected runtimes.
+- Codex multi-agent flow follows the official role-config model: enable `/experimental` (or `[features] multi_agent = true`), define `[agents.<role>]` in config, spawn via prompt, switch threads with `/agent`.
+- Codex and Gemini installs are skills-first; command artifacts are emitted only with explicit `--profile commands`.
+- Non-Claude hook integration is out of scope by decision — `docs/knowledge/decisions/non-claude-hooks-policy.md`.
+- No `AC`/`TRC` in this repository has coverage evidence under `docs/validation/` yet. Statuses in the record indexes are carried forward from the pre-migration assessment, not freshly verified; run `/status-update` before citing a row as evidence.
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-## Acknowledgments
-
-Built for Claude Code by Anthropic.
+MIT — see [LICENSE](LICENSE).

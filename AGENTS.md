@@ -2,6 +2,40 @@
 
 Guidance for agents working with AgentOrchestrator.
 
+`CLAUDE.md`, `GEMINI.md`, and every other runtime entry point read this file. Put guidance here, never in the pointer files.
+
+## Commands
+
+Bash and Markdown only — no package manager, no build step. Requires bash 4+ (macOS ships 3.2: `brew install bash`), `jq` for settings merges, and `uvx` for Serena provisioning.
+
+| Task | Command |
+|---|---|
+| Registry-vs-package path drift, no writes | `bash install.sh --check` |
+| Install, conformance, restore, idempotency suite | `bash tests/install/smoke.sh` |
+| Retired-vocabulary gate on instruction surfaces | `bash tests/package/vocabulary.sh` |
+| Shell + Python lint (shellcheck, ruff, whitespace) | `pre-commit run --all-files` |
+| Deploy this working tree onto the machine | `bash install.sh --global --claude` |
+
+The first three are the CI gate (`.github/workflows/install-ci.yml`); it fires on any change to `install.sh`, `package/**`, or `tests/**`. Run all three before a handoff — the suites are seconds, not minutes.
+
+`smoke.sh` executes every case at source time and has no selector. To exercise one behavior, drive the installer directly against a throwaway `HOME`:
+
+```bash
+tmp=$(mktemp -d); HOME="$tmp" bash install.sh --global --gemini; ls "$tmp/.gemini/skills"; rm -rf "$tmp"
+```
+
+Never point an install at your real `HOME` — every test case uses a temp `HOME` for that reason.
+
+## Repository Shape
+
+Two boundaries matter more than the file tree.
+
+**Source vs installed.** `package/` is authoring context that nothing reads at runtime; `install.sh` deploys it into runtime roots (`~/.claude/`, `~/.agents/`, `~/.gemini/`, `~/.config/opencode/`, `~/.qwen/`) and project-local equivalents. Instruction bodies must be valid at the *installed* path — a source-relative reference like `package/skills/...` is broken for every agent that reads the deployed copy. See the Install Context Boundary section below.
+
+**Registry vs mechanism.** `package/install/runtimes.sh` is the canonical per-runtime table — config dir, artifact paths, capability flags, namespace modes, doc format — declared as bash 4 associative arrays and sourced with no side effects. `install.sh` owns the copy/transform/restore mechanism and resolves every path through that registry. Support a runtime by extending the arrays; never hard-code a path in the mechanism. `install.sh --check` fails when the two disagree, and the CI drift job runs exactly that.
+
+This repository is also its own first consumer: `docs/` holds AgentOrchestrator's own records, produced by the skills in `package/skills/`.
+
 ## Artifact Layers
 
 - Strategic: `VISION` → `BLUEPRINT`
@@ -15,6 +49,8 @@ Guidance for agents working with AgentOrchestrator.
 ## Artifact Definitions
 
 Record ids are immutable and never recycled. `policy/RULES.md` owns the id grammars, identity fields, vocabularies, and status vocabularies.
+
+**This repository's registry is its Markdown record set** — the documents under `docs/` plus the indexes below them. There is no attached Factory Project here: the `factory` CLI on this machine is bound to the `factory` Project, whose only member is a sibling repository, so `factory reg:allocate` run from this tree mints into the wrong store. Allocate by reading the owning index's footer, which states the next free number for its type; `docs/development/ID-MAP.md` resolves every pre-migration `FR`/`NFR`/`US`/`T-`/`I-`/`G-` form. Skipped numbers are deliberate and stay skipped.
 
 | Artifact | Layer | Id | Location |
 |---|---|---|---|
