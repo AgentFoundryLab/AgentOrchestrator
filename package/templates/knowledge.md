@@ -57,7 +57,7 @@ knowledge/
 
 Serena MCP provides persistent memory and symbolic code operations across sessions. The `Setup` hook creates `.serena/memories/` for it.
 
-No skill writes Serena memories. Durable findings are files: knowledge under `docs/knowledge/`, analysis and instruction-fix memos under `reports/`. Treat memory as a supplement you opt into, and keep the file record authoritative.
+No skill writes Serena memories. Durable findings are files: knowledge under `docs/knowledge/`, analysis under `docs/analysis/`, instruction-fix memos under `reports/meta-optimization/`. Treat memory as a supplement you opt into, and keep the file record authoritative.
 
 ---
 

@@ -49,7 +49,7 @@ Both files include version headers with semver for lightweight governance.
 **Position in SWE workflow**: Between `/plan` and `/implement` (blocking gate)
 
 **Outputs**:
-- `reports/analysis/review-YYYY-MM-DD.md` (full review report)
+- `docs/analysis/review-YYYY-MM-DD.md` (full review report)
 - `docs/development/ISSUES.md` (blocking issues only)
 
 **Blocking vs non-blocking**: Issues are classified — blocking issues halt workflow, non-blocking are noted only.

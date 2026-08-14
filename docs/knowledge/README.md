@@ -66,7 +66,7 @@ Do not duplicate ADR content in `docs/knowledge/decisions/`; link or summarize w
 
 Serena MCP provides persistent memory and symbolic code operations across sessions. The `Setup` hook creates `.serena/memories/` for it.
 
-No skill writes Serena memories. Durable findings are files: knowledge here, analysis and instruction-fix memos under `reports/`. The tiered memory model in [`ADR-FND-002`](../architecture/ADR/ADR-FND-002.md) is the design, not observed behavior.
+No skill writes Serena memories. Durable findings are files: knowledge here, analysis under `docs/analysis/`, instruction-fix memos under `reports/meta-optimization/`. The tiered memory model in [`ADR-FND-002`](../architecture/ADR/ADR-FND-002.md) is the design, not observed behavior.
 
 See [.serena/README.md](../../.serena/README.md) for setup and tooling.
 

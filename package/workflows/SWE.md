@@ -73,7 +73,7 @@ delivery when the work ships or needs docs.
 
 4. **Review** (`/review` → Tech Writer)
    - Input: Roadmap, Plans, Work Orders, requirements, blueprints, ADRs
-   - Output: `reports/analysis/review-YYYY-MM-DD.md`, blocking issues in `docs/development/ISSUES.md`
+   - Output: `docs/analysis/review-YYYY-MM-DD.md`, blocking issues in `docs/development/ISSUES.md`
    - Activities: Cross-artifact consistency, `REQ` coverage, Work Order traceability
    - Note: **Blocking gate** — halt if blocking issues found. Skip for medium/light workflows.
 

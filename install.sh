@@ -156,7 +156,9 @@ What gets installed per runtime (default skills profile):
     - docs/                Provisioned folder tree with .gitignore placeholders
     - docs/policy/         STANDARDS.md, GUIDELINES.md templates
     - docs/knowledge/      README.md
-    - reports/             analysis/, research/ directories
+    - docs/analysis/       Analysis and review reports
+    - docs/validation/     AC/TRC coverage documents
+    - reports/             research/ and meta-optimization/ directories
     - .serena/             project.yml (requires uvx)
     - Injects @policy refs into runtime context docs
 
@@ -2274,7 +2276,8 @@ install_project() {
     local dirs=(docs/policy docs/objectives docs/architecture docs/architecture/adr
                 docs/development docs/knowledge docs/knowledge/decisions
                 docs/knowledge/domain docs/knowledge/patterns docs/knowledge/runbooks
-                reports/analysis reports/research)
+                docs/analysis docs/validation
+                reports/research reports/meta-optimization)
     for d in "${dirs[@]}"; do
         mkdir -p "${target}/${d}"
         if [ -z "$(ls -A "${target}/${d}" 2>/dev/null)" ]; then

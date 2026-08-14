@@ -142,7 +142,7 @@ Templates are the source of truth for artifact structure. They live in `package/
 | VISION | `docs/objectives/VISION.md` | `package/templates/vision.md` | `/spec` |
 | BLUEPRINT | `docs/objectives/BLUEPRINT.md` | `package/templates/blueprint.md` | `/spec` |
 | Knowledge index | `docs/knowledge/README.md` | `package/templates/knowledge.md` | `/onboard` |
-| Review Report | `reports/analysis/review-YYYY-MM-DD.md` | — (free-form) | `/review` |
+| Review Report | `docs/analysis/review-YYYY-MM-DD.md` | — (free-form) | `/review` |
 
 > **BACKLOG structure**: see [ADR-005](../adr/005-task-decomposition-hierarchy.md) for Milestone → Phase → Epic → Task hierarchy.
 

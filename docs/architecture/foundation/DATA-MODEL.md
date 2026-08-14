@@ -85,8 +85,8 @@ Abstract entity representing the output of a skill/agent invocation.
 | ISSUES | `docs/development/ISSUES.md` | File |
 | STANDARDS | `docs/policy/STANDARDS.md` | File |
 | GUIDELINES | `docs/policy/GUIDELINES.md` | File |
-| ReviewReport | `reports/analysis/review-YYYY-MM-DD.md` | File |
-| AnalysisReport | `reports/analysis/YYYY-MM-DD-topic.md` | File |
+| ReviewReport | `docs/analysis/review-YYYY-MM-DD.md` | File |
+| AnalysisReport | `docs/analysis/YYYY-MM-DD-topic.md` | File |
 | ResearchReport | `reports/research/YYYY-MM-DD-topic.md` | File |
 | ValidationRecord | Serena project memory | Serena |
 | ReflexionRecord | Serena project memory | Serena |

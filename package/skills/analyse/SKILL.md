@@ -30,7 +30,7 @@ Provide deep analysis by:
 
 ## Outputs
 
-Analysis report at `reports/analysis/YYYY-MM-DD-topic.md`
+Analysis report at `docs/analysis/YYYY-MM-DD-topic.md`
 
 ## Workflow
 

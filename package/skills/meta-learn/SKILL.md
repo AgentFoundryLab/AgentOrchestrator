@@ -130,7 +130,7 @@ Never commit or copy raw logs, sessions, cache, memories, shell snapshots, or pl
 
 Write the durable findings as memos so they outlive the session. Verify today's date; pick a short slug for the session/topic. Only write the file whose bucket has at least one finding.
 
-### 1. `reports/analysis/<date>-<slug>-repo-failure-modes.md` — active repo
+### 1. `docs/analysis/<date>-<slug>-repo-failure-modes.md` — active repo
 - Table: `Mode | Where it showed | Category | Tracked | Status` — `Tracked` MUST be a real `WO`/`ISS`/`TD` id from `docs/development/`, never hand-invented.
 - Fixes section: one bullet per tracked id.
 - Delivery note: landed vs in-flight vs unimplemented.
@@ -203,6 +203,6 @@ Do not track `sessions/`, `projects/`, `log/`, `logs/`, `cache/`, `memories/`, `
 - Excluded evidence surfaces:
 
 ## Memos written
-- reports/analysis/ repo memo:
+- docs/analysis/ repo memo:
 - reports/meta-optimization/ instruction memo:
 ```

@@ -75,7 +75,7 @@ superseded by `REQ-008`.
 
 | Finding | Path | Owner |
 |---|---|---|
-| Repo failure modes | `reports/analysis/<date>-<slug>-repo-failure-modes.md` | `$meta-learn` |
+| Repo failure modes | `docs/analysis/<date>-<slug>-repo-failure-modes.md` | `$meta-learn` |
 | Instruction fixes | `reports/meta-optimization/<date>-<slug>-instruction-fixes.md` | `$meta-learn` |
 | `AC`/`TRC` coverage | `docs/validation/` | `/validate` |
 | Project knowledge | `docs/knowledge/` | `/document`, `/architect` |
@@ -112,7 +112,7 @@ superseded by `REQ-008`.
 $meta-learn
 -> scripts/session_graph.py maps the session graph from JSONL transcripts
 -> classifies failure modes
--> writes reports/analysis/<date>-<slug>-repo-failure-modes.md
+-> writes docs/analysis/<date>-<slug>-repo-failure-modes.md
 -> writes reports/meta-optimization/<date>-<slug>-instruction-fixes.md
 ```
 
