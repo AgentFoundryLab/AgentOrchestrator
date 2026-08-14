@@ -41,7 +41,7 @@ jobs:
         run: bash install.sh --check
 
   # ---------------------------------------------------------------------------
-  # smoke-tests: run all install tests (T-087..T-090) in isolated temp HOME
+  # smoke-tests: run all install tests (WO-087..WO-090) in isolated temp HOME
   # ---------------------------------------------------------------------------
   smoke-tests:
     name: Install Smoke & Conformance Tests

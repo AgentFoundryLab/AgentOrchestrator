@@ -260,7 +260,7 @@ RUNTIME_COMMANDS_CONF_OVERRIDE[qwen]=""
 # Relative path for hooks/plugins installation. Empty = hooks not supported.
 # NOTE: opencode hooks are JS/TS plugin event subscribers (.opencode/plugins/), not
 # bash command hooks. Claude-format SH hooks are incompatible. GAP: no adapter exists.
-# See docs/development/ISSUES.md G-001.
+# See docs/development/TECH_DEBT.md TD-001.
 declare -A RUNTIME_HOOKS_PATH
 RUNTIME_HOOKS_PATH[claude]="hooks"
 RUNTIME_HOOKS_PATH[codex]=""
@@ -282,7 +282,7 @@ declare -A RUNTIME_SUPPORTS_HOOKS
 RUNTIME_SUPPORTS_HOOKS[claude]="true"
 RUNTIME_SUPPORTS_HOOKS[codex]="false"
 RUNTIME_SUPPORTS_HOOKS[gemini]="false"
-RUNTIME_SUPPORTS_HOOKS[opencode]="false"  # GAP G-001: non-Claude hooks out of scope by decision
+RUNTIME_SUPPORTS_HOOKS[opencode]="false"  # GAP TD-001: non-Claude hooks out of scope by decision
 RUNTIME_SUPPORTS_HOOKS[qwen]="false"
 
 declare -A RUNTIME_SUPPORTS_SKILLS

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tests/install/smoke.sh
 # Install smoke, conformance, restore/cleanup regression, and idempotency tests.
-# Covers T-087, T-088, T-089, T-090.
+# Covers WO-087, WO-088, WO-089, WO-090.
 #
 # Usage: bash tests/install/smoke.sh
 # Requirements: bash 4.0+, no external dependencies.
@@ -115,10 +115,10 @@ assert_file_lacks_claude_keys() {
 }
 
 # ---------------------------------------------------------------------------
-# T-087: Smoke tests — each runtime, global install, exit code 0
+# WO-087: Smoke tests — each runtime, global install, exit code 0
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== T-087: Smoke Tests (Global Install per Runtime) ==="
+echo "=== WO-087: Smoke Tests (Global Install per Runtime) ==="
 
 for rt in claude codex gemini opencode qwen; do
     TMP=$(mktemp -d)
@@ -188,10 +188,10 @@ test_smoke_global_all_shortcut() {
 run_test "smoke-install-global-all-shortcut" test_smoke_global_all_shortcut
 
 # ---------------------------------------------------------------------------
-# T-088: Conformance tests — expected capabilities present/absent per runtime
+# WO-088: Conformance tests — expected capabilities present/absent per runtime
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== T-088: Conformance Tests (Capability Presence/Absence) ==="
+echo "=== WO-088: Conformance Tests (Capability Presence/Absence) ==="
 
 # Claude default: skills present; hooks disabled unless --hooks; agents present
 test_conformance_claude_default() {
@@ -499,7 +499,7 @@ PY
 }
 run_test "conformance-gemini-commands-profile-toml-valid" test_conformance_gemini_commands_toml_valid
 
-# OpenCode: skills present; agents present; plugins absent (G-001: SH hooks incompatible with JS/TS plugin system)
+# OpenCode: skills present; agents present; plugins absent (TD-001: SH hooks incompatible with JS/TS plugin system)
 test_conformance_opencode() {
     local tmp
     tmp=$(mktemp -d)
@@ -508,7 +508,7 @@ test_conformance_opencode() {
     assert_dir_exists "${tmp}/.config/opencode/skills" || ok=1
     assert_any_file_in "${tmp}/.config/opencode/skills" || ok=1
     assert_dir_exists "${tmp}/.config/opencode/agents" || ok=1
-    # plugins dir must NOT be created (GAP G-001: hooks not supported for opencode)
+    # plugins dir must NOT be created (GAP TD-001: hooks not supported for opencode)
     if [ -d "${tmp}/.config/opencode/plugins" ]; then
         echo "  UNEXPECTED: .config/opencode/plugins exists (hooks should not be installed for opencode)"
         ok=1
@@ -757,10 +757,10 @@ EOF
 run_test "conformance-serena-project-name-not-shell-quoted" test_serena_project_name_not_shell_quoted
 
 # ---------------------------------------------------------------------------
-# T-089: Restore/cleanup regression tests for namespaced installs
+# WO-089: Restore/cleanup regression tests for namespaced installs
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== T-089: Restore/Cleanup Regression (Namespaced Installs) ==="
+echo "=== WO-089: Restore/Cleanup Regression (Namespaced Installs) ==="
 
 # Install --namespace myorg then --restore — namespaced skills removed
 test_restore_namespace() {
@@ -927,10 +927,10 @@ test_two_namespace_isolation() {
 run_test "two-namespaces-cleanup-one-leaves-other-intact" test_two_namespace_isolation
 
 # ---------------------------------------------------------------------------
-# T-090: Idempotency tests for repeated installs
+# WO-090: Idempotency tests for repeated installs
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== T-090: Idempotency Tests ==="
+echo "=== WO-090: Idempotency Tests ==="
 
 # Run install twice, second run exits 0 and creates 0 new files
 test_idempotent_double_install() {
