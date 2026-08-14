@@ -19,7 +19,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${PROJECT_ROOT}"
 
-SCAN=("package" "AGENTS.md" "docs/INDEX.md")
+# Every surface a reader is handed: the distributed package, the runtime entry
+# points, and the two that ship user-facing prose about the record set — the
+# README and the installer's own --help output. README.md and install.sh were
+# added after both were found still advertising retired artifacts; a gate that
+# skips a surface is why drift survives there.
+SCAN=("package" "AGENTS.md" "docs/INDEX.md" "README.md" "install.sh")
 
 # A line that names a retired flow in order to forbid it is documentation, not a
 # regression. Keep this allowlist keyed on intent, never on file or line number.
