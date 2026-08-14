@@ -66,7 +66,7 @@ Abstract entity representing the output of a skill/agent invocation.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| type | enum | PRD, Architecture, ADR, ROADMAP, BACKLOG, ValidationReport, ReviewReport, STANDARDS, GUIDELINES, Code, ReflexionRecord, ReflectionRecord |
+| type | enum | FRD, TRD, FBP, ADR, ROADMAP, PLAN, WO, ISS, REG, TD, FB, CoverageDocument, ReviewReport, AnalysisReport, ResearchReport, STANDARDS, GUIDELINES, Code |
 | location | path | Where the artifact is written |
 | storage | enum: file, serena | File = git-versioned; Serena = transient memory |
 | producer | Skill | Which skill created it |
@@ -85,12 +85,11 @@ Abstract entity representing the output of a skill/agent invocation.
 | ISSUES | `docs/development/ISSUES.md` | File |
 | STANDARDS | `docs/policy/STANDARDS.md` | File |
 | GUIDELINES | `docs/policy/GUIDELINES.md` | File |
-| ReviewReport | `reports/analysis/review-YYYY-MM-DD.md` | File |
-| AnalysisReport | `reports/analysis/YYYY-MM-DD-topic.md` | File |
+| ReviewReport | `docs/analysis/review-YYYY-MM-DD.md` | File |
+| AnalysisReport | `docs/analysis/YYYY-MM-DD-topic.md` | File |
 | ResearchReport | `reports/research/YYYY-MM-DD-topic.md` | File |
-| ValidationRecord | Serena project memory | Serena |
-| ReflexionRecord | Serena project memory | Serena |
-| ReflectionRecord | Serena global memory | Serena |
+| CoverageDocument | `docs/validation/` | File |
+| InstructionFixMemo | `reports/meta-optimization/YYYY-MM-DD-slug.md` | File |
 
 ---
 
@@ -118,27 +117,16 @@ Policy files are versioned configuration artifacts.
 
 ## Entity: Memory Record (Serena)
 
-Serena-persisted records for the four-tier memory system.
+**Not implemented.** No skill issues `write_memory` or `read_memory`; `.serena/memories/` is created
+empty and never filled. `ADR-FND-002` carries the tier model and its 2026-08-14 amendment recording
+this; `WO-128`/`WO-129`/`WO-130` own building it.
 
-| Memory Tier | Key Pattern | Fields | Lifecycle |
-|-------------|-------------|--------|-----------|
-| Semantic | `knowledge/<topic>` | facts, patterns, conventions | Long-lived, project-scoped |
-| Reflexion | `reflexion/<date>-<topic>` | known_issue, cause, solution, prevention | Session+, project-scoped |
-| Transient (Validation) | `validation/<date>-<task>` | ac_status, test_results, notes | Short-lived |
-| Transient (Reflection) | `reflection/<session_id>` | lessons, patterns, errors, blockers | Session-scoped |
+The key patterns this section used to specify — `reflexion/<date>-<topic>` and
+`reflection/<session_id>` — were named for `$reflexion` and `$reflect`, skills `$meta-learn`
+absorbed. Specifying a schema for records nothing writes, under names nothing owns, is why this
+entity is deferred to its implementing Work Orders rather than restated here.
 
-**Reflexion Record Schema**:
-```yaml
-date: YYYY-MM-DD
-agent: <agent-name>
-task: <task-description>
-severity: low | medium | high
----
-## Known Issue
-## Root Cause
-## Solution
-## Prevention
-```
+What is durable today is the file entities above.
 
 ---
 
@@ -150,7 +138,7 @@ Runtime events that trigger lifecycle scripts.
 |-----------|------|-------------|
 | event | enum | SessionStart, SubagentStart, SubagentStop, Stop, SessionEnd |
 | blocking | boolean | Whether Claude waits for script completion |
-| stop_hook_active | boolean | SubagentStop phase (false=validation, true=reflexion) |
+| stop_hook_active | boolean | SubagentStop phase (false=validation, true=learning) |
 | script | path | Shell script that handles the event |
 | output | string | Script stdout injected as system reminder |
 

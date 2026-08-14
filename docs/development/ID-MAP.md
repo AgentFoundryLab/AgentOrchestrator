@@ -129,6 +129,14 @@ nothing downstream can resolve. Per-tier counters keep `FND` contiguous at 001-0
 `ISS-001`, `ISS-003`-`ISS-005`, and `TD-002`+ are never issued — preserved numbering leaves those
 gaps permanently unused.
 
+`G-002` (Gemini TOML command transform, invalid schema and syntax errors) has **no successor id and
+never will**. It was resolved and archived on 2026-02-24 — see
+[`archive/issues-resolved-2026-02-24.md`](archive/issues-resolved-2026-02-24.md) — before the
+migration, so there was no live record to retype. Its defect later recurred and is tracked on its own
+lineage as `REG-002` under `ISS-002`, which descends from `I-006`, not from `G-002`. Recorded here
+because the row's absence reads identically to an oversight, and because WO-182's own integration
+test asks that this map account for every old id found in a pre-migration document.
+
 ## Delivery (`T-nnn` → `WO-nnn`)
 
 Every `T-nnn` maps to `WO-nnn` with the number preserved: `T-001` → `WO-001` through `T-180` →

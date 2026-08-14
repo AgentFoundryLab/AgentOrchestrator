@@ -27,7 +27,8 @@ The value is not the agent count. It is that role boundaries are enforceable and
 
 - **bash 4.0+** — the installer uses associative arrays. macOS ships 3.2: `brew install bash`
 - **jq** — JSON merging during installation (`apt install jq` / `brew install jq`)
-- **uv** — Python operations and Serena MCP (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **uv** — only for Serena MCP provisioning (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **python3** — two bundled skill helpers (`/distill`, `/meta-learn`); stdlib only, nothing to install
 
 ### Runtime Support
 
@@ -131,7 +132,9 @@ your-project/
 │   ├── architecture/     # blueprints, ADRs, diagrams
 │   ├── development/      # plans, work orders, feedback records, indexes
 │   └── knowledge/        # README.md + decisions/, domain/, patterns/, runbooks/
-├── reports/              # analysis/, research/
+├── docs/analysis/        # /review, /analyse, /reconcile reports
+├── docs/validation/      # AC/TRC coverage
+├── reports/              # research/, meta-optimization/
 └── .serena/project.yml   # generated via uvx, language auto-detected
 ```
 
@@ -165,10 +168,10 @@ Empty directories carry a `.gitignore` placeholder so the tree survives a commit
 | `/orchestrate` | Delegated multi-agent delivery; owns depth selection and lane lifecycle | Coordination, handoff commits |
 | `/reconcile` | Route downstream findings back to the owning stage | Routing decision, `docs/analysis/` |
 | `/context-compiler` | Compact persisted context bundles | `context/<area>/<task>.md` |
-| `/meta-learn` | Session analysis and instruction-rule fixes | `reports/meta-optimization/`, `reports/analysis/` |
+| `/meta-learn` | Session analysis and instruction-rule fixes | `reports/meta-optimization/`, `docs/analysis/` |
 | `/cleanup` | Prune stale worktrees, branches, runtime stacks, claim leases | Triage table, removals |
 | `/anneal` | Complexity, duplication, and drift audit | Ranked simplification plan |
-| `/analyse` | Code investigation | `reports/analysis/` |
+| `/analyse` | Code investigation | `docs/analysis/` |
 | `/research` | External documentation lookup | `reports/research/` |
 | `/qmd` | Local markdown and doc retrieval | Cited doc text |
 | `/codebase-memory` | Structural code-graph retrieval | Symbols, call paths, snippets |
@@ -223,7 +226,7 @@ Every artifact carries an immutable, never-recycled id, and citation runs one wa
 
 | Server | Purpose | Status |
 |---|---|---|
-| **Serena** | Memory persistence, symbolic code ops | Required |
+| **Serena** | Memory persistence, symbolic code ops | Recommended |
 | **Context7** | Library and framework documentation | Recommended |
 | **DeepWiki** | GitHub repository documentation | Recommended |
 | **Parallel Search** | Fast parallel web lookup | Recommended |

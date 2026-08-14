@@ -23,8 +23,8 @@ Orchestrator supports two hook types:
 | `Setup` | `--init` or `--maintenance` | No | One-time project initialization |
 | `SessionStart` | Session begins | No | Inject context, log session start |
 | `SubagentStart` | Subagent spawned | No | Inject context, log agent start |
-| `SubagentStop` | Agent completes | Yes | Validation reminders, reflexion prompt |
-| `Stop` | Main session stops | Yes | Session reflection prompt |
+| `SubagentStop` | Agent completes | Yes | Validation reminder, then a prompt to report the learning signal |
+| `Stop` | Main session stops | Yes | `$meta-learn` prompt for session learning |
 | `SessionEnd` | Session terminates | No | Cleanup and logging |
 
 ### Blocking vs Non-Blocking
@@ -236,13 +236,17 @@ Writes first entry to `agent-stop.jsonl`.
 **Blocking**: Yes
 **Condition**: Only fires when `stop_hook_active=true` (second phase)
 
-Prompts agent to invoke `$meta-learn` if errors were encountered during the task:
+Asks the agent to report its learning signal — failure mode, observed cause, instruction finding —
+in its final message, if it hit any of:
 - Errors that required debugging
 - Wrong assumptions that needed correction
 - Missing dependencies or unexpected behaviors
 - Workarounds for undocumented issues
 
-High signal/noise threshold: Only significant learnings are recorded.
+The sub-agent does **not** invoke `$meta-learn`. That skill is `context: inline` and runs in the
+parent session, which holds the whole session graph and the user's approval for instruction edits.
+
+High signal/noise threshold: significant failures only. Silence is a valid report.
 
 Writes second entry to `agent-stop.jsonl`.
 
@@ -267,7 +271,7 @@ The SubagentStop event fires twice per agent completion, controlled by the `stop
 | Phase | `stop_hook_active` | Script | Action |
 |-------|-------------------|--------|--------|
 | 1 (Validation) | `false` | `remind-validate.sh` | Self-validation checklist |
-| 2 (Reflexion) | `true` | `remind-agent-learn.sh` | Reflexion prompt if errors |
+| 2 (Learning) | `true` | `remind-agent-learn.sh` | Report the learning signal if errors |
 
 **Flow**:
 1. Agent completes task and attempts to stop
@@ -275,8 +279,9 @@ The SubagentStop event fires twice per agent completion, controlled by the `stop
 3. `remind-validate.sh` outputs validation checklist, writes to `agent-stop.jsonl`
 4. Agent responds to validation (may continue or complete)
 5. SubagentStop fires again with `stop_hook_active=true`
-6. `remind-agent-learn.sh` outputs reflexion prompt, appends to `agent-stop.jsonl`
-7. Agent decides whether to invoke `$meta-learn`
+6. `remind-agent-learn.sh` asks for the learning signal, appends to `agent-stop.jsonl`
+7. Agent reports failure mode, cause, and instruction finding in its final message — it does not
+   invoke `$meta-learn`, which runs inline in the parent session
 
 Both phases are logged to `agent-stop.jsonl` as separate JSONL entries.
 
@@ -584,7 +589,7 @@ All event files use JSONL format for consistency and append support:
 
 1. Check `stop_hook_active` value in hook input
 2. First phase: `stop_hook_active=false` (validation)
-3. Second phase: `stop_hook_active=true` (reflexion)
+3. Second phase: `stop_hook_active=true` (learning)
 4. Verify both scripts check for correct phase
 
 ---

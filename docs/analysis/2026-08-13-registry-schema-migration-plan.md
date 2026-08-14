@@ -1,7 +1,7 @@
 # Registry Schema Migration Plan
 
 Date: 2026-08-13
-Status: proposed — awaiting go/no-go on Phase A
+Status: accepted — Phase A go/no-go decided **go** on 2026-08-14. The `reports/validation/` → `docs/validation/` and `reports/analysis/` → `docs/analysis/` remap below is executed; `reports/research/` and `reports/meta-optimization/` stay where they are, as this plan's remap table always specified.
 Scope: migrate AgentOrchestrator's artifact ids and document taxonomy to the Factory record schema, without the Factory CLI
 
 ## Objective

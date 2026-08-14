@@ -178,9 +178,9 @@ Using ACP would require **custom bridges** for every framework. A2A is framework
 
 ### Related ADRs
 
-- [ADR-008](008-multi-provider-integration-strategy.md): Hybrid MCP + A2A for multi-provider OAuth
-- [ADR-009](009-orchestration-framework-selection.md): Strands Agents (A2A native)
-- [ADR-010](010-observability-architecture.md): A2A event instrumentation for OTEL
+- [ADR-008](ADR-FND-008.md): Hybrid MCP + A2A for multi-provider OAuth
+- [ADR-009](ADR-FND-009.md): Strands Agents (A2A native)
+- [ADR-010](ADR-FND-010.md): A2A event instrumentation for OTEL
 
 ### Related Requirements
 

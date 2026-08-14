@@ -33,7 +33,7 @@ User: /spec "todo app"                 User: /orchestrate "todo app"
           | injected instructions            | injected instructions
           v                                  v
 +-------------------+              +-------------------+
-| PRD artifact      |              | PRD artifact      |
+| FRD/TRD           |              | FRD/TRD           |
 | + SubagentStop    |              | + SubagentStop    |
 |   hooks fire      |              |   hooks fire      |
 +-------------------+              +-------------------+
@@ -44,4 +44,4 @@ KEY INSIGHT: Both paths spawn agent, both fire hooks. Skill is single source of 
 
 ## Related
 
-- [ADR-004: Skill-Agent Invocation Paths](../adr/004-skill-agent-invocation-paths.md)
+- [ADR-FND-004: Skill-Agent Invocation Paths](../ADR/ADR-FND-004.md)

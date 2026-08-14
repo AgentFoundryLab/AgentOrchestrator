@@ -48,14 +48,14 @@ SESSION START
 +------------------+
 | <system-reminder>|
 | Validation list  |
-| Reflexion prompt |
+| Learning signal  |
 +--------+---------+
          |
          | Agent responds
          v
 +------------------+
 | Self-validate    |
-| Maybe /reflexion |
+| Report signal    |
 +------------------+
          |
          v
@@ -81,7 +81,7 @@ SESSION START
 +--------+---------+
          |
          | Orchestrator may
-         | invoke /reflect
+         | invoke /meta-learn
          v
 +------------------+
 | Session learnings|
@@ -117,4 +117,4 @@ SESSION START
 
 ## Related
 
-- [ADR-001: Hook Behavior Pattern](../adr/001-hook-reminder-pattern.md)
+- [ADR-FND-001: Hook Behavior Pattern](../ADR/ADR-FND-001.md)

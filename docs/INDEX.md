@@ -27,9 +27,9 @@ orchestrator/
 │   ├── validation/            # AC/TRC coverage documents
 │   ├── policy/                # STANDARDS.md, GUIDELINES.md (project tier)
 │   ├── knowledge/             # decisions/ (TDR), domain/, patterns/, runbooks/
-│   ├── analysis/              # review, reconcile, meta-learn memos
+│   ├── analysis/              # review, reconcile, analyse, meta-learn repo memos
 │   └── archive/development/   # closed + decommissioned records
-└── reports/                   # research/ outputs
+└── reports/                   # research/ and meta-optimization/ outputs
 ```
 
 ## Artifact Ownership
@@ -49,7 +49,7 @@ orchestrator/
 | Research reports | `reports/research/` | `/research` |
 | Coverage documents | `docs/validation/` | `/validate` |
 | Context bundles | `context/<area>/<task>.md` | `/context-compiler` |
-| Instruction-fix memos | `docs/analysis/` | `/meta-learn` |
+| Instruction-fix memos | `reports/meta-optimization/` | `/meta-learn` |
 
 ## Canonical References
 

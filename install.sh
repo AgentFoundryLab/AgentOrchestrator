@@ -156,7 +156,12 @@ What gets installed per runtime (default skills profile):
     - docs/                Provisioned folder tree with .gitignore placeholders
     - docs/policy/         STANDARDS.md, GUIDELINES.md templates
     - docs/knowledge/      README.md
-    - reports/             analysis/, research/ directories
+    - docs/requirements/   FRD-*/TRD-* requirements
+    - docs/architecture/   foundation/, feature/, system/, ADR/
+    - docs/development/    plans/, workorders/, issues/, debt/, feedback/, status/
+    - docs/analysis/       Analysis and review reports
+    - docs/validation/     AC/TRC coverage documents
+    - reports/             research/ and meta-optimization/ directories
     - .serena/             project.yml (requires uvx)
     - Injects @policy refs into runtime context docs
 
@@ -196,7 +201,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# validate_namespace — T-067: Validate namespace grammar
+# validate_namespace — WO-067: Validate namespace grammar
 # ---------------------------------------------------------------------------
 # Grammar: single dash-notation token matching [a-z][a-z0-9-]*.
 # Empty string is valid (means no namespace / flat mode).
@@ -254,12 +259,25 @@ namespace_mode_for_runtime_artifact() {
     esac
 }
 
+# sed_in_place — portable `sed -i`. BSD sed (macOS) reads -i's argument as a
+# mandatory backup suffix, so the GNU form `sed -i <script> <file>` parses the
+# script as the suffix and the path as the script. Write via temp + mv instead,
+# matching the idiom in strip_claude_frontmatter.
+sed_in_place() {
+    local script="$1"
+    local file="$2"
+    local tmp
+    tmp="$(mktemp)"
+    sed "$script" "$file" > "$tmp"
+    mv "$tmp" "$file"
+}
+
 apply_frontmatter_name_override() {
     local file="$1"
     local old_name="$2"
     local new_name="$3"
     [ -f "$file" ] || return 0
-    sed -i "s/^name: ${old_name}$/name: ${new_name}/" "$file"
+    sed_in_place "s/^name: ${old_name}$/name: ${new_name}/" "$file"
 }
 
 # Log functions
@@ -786,8 +804,11 @@ inject_policy_refs() {
                 ((++BACKUPS))
 
                 local tmp_file="${f}.tmp"
-                awk -v s="$start_tag" -v e="$end_tag" -v r="$desired_block" '
-                    BEGIN {inblock=0; replaced=0}
+                # desired_block is multi-line: BSD awk rejects a newline inside a
+                # -v assignment, so pass it through the environment instead.
+                ORCH_REFS_BLOCK="$desired_block" \
+                awk -v s="$start_tag" -v e="$end_tag" '
+                    BEGIN {inblock=0; replaced=0; r=ENVIRON["ORCH_REFS_BLOCK"]}
                     $0 == s && replaced == 0 {
                         print r
                         inblock=1
@@ -819,7 +840,7 @@ inject_policy_refs() {
 }
 
 # ---------------------------------------------------------------------------
-# check_drift (invoked by --check) — T-065
+# check_drift (invoked by --check) — WO-065
 # ---------------------------------------------------------------------------
 # Validates two things only:
 #   1. SOURCE exists on disk  — package layout is intact (package/skills/, agents/, hooks/)
@@ -834,7 +855,7 @@ inject_policy_refs() {
 #   MISSING — source directory absent from package layout (drift: fix package or registry)
 #   DRIFT   — registry declaration is empty (fix runtimes.sh)
 #   PARTIAL — installed but not fully compatible (e.g. frontmatter not yet transformed, D-5)
-#   GAP     — not installed at all; implementation blocked by incompatibility (G-001, G-002)
+#   GAP     — not installed at all; implementation blocked by incompatibility (TD-001; the Gemini transform gap is REG-002 under ISS-002)
 #
 # Respects --profile: skills (default) shows skills/agents/hooks rows;
 #                     commands shows commands rows.
@@ -888,7 +909,7 @@ check_drift() {
                 local cmd_path="${RUNTIME_COMMANDS_PATH[${rt}]:-commands}"
                 local cmd_override=""
                 _drift_row "$rt" "$cmd_type" "commands" "$skills_src" "${cmd_conf_dir}/${cmd_path}/" "$skills_src" "$cmd_override"
-                # T-095: runtime-aware frontmatter/schema transform applied
+                # WO-095: runtime-aware frontmatter/schema transform applied
                 [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(runtime key map)" "${cmd_conf_dir}/${cmd_path}/"
             fi
         else
@@ -896,11 +917,11 @@ check_drift() {
             if [[ "${RUNTIME_SUPPORTS_SKILLS[${rt}]}" == "true" ]]; then
                 local skills_target="${conf_dir}/${RUNTIME_SKILLS_PATH[${rt}]}/"
                 _drift_row "$rt" "MD" "skills" "$skills_src" "$skills_target" "$skills_src"
-                # T-095: runtime-aware frontmatter/schema transform applied
+                # WO-095: runtime-aware frontmatter/schema transform applied
                 [[ "$rt" != "claude" ]] && _drift_row "$rt" "MD" "frontmatter" "(runtime key map)" "$skills_target"
             fi
 
-            # T-092: Gemini commands TOML transform — show status row in skills profile view
+            # WO-092: Gemini commands TOML transform — show status row in skills profile view
             if [[ "$rt" == "gemini" ]]; then
                 local cmd_conf_dir="${RUNTIME_COMMANDS_CONF_OVERRIDE[gemini]:-${conf_dir}}"
                 local cmd_path="${RUNTIME_COMMANDS_PATH[gemini]:-commands}"
@@ -916,8 +937,8 @@ check_drift() {
                 local hooks_target="${conf_dir}/${RUNTIME_HOOKS_PATH[${rt}]}/"
                 _drift_row "$rt" "SH" "hooks" "$hooks_src" "$hooks_target" "$hooks_src"
             fi
-            # GAP G-001: OpenCode hooks incompatible with JS/TS plugin system
-            [[ "$rt" == "opencode" ]] && _drift_row "opencode" "SH" "hooks" "$hooks_src" "${conf_dir}/plugins/" "" "GAP"  # G-001: non-Claude hooks out of scope by decision
+            # GAP TD-001: OpenCode hooks incompatible with JS/TS plugin system
+            [[ "$rt" == "opencode" ]] && _drift_row "opencode" "SH" "hooks" "$hooks_src" "${conf_dir}/plugins/" "" "GAP"  # TD-001: non-Claude hooks out of scope by decision
         fi
 
         # Registry declarations (always shown regardless of profile)
@@ -948,7 +969,7 @@ check_drift() {
 # Runtime install helpers (registry-driven)
 # ---------------------------------------------------------------------------
 
-# strip_claude_frontmatter — T-094/T-095: Remove Claude-specific keys from SKILL.md frontmatter.
+# strip_claude_frontmatter — WO-094/WO-095: Remove Claude-specific keys from SKILL.md frontmatter.
 # Preserves universal keys: name, description, tools, scripts (and any unknown keys).
 # Drops Claude-only keys in YAML frontmatter only: argument-hint, user-invocable, context, agent.
 # No-op if file does not exist or has no frontmatter block.
@@ -967,12 +988,12 @@ strip_claude_frontmatter() {
     mv "$tmp" "$f"
 }
 
-# convert_args_placeholder — T-094: Replace $ARGUMENTS with {{args}} for runtimes that use it.
+# convert_args_placeholder — WO-094: Replace $ARGUMENTS with {{args}} for runtimes that use it.
 # Applies to commands mode targets for Qwen and Gemini (official docs confirmed).
 convert_args_placeholder() {
     local f="$1"
     [ -f "$f" ] || return 0
-    sed -i 's/\$ARGUMENTS/{{args}}/g' "$f"
+    sed_in_place 's/\$ARGUMENTS/{{args}}/g' "$f"
 }
 
 # ============================================================================
@@ -1388,7 +1409,7 @@ normalize_agent_markdown_in_place() {
     esac
 }
 
-# normalize_skill_markdown_in_place — T-095: Apply per-runtime frontmatter/body normalization.
+# normalize_skill_markdown_in_place — WO-095: Apply per-runtime frontmatter/body normalization.
 # Runtime-agnostic rule: strip Claude-only keys for non-Claude runtimes.
 # Commands-mode runtime rule: Qwen/Gemini use {{args}} placeholder.
 normalize_skill_markdown_in_place() {
@@ -1430,7 +1451,7 @@ strip_frontmatter() {
 # qwen    | .qwen/commands/<skill>.md            | Claude keys stripped + {{args}} conversion
 # ---------------------------------------------------------------------------
 
-# skill_to_gemini_toml — T-092: Transform a SKILL.md file into a Gemini TOML command file.
+# skill_to_gemini_toml — WO-092: Transform a SKILL.md file into a Gemini TOML command file.
 # Writes the result to stdout.
 # Transform rules:
 #   - description: extracted from frontmatter `description:` field
@@ -1476,7 +1497,7 @@ skill_to_gemini_toml() {
     fi
 }
 
-# render_transformed_skill — T-095: apply per-runtime transform rules.
+# render_transformed_skill — WO-095: apply per-runtime transform rules.
 # Writes transformed content to stdout.
 render_transformed_skill() {
     local src="$1"
@@ -1680,7 +1701,7 @@ restore_runtime_commands_compat() {
     find "$commands_dir" -depth -type d -empty -delete 2>/dev/null || true
 }
 
-# check_runtime_collisions — T-081: Detect shared paths between selected runtimes.
+# check_runtime_collisions — WO-081: Detect shared paths between selected runtimes.
 check_runtime_collisions() {
     # OpenCode reads .claude/skills and .agents/skills natively
     if [ "$REF_OPENCODE" = true ]; then
@@ -1744,7 +1765,7 @@ install_runtime_global() {
 
     log_info "Installing runtime '${rt}' to ${target} (profile: ${PROFILE})"
 
-    # T-079: warn and skip when requested profile is unsupported by this runtime
+    # WO-079: warn and skip when requested profile is unsupported by this runtime
     if [[ "$PROFILE" == "hooks" ]] && [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" != "true" ]]; then
         log_warning "${rt}: hooks not supported; --profile hooks ignored for this runtime"
         return
@@ -1873,7 +1894,7 @@ install_runtime_project() {
 
     log_info "Installing runtime '${rt}' project artifacts to ${rt_target} (profile: ${PROFILE})"
 
-    # T-079: warn and skip when requested profile is unsupported by this runtime
+    # WO-079: warn and skip when requested profile is unsupported by this runtime
     if [[ "$PROFILE" == "hooks" ]] && [[ "${RUNTIME_SUPPORTS_HOOKS[${rt}]}" != "true" ]]; then
         log_warning "${rt}: hooks not supported; --profile hooks ignored for this runtime"
         return
@@ -2209,7 +2230,7 @@ install_global() {
         merge_json "${PACKAGE_DIR}/mcp.json" "${HOME}/.claude.json" "$backup_dir" ".claude.json"
     fi
 
-    # T-081: check for cross-runtime path collisions
+    # WO-081: check for cross-runtime path collisions
     check_runtime_collisions
 
     # Install per-runtime artifacts using registry
@@ -2271,10 +2292,20 @@ install_project() {
     backup_dir=$(create_backup_dir "$target")
 
     # 1. Provision docs folder tree with .gitignore placeholders
-    local dirs=(docs/policy docs/objectives docs/architecture docs/architecture/adr
-                docs/development docs/knowledge docs/knowledge/decisions
+    # The record schema's document tree. ADR is uppercase because the record id is
+    # ADR-<TIER>-NNN and every canon reference spells the directory that way; a lowercase
+    # adr/ is invisible on a case-insensitive filesystem and a second, empty directory on
+    # every other one.
+    local dirs=(docs/policy docs/objectives docs/requirements
+                docs/architecture docs/architecture/foundation docs/architecture/feature
+                docs/architecture/system docs/architecture/ADR
+                docs/development docs/development/plans docs/development/workorders
+                docs/development/issues docs/development/debt docs/development/feedback
+                docs/development/status
+                docs/knowledge docs/knowledge/decisions
                 docs/knowledge/domain docs/knowledge/patterns docs/knowledge/runbooks
-                reports/analysis reports/research)
+                docs/analysis docs/validation
+                reports/research reports/meta-optimization)
     for d in "${dirs[@]}"; do
         mkdir -p "${target}/${d}"
         if [ -z "$(ls -A "${target}/${d}" 2>/dev/null)" ]; then
@@ -2311,7 +2342,7 @@ install_project() {
         fi
     done
 
-    # T-081: check for cross-runtime path collisions
+    # WO-081: check for cross-runtime path collisions
     check_runtime_collisions
 
     # 5. Install per-runtime project artifacts using registry

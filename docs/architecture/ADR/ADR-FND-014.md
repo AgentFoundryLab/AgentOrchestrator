@@ -238,10 +238,10 @@ Keep all path definitions as local variables or constants inside `install.sh` fu
 
 ## Related
 
-- [ADR-004](004-skill-agent-invocation-paths.md) — Skill-agent invocation paths (skill naming conventions that namespace builds on)
-- [ADR-006](006-policy-modularization.md) — Policy modularization (policy-ref injection extended by D-1 for all 5 runtimes)
-- [ADR-008](008-multi-provider-integration-strategy.md) — Multi-provider integration strategy (runtime capability matrix context)
-- [ADR-013](013-extended-skills.md) — Extended skills (governance skills whose install behavior is governed by this ADR)
+- [ADR-004](ADR-FND-004.md) — Skill-agent invocation paths (skill naming conventions that namespace builds on)
+- [ADR-006](ADR-FND-006.md) — Policy modularization (policy-ref injection extended by D-1 for all 5 runtimes)
+- [ADR-008](ADR-FND-008.md) — Multi-provider integration strategy (runtime capability matrix context)
+- [ADR-013](ADR-FND-013.md) — Extended skills (governance skills whose install behavior is governed by this ADR)
 - `docs/knowledge/decisions/flat-skill-paths.md` — Flat vs dot-prefix skill paths decision record (D-2 builds on this)
 - `docs/knowledge/decisions/latest-compatible-only-policy.md` — Latest-native policy
 - `docs/knowledge/decisions/non-claude-hooks-policy.md` — Installer policy: non-Claude hooks integration out of scope in v0.x

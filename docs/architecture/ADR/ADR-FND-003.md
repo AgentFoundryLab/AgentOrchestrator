@@ -31,11 +31,11 @@ AgentOrchestrator aims for minimalism: "What's the smallest MCP set that enables
 
 ## Decision
 
-**One required MCP server, recommended support servers, and optional add-ons**:
+**Recommended support servers and optional add-ons**:
 
 | Server | Status | Purpose |
 |--------|--------|---------|
-| **Serena** | Required | Session persistence, semantic memory, symbolic code operations |
+| **Serena** | Recommended | Session persistence, semantic memory, symbolic code operations. Downgraded from `Required` on 2026-08-14: no skill invokes it (see the ADR-FND-002 amendment), and `FRD-MEM-001:13` calls the memory store optional. |
 | **Context7** | Recommended | Documentation lookup, hallucination prevention |
 | **DeepWiki** | Recommended | AI-powered GitHub repository documentation and Q&A |
 | **Parallel Search/Task** | Recommended | Parallel web search and deep research tasks |

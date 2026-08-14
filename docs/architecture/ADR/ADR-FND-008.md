@@ -252,9 +252,9 @@ task_id = send_message(
 
 ### Related ADRs
 
-- [ADR-007](007-multi-agent-protocol-selection.md): A2A for orchestrator-agent communication
-- [ADR-009](009-orchestration-framework-selection.md): Strands Agents (MCP-compatible)
-- [ADR-010](010-observability-architecture.md): Bridge event instrumentation
+- [ADR-007](ADR-FND-007.md): A2A for orchestrator-agent communication
+- [ADR-009](ADR-FND-009.md): Strands Agents (MCP-compatible)
+- [ADR-010](ADR-FND-010.md): Bridge event instrumentation
 
 ### Related Requirements
 

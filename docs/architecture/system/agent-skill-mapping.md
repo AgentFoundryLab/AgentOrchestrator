@@ -15,7 +15,7 @@ ORCHESTRATION: Calls agents via Task tool, agents have skills injected
 AGENT-BACKED SKILLS: Skill content injected into agent
 
 +-------------+   has injected   +-------------+     produces
-|  BA Agent   | <--------------- |   /spec     | ---------------> PRD
+|  BA Agent   | <--------------- |   /spec     | ------------> FRD/TRD
 +-------------+                  +-------------+
 
 +-------------+   has injected   +-------------+     produces
@@ -54,11 +54,12 @@ EXTENDED SKILLS (spawn Architect agent with a secondary skill)
 UTILITY SKILLS (inline, no agent spawn)
 
 +-------------+                  +-------------+
-| /reflexion  | ----------------> |   Serena    |
-| /reflect    |   (direct)       |   Memory    |
-| /optimize   |                  +-------------+
-| /distill    |
+| /meta-learn | ----------------> | Versioned   |
+| /analyse    |   (direct)       | files under  |
+| /reconcile  |                  | docs/,reports|
+| /distill    |                  +-------------+
 +-------------+
+(Serena memory is designed but unwritten -- see memory-system.md)
 ```
 
 ## Multi-Skill Model
@@ -71,4 +72,4 @@ UTILITY SKILLS (inline, no agent spawn)
 
 ## Related
 
-- [ADR-004: Skill-Agent Invocation Paths](../adr/004-skill-agent-invocation-paths.md)
+- [ADR-FND-004: Skill-Agent Invocation Paths](../ADR/ADR-FND-004.md)

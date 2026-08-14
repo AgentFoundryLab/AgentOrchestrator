@@ -73,7 +73,7 @@ delivery when the work ships or needs docs.
 
 4. **Review** (`/review` → Tech Writer)
    - Input: Roadmap, Plans, Work Orders, requirements, blueprints, ADRs
-   - Output: `reports/analysis/review-YYYY-MM-DD.md`, blocking issues in `docs/development/ISSUES.md`
+   - Output: `docs/analysis/review-YYYY-MM-DD.md`, blocking issues in `docs/development/ISSUES.md`
    - Activities: Cross-artifact consistency, `REQ` coverage, Work Order traceability
    - Note: **Blocking gate** — halt if blocking issues found. Skip for medium/light workflows.
 
@@ -268,7 +268,7 @@ If a phase fails or is blocked:
    - High: Needs resolution before next phase
    - Medium: Can proceed with caveat
    - Low: Note for later
-3. **Invoke `$meta-learn`** if the failure reveals an instruction or process gap
+3. **Invoke `$meta-learn`** if the failure reveals an instruction or process gap — inline, in the session that owns the workflow. Never delegate it to a lane agent; a lane reports the signal instead.
 4. **Consult user** for critical/high blockers
 5. **Continue or halt** based on guidance
 

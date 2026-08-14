@@ -42,71 +42,44 @@ uvx --from git+https://github.com/oraios/serena serena project create
 
 ---
 
-## Memory Tiers (ADR-002)
+## Memory Tiers
 
-Orchestrator uses a four-tier memory architecture:
+[`ADR-FND-002`](../docs/architecture/ADR/ADR-FND-002.md) owns the four-tier model and is the only
+place it is defined; the copy that used to sit here drifted from it and is gone.
 
-| Tier | Purpose | Storage | Lifetime |
-|------|---------|---------|----------|
-| **Session** | Conversation history | Claude JSONL | Session |
-| **Semantic** | Project knowledge | Serena project memory | Persistent |
-| **Reflexion** | Error learnings | Serena project memory | Persistent |
-| **Transient** | Validation records | Serena | Session/Short-term |
+That ADR was amended on 2026-08-14 to record that **none of it is implemented** — no skill issues
+`write_memory` or `read_memory`, and `WO-128`/`WO-129`/`WO-130` own building it. One of its tiers,
+**Reflexion**, is named for a skill that no longer exists; the name is retained until the model is
+actually built, since renaming an unimplemented tier only moves the drift.
 
 ---
 
 ## Memory Namespaces
 
-Orchestrator uses namespaced memory for organization:
+> **No skill currently writes Serena memories.** Nothing in `package/` issues `write_memory` or
+> `read_memory`; `setup-project.sh` creates an empty `.serena/memories/` and no stage fills it. The
+> namespaces below are the convention to follow *if* you write one by hand or a future skill adopts
+> the tier model — they are not a description of observed behavior. Durable findings today are files.
 
-### `knowledge/`
-Project-level semantic knowledge:
-- Domain concepts
-- Architecture patterns
-- Team conventions
+| Namespace | Holds | Written by |
+|---|---|---|
+| `knowledge/` | Domain concepts, architecture patterns, team conventions | nothing today |
+| `validation/` | Test results, `AC`/`TRC` verification, quality checks | nothing today; `/validate` writes `docs/validation/` instead |
+| `meta-learn/` | Failure modes, root causes, prevention | nothing today; `$meta-learn` writes memo files instead |
 
-**Example**:
-```
-knowledge/api-patterns
-knowledge/auth-conventions
-knowledge/testing-strategy
-```
+The `reflexion/` and `reflect/` namespaces are retired. The skills that defined them —
+`$reflexion`, `$reflect`, and `$optimize` — were absorbed into `$meta-learn`, which reads real
+session transcripts rather than hand-written records. `REQ-007` is `Decommissioned` for that reason,
+superseded by `REQ-008`.
 
-### `reflexion/`
-Error learnings captured by the `$meta-learn` skill:
-- Known issues
-- Root causes
-- Solutions
-- Prevention strategies
+**Where durable findings actually go**:
 
-**Example**:
-```
-reflexion/2026-01-24-token-refresh-edge-case
-reflexion/2026-01-23-db-connection-timeout
-```
-
-### `reflect/`
-Session reflection records captured by the `$meta-learn` skill:
-- Session summaries
-- Lessons learned
-- Patterns identified
-- Improvement suggestions
-
-**Example**:
-```
-reflect/2026-01-24-session-abc123
-```
-
-### `validation/`
-Transient validation records from `/validate` skill:
-- Test results
-- AC verification
-- Quality checks
-
-**Example**:
-```
-validation/T-001-2026-01-24
-```
+| Finding | Path | Owner |
+|---|---|---|
+| Repo failure modes | `docs/analysis/<date>-<slug>-repo-failure-modes.md` | `$meta-learn` |
+| Instruction fixes | `reports/meta-optimization/<date>-<slug>-instruction-fixes.md` | `$meta-learn` |
+| `AC`/`TRC` coverage | `docs/validation/` | `/validate` |
+| Project knowledge | `docs/knowledge/` | `/document`, `/architect` |
 
 ---
 
@@ -134,30 +107,25 @@ validation/T-001-2026-01-24
 
 ## Usage Patterns
 
-### Storing Reflexion
+### Session learning — what actually happens
 
 ```
 $meta-learn
--> Classifies the failure mode from the session transcript
--> write_memory("reflexion/2026-01-24-issue-name", content)
+-> scripts/session_graph.py maps the session graph from JSONL transcripts
+-> classifies failure modes
+-> writes docs/analysis/<date>-<slug>-repo-failure-modes.md
+-> writes reports/meta-optimization/<date>-<slug>-instruction-fixes.md
 ```
 
-### Retrieving Knowledge
+No `write_memory` call is involved. The transcripts are the evidence and the memos are the record.
+
+### Retrieving knowledge
 
 ```
-/implement T-001
+/implement WO-101
 -> Agent needs context
--> read_memory("knowledge/api-patterns")
--> Informed implementation
-```
-
-### Session Reflection
-
-```
-$meta-learn
--> Analyzes the session graph
--> write_memory("reflect/session-id", summary)
--> Feeds the same skill's rule-optimization phase
+-> read_memory("knowledge/api-patterns")   # only if a memory was written by hand
+-> otherwise: docs/knowledge/ and $qmd
 ```
 
 ---
@@ -192,17 +160,13 @@ Auto-generated during `--project` installation. Contains:
 ## Best Practices
 
 ### 1. Namespace Consistently
-Always use the appropriate namespace prefix:
-- `knowledge/` for permanent project info
-- `reflexion/` for error learnings
-- `reflect/` for session insights
-- `validation/` for temporary records
+Use the prefixes in **Memory Namespaces** above: `knowledge/`, `validation/`, `meta-learn/`. Never
+`reflexion/` or `reflect/` — those are retired.
 
 ### 2. Date-Prefix Temporal Records
-Include dates in reflexion and reflection keys:
+Include the date in any time-bound key:
 ```
-reflexion/2026-01-24-description
-reflect/2026-01-24-session-summary
+meta-learn/2026-01-24-description
 ```
 
 ### 3. Keep Records Focused

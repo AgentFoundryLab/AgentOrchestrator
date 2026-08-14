@@ -28,9 +28,13 @@ Session work → $meta-learn → patch plan → user approval → apply to sourc
 |---------|-----------|
 | Explicit | User invokes `$meta-learn` |
 | Suggested at session end | Stop hook `remind-session-learn.sh` |
-| Suggested after a sub-agent failure | SubagentStop hook `remind-agent-learn.sh` |
+| Signalled after a sub-agent failure | SubagentStop hook `remind-agent-learn.sh` — the sub-agent reports the failure mode; the parent session runs the skill |
 
 Hooks only prompt; they never invoke. See ADR-001 (reminder pattern).
+
+Every trigger lands the run in the session under analysis. `$meta-learn` is `context: inline` and is
+never delegated to a sub-agent: it edits instruction surfaces, which a delivery lane may not touch,
+and it needs the whole session graph plus the user's approval — none of which a child agent has.
 
 ---
 
