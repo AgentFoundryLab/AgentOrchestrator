@@ -15,6 +15,7 @@ Ids are immutable — [`ID-MAP.md`](ID-MAP.md) resolves the pre-migration `I-`/`
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [ISS-002](issues/ISS-002.md) | bugfix | installer | config | High | Suspected | Gemini capability drift vs the validated baseline | `WO-097` | Open |
 | [ISS-006](issues/ISS-006.md) | bugfix | installer | config | High | Confirmed | Runtime target isolation across global installs | `WO-097` | Closed |
+| [ISS-007](issues/ISS-007.md) | bugfix | hooks | logic | Medium | Confirmed | SessionStart derives project context but never injects it | — | Open |
 
 ## Regressions
 
@@ -30,3 +31,5 @@ its report document was never rewritten.
 
 `ISS-001`, `ISS-003`–`ISS-005` are permanently unissued: preserved numbering from the `I-`/`G-` forms
 leaves those gaps. A skipped number is harmless; a recycled one is not.
+
+`ISS-008` is the next free id.
