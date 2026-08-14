@@ -27,7 +27,8 @@ The value is not the agent count. It is that role boundaries are enforceable and
 
 - **bash 4.0+** — the installer uses associative arrays. macOS ships 3.2: `brew install bash`
 - **jq** — JSON merging during installation (`apt install jq` / `brew install jq`)
-- **uv** — Python operations and Serena MCP (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **uv** — only for Serena MCP provisioning (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **python3** — two bundled skill helpers (`/distill`, `/meta-learn`); stdlib only, nothing to install
 
 ### Runtime Support
 
@@ -225,7 +226,7 @@ Every artifact carries an immutable, never-recycled id, and citation runs one wa
 
 | Server | Purpose | Status |
 |---|---|---|
-| **Serena** | Memory persistence, symbolic code ops | Required |
+| **Serena** | Memory persistence, symbolic code ops | Recommended |
 | **Context7** | Library and framework documentation | Recommended |
 | **DeepWiki** | GitHub repository documentation | Recommended |
 | **Parallel Search** | Fast parallel web lookup | Recommended |

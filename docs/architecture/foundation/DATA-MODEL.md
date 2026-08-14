@@ -150,7 +150,7 @@ Runtime events that trigger lifecycle scripts.
 |-----------|------|-------------|
 | event | enum | SessionStart, SubagentStart, SubagentStop, Stop, SessionEnd |
 | blocking | boolean | Whether Claude waits for script completion |
-| stop_hook_active | boolean | SubagentStop phase (false=validation, true=reflexion) |
+| stop_hook_active | boolean | SubagentStop phase (false=validation, true=learning) |
 | script | path | Shell script that handles the event |
 | output | string | Script stdout injected as system reminder |
 

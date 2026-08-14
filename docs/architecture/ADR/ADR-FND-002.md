@@ -1,9 +1,37 @@
 # ADR-FND-002: Four-Tier Memory System
 
-**Status**: Accepted
-**Version**: 1.0
-**Date**: 2026-01-23
+**Status**: Accepted — **design only; not implemented**
+**Version**: 1.1
+**Date**: 2026-01-23 · amended 2026-08-14
 **Context**: AgentOrchestrator v0 memory architecture
+
+---
+
+## Amendment — 2026-08-14
+
+**Nothing in this decision is implemented.** No skill in `package/` issues `write_memory` or
+`read_memory`; the only Serena touchpoints in the whole package are `setup-project.sh` creating an
+empty `.serena/memories/` and `deploy/SKILL.md` naming a deployment record. `.serena/memories/` in
+this repository is empty.
+
+The tiers, namespaces, and promotion paths below describe a target, not behavior. `WO-128`, `WO-129`,
+and `WO-130` under `PLAN-003` own building it; this amendment does not add delivery work, because the
+defect was the over-claim, not the absence.
+
+Two consequences recorded here rather than left implicit:
+
+- **The `Reflexion` tier is named for a skill that no longer exists.** `$reflexion`, `$reflect`, and
+  `$optimize` were absorbed into `$meta-learn`, and `REQ-007` is `Decommissioned` in favor of
+  `REQ-008`. The tier name is retained until the model is actually built, at which point it should be
+  named for what writes it. Renaming an unimplemented tier would only move the drift.
+- **Serena is downgraded from `Required` to `Recommended`** in `ADR-FND-003`. `FRD-MEM-001:13` already
+  calls the memory store "optional"; the two now agree. Nothing in the delivery chain fails without
+  it, and marking a dependency required when no code path uses it makes every consumer install a
+  server for a capability that never runs.
+
+What is durable today is files: `$meta-learn` writes `docs/analysis/` and
+`reports/meta-optimization/`, `/validate` writes `docs/validation/`, and project knowledge lives in
+`docs/knowledge/`.
 
 ---
 

@@ -47,9 +47,10 @@ uvx --from git+https://github.com/oraios/serena serena project create
 [`ADR-FND-002`](../docs/architecture/ADR/ADR-FND-002.md) owns the four-tier model and is the only
 place it is defined; the copy that used to sit here drifted from it and is gone.
 
-One tier in that ADR — **Reflexion**, "error learnings" — is named for a skill that no longer exists.
-Nothing writes it. Retiring or renaming the tier is an architecture decision, so it stays as the ADR
-records it until `$architect` revisits it.
+That ADR was amended on 2026-08-14 to record that **none of it is implemented** — no skill issues
+`write_memory` or `read_memory`, and `WO-128`/`WO-129`/`WO-130` own building it. One of its tiers,
+**Reflexion**, is named for a skill that no longer exists; the name is retained until the model is
+actually built, since renaming an unimplemented tier only moves the drift.
 
 ---
 
