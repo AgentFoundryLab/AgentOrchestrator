@@ -8,6 +8,11 @@ linkage encoded by directory nesting: `<sessionId>/subagents/agent-<id>.jsonl`)
 session-log layouts. Format is auto-detected per file; pass --runtime to force
 one, or --sessions-dir to point at an arbitrary root (mixed layouts under one
 root are fine — each file is sniffed independently).
+
+Root selection is deterministic with --self (the runtime's own session id) or
+--session <id>; both find the transcripts by scanning every projects dir for the
+id, so neither depends on the caller's cwd. Without either, the root is guessed
+by mtime and the output says so.
 """
 from __future__ import annotations
 
@@ -18,7 +23,6 @@ import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE)
 SECRET_RE = re.compile(r"(?i)(api[_-]?key|token|secret|password|authorization|cookie)(\s*[=:]\s*)([^\s,'\"]+)")
@@ -125,6 +129,22 @@ def parse_session_claude(path: Path) -> Session | None:
     if is_subagent:
         sess.parent = path.parent.parent.name
         sess.thread_source = "subagent"
+        # A sidecar `agent-<id>.meta.json` carries the spawn contract the transcript does not:
+        # agentType (the tier/role actually dispatched), the caller's description, spawnDepth,
+        # and stoppedByUser — the difference between an agent that finished and one that was
+        # killed, which no event in the JSONL states.
+        meta_path = path.parent / f"{path.stem}.meta.json"
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            meta = {}
+        if isinstance(meta, dict):
+            sess.role = meta.get("agentType") or ""
+            sess.nickname = meta.get("description") or ""
+            if meta.get("stoppedByUser"):
+                sess.notable.append("meta: stoppedByUser=true — this agent was killed, not completed")
+            if meta.get("spawnDepth") is not None:
+                sess.thread_source = f"subagent (depth {meta['spawnDepth']})"
     first_ts = ""
     for line_no, event in iter_jsonl(path):
         etype = event.get("type", "unknown")
@@ -164,15 +184,66 @@ def parse_session(path: Path, runtime_hint: str = "auto") -> Session | None:
     return None
 
 
+def codex_sessions_root() -> Path:
+    return Path(os.environ.get("CODEX_HOME") or (Path.home() / ".codex")) / "sessions"
+
+
+def claude_projects_root() -> Path:
+    return Path(os.environ.get("CLAUDE_CONFIG_DIR") or (Path.home() / ".claude")) / "projects"
+
+
 def default_roots(runtime: str, project_cwd: str) -> list[Path]:
-    home = Path.home()
     encoded_cwd = project_cwd.replace(os.sep, "-")
     roots = []
     if runtime in ("auto", "codex"):
-        roots.append(home / ".codex" / "sessions")
+        roots.append(codex_sessions_root())
     if runtime in ("auto", "claude"):
-        roots.append(home / ".claude" / "projects" / encoded_cwd)
+        roots.append(claude_projects_root() / encoded_cwd)
     return [r for r in roots if r.exists()]
+
+
+def self_session_id() -> str | None:
+    """The session id of the process running this script, from the runtime's own environment.
+
+    Claude Code exports `CLAUDE_CODE_SESSION_ID`, which names the ROOT transcript
+    (`<projects>/<encoded-cwd>/<id>.jsonl`). Inside a spawned sub-agent it is the PARENT
+    session id, because a sub-agent transcript's `sessionId` is inherited from its parent
+    rather than newly minted. Either way it is the correct root for graph analysis: from the
+    main session it selects self plus every child, and from a sub-agent it selects the parent
+    plus every sibling — deterministically, with no mtime guessing.
+
+    Codex exports no verified equivalent; `--self` degrades to the heuristic there.
+    """
+    return os.environ.get("CLAUDE_CODE_SESSION_ID", "").strip() or None
+
+
+def roots_for_id(session_id: str, runtime: str) -> list[Path]:
+    """Find the roots that actually hold `session_id`, ignoring the current cwd.
+
+    A sub-agent logs to its PARENT's encoded-cwd directory, not its own: a sub-agent running
+    in `<repo>/.worktrees/<id>` still writes under `<projects>/<encoded-repo-cwd>/`. Deriving
+    the projects dir from `os.getcwd()` therefore finds nothing at all in a worktree lane —
+    the exact case delegated Factory work runs in. Scanning every projects dir for the id
+    removes the dependency on where the caller happens to stand.
+    """
+    found: list[Path] = []
+    if runtime in ("auto", "claude"):
+        projects = claude_projects_root()
+        if projects.is_dir():
+            for d in sorted(projects.iterdir()):
+                if d.is_dir() and ((d / f"{session_id}.jsonl").exists() or (d / session_id).is_dir()):
+                    found.append(d)
+    # Stop once the id resolves on one side. Under "auto" the Codex root is a single flat
+    # directory of every session ever recorded — gigabytes on a working machine — and
+    # load_sessions() parses each file in full, so adding it to a resolved Claude lookup
+    # costs minutes and returns nothing the graph can use.
+    if found:
+        return found
+    if runtime in ("auto", "codex"):
+        codex = codex_sessions_root()
+        if codex.exists():
+            found.append(codex)
+    return found
 
 
 def load_sessions(roots: list[Path], runtime_hint: str) -> dict[str, Session]:
@@ -260,6 +331,10 @@ def main() -> None:
     parser.add_argument("--project-cwd", default=os.getcwd(),
                          help="cwd used to compute the default Claude Code projects dir (ignored if --sessions-dir given).")
     parser.add_argument("--session", help="Root session id/prefix or JSONL path. Defaults to latest main session.")
+    parser.add_argument("--self", dest="use_self", action="store_true",
+                         help="Resolve the root from this process's own runtime environment "
+                              "(CLAUDE_CODE_SESSION_ID) instead of guessing by mtime. From a sub-agent "
+                              "this selects the parent and every sibling. Prefer this over the default.")
     parser.add_argument("--latest-any", action="store_true", help="Default to newest session even if it is a sub-agent.")
     parser.add_argument(
         "--cwd-contains",
@@ -270,26 +345,49 @@ def main() -> None:
                          help="Skip listing Claude Code Workflow-tool run journals found under the scanned roots.")
     args = parser.parse_args()
 
-    roots = [Path(p).expanduser() for p in args.sessions_dir] if args.sessions_dir else default_roots(args.runtime, args.project_cwd)
+    target = args.session
+    provenance = "explicit `--session`" if target else ""
+    warnings: list[str] = []
+    if not target and args.use_self:
+        target = self_session_id()
+        if target:
+            provenance = "deterministic — `CLAUDE_CODE_SESSION_ID`"
+        else:
+            warnings.append("`--self` was requested but this runtime exports no session id; "
+                            "falling back to the mtime heuristic. Pass `--session` to stay deterministic.")
+
+    if args.sessions_dir:
+        roots = [Path(p).expanduser() for p in args.sessions_dir]
+    elif target:
+        roots = roots_for_id(target, args.runtime) or default_roots(args.runtime, args.project_cwd)
+    else:
+        roots = default_roots(args.runtime, args.project_cwd)
     if not roots:
         raise SystemExit("No session roots found/exist; pass --sessions-dir explicitly.")
 
     sessions = load_sessions(roots, args.runtime)
     root_id = choose_root(
         sessions,
-        args.session,
+        target,
         latest_main=not args.latest_any,
         cwd_contains=args.cwd_contains,
         runtime_hint=args.runtime,
     )
     graph = descendants(root_id, sessions)
 
-    print(f"# Session graph\n")
-    if not args.session:
+    print("# Session graph\n")
+    for warning in warnings:
+        print(f"Selection warning: {warning}")
+    if provenance:
+        print(f"Root selection: {provenance}.")
+        if sessions.get(root_id) and sessions[root_id].parent:
+            print("Note: the resolved root is itself a sub-agent; its siblings are outside this graph.")
+    else:
         selector = "latest main session" if not args.latest_any else "latest session including sub-agents"
         if args.cwd_contains:
             selector += f" with cwd containing `{args.cwd_contains}`"
-        print(f"Selection warning: root was selected heuristically as {selector}; pass --session for deterministic analysis.")
+        print(f"Selection warning: root was selected heuristically as {selector}; "
+              f"pass `--self` or `--session` for deterministic analysis.")
     print(f"Root: {root_id}")
     roots_str = ", ".join(f"`{r}`" for r in roots)
     print(f"Sessions inspected: {len(graph)} of {len(sessions)} loaded from {roots_str}\n")

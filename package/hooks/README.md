@@ -23,7 +23,7 @@ Orchestrator supports two hook types:
 | `Setup` | `--init` or `--maintenance` | No | One-time project initialization |
 | `SessionStart` | Session begins | No | Inject context, log session start |
 | `SubagentStart` | Subagent spawned | No | Inject context, log agent start |
-| `SubagentStop` | Agent completes | Yes | Validation reminder, then `$meta-learn` prompt |
+| `SubagentStop` | Agent completes | Yes | Validation reminder, then a prompt to report the learning signal |
 | `Stop` | Main session stops | Yes | `$meta-learn` prompt for session learning |
 | `SessionEnd` | Session terminates | No | Cleanup and logging |
 
@@ -267,7 +267,7 @@ The SubagentStop event fires twice per agent completion, controlled by the `stop
 | Phase | `stop_hook_active` | Script | Action |
 |-------|-------------------|--------|--------|
 | 1 (Validation) | `false` | `remind-validate.sh` | Self-validation checklist |
-| 2 (Learning) | `true` | `remind-agent-learn.sh` | `$meta-learn` prompt if errors |
+| 2 (Learning) | `true` | `remind-agent-learn.sh` | Report the learning signal if errors |
 
 **Flow**:
 1. Agent completes task and attempts to stop
@@ -275,8 +275,9 @@ The SubagentStop event fires twice per agent completion, controlled by the `stop
 3. `remind-validate.sh` outputs validation checklist, writes to `agent-stop.jsonl`
 4. Agent responds to validation (may continue or complete)
 5. SubagentStop fires again with `stop_hook_active=true`
-6. `remind-agent-learn.sh` outputs the `$meta-learn` prompt, appends to `agent-stop.jsonl`
-7. Agent decides whether to invoke `$meta-learn`
+6. `remind-agent-learn.sh` asks for the learning signal, appends to `agent-stop.jsonl`
+7. Agent reports failure mode, cause, and instruction finding in its final message — it does not
+   invoke `$meta-learn`, which runs inline in the parent session
 
 Both phases are logged to `agent-stop.jsonl` as separate JSONL entries.
 

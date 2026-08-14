@@ -9,6 +9,7 @@ description: >-
   re-validate failure modes against updated rules, and git-version allowed
   instruction surfaces only.
 argument-hint: optional focus area, session id, or failure description
+context: inline
 user-invocable: true
 allowed-tools:
   - Read
@@ -25,6 +26,24 @@ allowed-tools:
 Post-session learning and rule improvement. An analysis-and-instruction-optimization workflow, not product implementation.
 
 This skill owns the full loop that observation, error capture, and proposal used to split between: it reads what actually happened from session transcripts, classifies the failure modes, proposes instruction changes with rationale, applies them only on request, and then re-validates each original failure mode against the updated rules.
+
+## Runs inline — never as a spawned sub-agent
+
+`context: inline`. Run this skill in the session that is under analysis, and never delegate it into a
+child agent. Three reasons, each independently sufficient:
+
+- **It edits instruction surfaces.** Rules files, agent profiles, and skills. A delivery lane is
+  forbidden from touching those (`RULES.md`, *Source of Truth and Priority*) — this skill is one of
+  the two sanctioned exceptions, and that exception belongs to the session holding the user's
+  approval, not to a child spawned by a delivery lane.
+- **A child cannot see the graph it is meant to analyze.** Its own transcript is a sibling of the
+  agents under review, and it adds a node to the very graph it is reporting on.
+- **Approval is interactive.** The patch plan needs `AskUserQuestion` before anything is applied. A
+  sub-agent that asks gets its conversation forked, not answered.
+
+When a sub-agent hits something learning-worthy, it **reports the signal in its final message** —
+failure mode, where it showed, which instruction allowed it. The parent session runs `$meta-learn`
+afterwards, with the full graph and the user present.
 
 ## Portability
 
@@ -56,7 +75,8 @@ Never commit or copy raw logs, sessions, cache, memories, shell snapshots, or pl
 
 2. **Map the session graph**
    - Use `scripts/session_graph.py` (auto-detects the Claude Code vs Codex layout per file; pass `--runtime` to force one, `--sessions-dir` to point at an arbitrary root, `--project-cwd` to steer the default Claude Code projects-dir lookup) or equivalent JSONL inspection before drawing session-level conclusions, unless the user explicitly asks for instruction-only review.
-   - Pass `--session` or `--cwd-contains` when possible; unfiltered latest-session defaults are heuristic and must be reported as such.
+   - **Start with `--self`.** It reads the runtime's own `CLAUDE_CODE_SESSION_ID` and resolves the root with no guessing. Analyzing a different session takes `--session <id>`; both print their provenance. Fall back to the mtime default only when neither is available, and report the run as heuristic when you do — the default picks the newest *root* session in scope, which is whatever was touched most recently, not necessarily the one that failed.
+   - Both `--self` and `--session` locate the transcripts by scanning every projects dir for the id, so they work from any cwd. This matters in a worktree: a sub-agent running in `<repo>/.worktrees/<id>` still logs under the **parent's** encoded-cwd directory, so a cwd-derived lookup finds nothing there. Workflow-tool run journals are the mirror case — they land under the worktree's own encoded dir, keyed by the parent session id.
    - Identify the active/root session and all sub-agent sessions by parent linkage (directory nesting for Claude Code, thread id for Codex).
    - Summarize timeline, user corrections, tool failures, delegation attempts, commits, validation runs, mode changes, and reported blockers.
    - Redact secrets; do not paste long raw log excerpts.
