@@ -1,279 +1,128 @@
 # Meta-Learning Workflow
 
-**Version**: 0.1.0
-**Purpose**: Session learning and system optimization
+**Version**: 0.2.0
+**Purpose**: Session learning and instruction-rule optimization
 
 ---
 
-## Workflow Overview
+## Owner
 
-The meta-learning workflow captures session insights and proposes system improvements.
+`$meta-learn` owns this loop end to end — session-graph mapping, failure-mode classification, rule
+analysis, the patch plan, the approval gate, application, and re-validation. Read
+`package/skills/meta-learn/SKILL.md` for the procedure; this document holds only what is specific to
+AgentOrchestrator's two-layer source/deployment split and is not the skill's to know.
+
+The earlier three-skill split (`/reflect` observe → `/optimize` propose → apply) collapsed into that
+one skill. Its evidence source changed from hand-written memory records to real session transcripts,
+and it gained a re-validation step the trio never had.
 
 ```
-Session Work → /reflect → /optimize → User Approval → Rollout
+Session work → $meta-learn → patch plan → user approval → apply to source → reinstall → re-validate
 ```
 
 ---
 
-## Workflow Triggers
+## Triggers
 
-### Explicit Trigger
-User invokes `/reflect` or `/optimize` directly.
+| Trigger | Mechanism |
+|---------|-----------|
+| Explicit | User invokes `$meta-learn` |
+| Suggested at session end | Stop hook `remind-session-learn.sh` |
+| Suggested after a sub-agent failure | SubagentStop hook `remind-agent-learn.sh` |
 
-### Suggested Trigger
-Stop hook (`remind-reflect.sh`) suggests reflection at session end.
-
-### Automatic Trigger (Future)
-Pattern detection triggers optimization proposals.
-
----
-
-## Phases
-
-### Phase 1: Session Reflection (`/reflect`)
-
-Capture session-level learnings.
-
-```
-┌─────────────────────────────────────────┐
-│              /reflect                    │
-├─────────────────────────────────────────┤
-│ Input:  Current session context          │
-│         ${CLAUDE_SESSION_ID}             │
-│                                          │
-│ Process:                                 │
-│   1. Review session activities           │
-│   2. Identify what worked well           │
-│   3. Note what could improve             │
-│   4. Extract patterns                    │
-│   5. Document blockers                   │
-│                                          │
-│ Output: Reflection record (Serena)       │
-│         - Lessons learned                │
-│         - Patterns identified            │
-│         - Improvement suggestions        │
-└─────────────────────────────────────────┘
-```
-
-**Reflection Record Schema**:
-```yaml
----
-date: YYYY-MM-DD
-session_id: ${CLAUDE_SESSION_ID}
-project: ${PROJECT_NAME}
-completion: full | partial | blocked
----
-
-## Summary
-[What was accomplished]
-
-## What Worked
-- [Effective approach]
-
-## What Could Improve
-- [Inefficiency or gap]
-
-## Patterns
-- [Recurring pattern worth noting]
-
-## Suggestions
-- [Specific improvement idea]
-```
-
-### Phase 2: System Optimization (`/optimize`)
-
-Propose improvements to Orchestrator components.
-
-```
-┌─────────────────────────────────────────┐
-│              /optimize                   │
-├─────────────────────────────────────────┤
-│ Input:  Reflection records               │
-│         Reflexion records                │
-│         Current agent/skill definitions  │
-│                                          │
-│ Process:                                 │
-│   1. Analyze reflection patterns         │
-│   2. Review reflexion prevention items   │
-│   3. Identify improvement opportunities  │
-│   4. Draft proposed changes              │
-│   5. Create optimization plan            │
-│                                          │
-│ Output: Meta-Opt Plan file               │
-│         - Proposed changes               │
-│         - Rationale                      │
-│         - Risk assessment                │
-└─────────────────────────────────────────┘
-```
-
-**Optimization Plan Schema**:
-```yaml
----
-date: YYYY-MM-DD
-type: meta-optimization
-status: proposed | approved | applied | rejected
----
-
-## Optimization Summary
-[What improvements are proposed]
-
-## Analysis
-
-### Reflection Patterns
-- [Pattern from multiple sessions]
-- [Recurring issue]
-
-### Reflexion Prevention Items
-- [Error prevention that could be systematized]
-
-## Proposed Changes
-
-### Change 1: [Component]
-**Current**: [What exists now]
-**Proposed**: [What should change]
-**Rationale**: [Why this improves things]
-**Risk**: Low | Medium | High
-
-### Change 2: [Component]
-...
-
-## Implementation
-1. [Step to apply changes]
-2. [Verification step]
-
-## Rollback
-[How to undo if needed]
-```
-
-### Phase 3: User Approval
-
-**Critical**: No changes applied without explicit user approval.
-
-```
-┌─────────────────────────────────────────┐
-│           User Approval Gate             │
-├─────────────────────────────────────────┤
-│                                          │
-│ Present optimization plan to user:       │
-│                                          │
-│ "Based on session analysis, I propose:   │
-│  1. [Change 1 summary]                   │
-│  2. [Change 2 summary]                   │
-│                                          │
-│ Apply these optimizations?"              │
-│                                          │
-│ Options:                                 │
-│   - Yes, apply all                       │
-│   - Apply selected (1, 2, ...)           │
-│   - No, reject                           │
-│   - Modify first                         │
-│                                          │
-└─────────────────────────────────────────┘
-```
-
-### Phase 4: Rollout
-
-Apply approved changes.
-
-```
-┌─────────────────────────────────────────┐
-│              Rollout                     │
-├─────────────────────────────────────────┤
-│                                          │
-│ For each approved change:                │
-│   1. Backup current version              │
-│   2. Apply modification                  │
-│   3. Verify syntax/structure             │
-│   4. Log change with timestamp           │
-│                                          │
-│ Output:                                  │
-│   - Modified files                       │
-│   - Backup references                    │
-│   - Change log entry                     │
-│                                          │
-└─────────────────────────────────────────┘
-```
+Hooks only prompt; they never invoke. See ADR-001 (reminder pattern).
 
 ---
 
 ## Optimization Targets
 
-What can be optimized:
+Every target has a **source** in this repo and a **deployed copy** under the runtime roots. Fix the
+source; the deployed copy is overwritten on the next install.
 
-| Target | Location | Example Change |
-|--------|----------|----------------|
-| Agent instructions | `package/agents/*.md` or `.claude/agents/jarvis/*.md` | Add clarifying guidance |
-| Skill workflows | `package/skills/*/SKILL.md` or `.claude/skills/jarvis/*/SKILL.md` | Improve process steps |
-| Hook prompts | `package/hooks/scripts/*.sh` or `.claude/hooks/scripts/*.sh` | Refine reminder text |
-| Rules | `package/policy/RULES.md` or `<runtime-root>/policy/RULES.md` | Add new rule from pattern |
-| Workflow templates | `package/workflows/*.md` or `<runtime-root>/workflows/*.md` | Adjust decision criteria |
+| Target | Source (edit this) | Deployed copy (do not hand-edit) |
+|--------|--------------------|----------------------------------|
+| Global policy | `package/policy/{PRINCIPLES,RULES}.md` | `<runtime-root>/policy/*.md` |
+| Agent instructions | `package/agents/*.md` | `<runtime-root>/agents/*.md` |
+| Skill workflows | `package/skills/*/SKILL.md` | `<runtime-root>/skills/*/SKILL.md` |
+| Hook prompts | `package/hooks/scripts/*.sh` | `~/.claude/hooks/scripts/*.sh` |
+| Workflow docs | `package/workflows/*.md` | `<runtime-root>/workflows/*.md` |
+| Artifact templates | `package/templates/*.md` | `<runtime-root>/templates/*.md` |
+| Project policy | `docs/policy/{STANDARDS,GUIDELINES}.md` | — (project-local, generated by `/onboard`) |
+
+Not a target: product code, docs, logs, sessions, cache, generated artifacts. `$meta-learn` edits
+instruction surfaces only.
+
+### Placement rule
+
+Name the target by who can violate the rule:
+
+- Any agent can violate it → `package/policy/RULES.md`
+- Only one stage can act on it → that stage's `SKILL.md`
+- It is a role or tool boundary → that agent's profile
+- It is repo-specific → the active repo's `AGENTS.md` or `docs/policy/`
+
+A one-stage rule in the global policy pays rent in every session and fires in none.
 
 ---
 
 ## Safety Measures
 
-### Backup Before Change
-Always create backup before modifying:
+### Approval gate
+
+No change is applied without explicit user approval. Observation and proposal are safe; application is
+not. `$meta-learn` presents the patch plan first.
+
+### Backup before change
+
+For a global runtime root, copy the affected files to an excluded backup under that root
+(`~/.claude/backups/<UTC_TIMESTAMP>/`). For repo sources, git history is the backup — commit before
+and after, and stage explicit paths only.
+
+`install.sh` also writes its own `.backup/<timestamp>/` on each install and supports `--restore`.
+
+### Verify source and deployment agree
+
+After applying and reinstalling, diff the deployment against the source:
+
 ```bash
-cp file.md file.md.backup.$(date +%Y%m%d%H%M%S)
+diff -r package/skills ~/.claude/skills
+diff -r package/agents ~/.claude/agents
 ```
 
-### Change Logging
-Record all meta-optimizations:
-```
-~/.claude/logs/meta-opt.log
-YYYY-MM-DD HH:MM:SS | [component] | [change summary] | [status]
-```
+The Claude root is the native format and gets no frontmatter transform, so any difference there is a
+real edit. The other runtime roots legitimately differ — the installer strips Claude-only frontmatter
+keys and maps tool names — so compare bodies below the frontmatter there.
 
-### Rollback Capability
-Every optimization must include rollback instructions.
+What the built-in commands actually cover:
 
-### Approval Gate
-No automatic application - user must explicitly approve.
+| Command | Checks |
+|---------|--------|
+| `install.sh --check` | package layout is intact and registry declarations are populated — **not** file contents |
+| `tests/install/smoke.sh` | post-install conformance: artifacts land at the expected paths per runtime |
+
+There is no content manifest. The diff above is the deploy-drift detector — see `$meta-learn` step 2.
+
+### Rollback
+
+Every proposed change carries rollback instructions: the backup path for a global surface, or the
+reverting commit for a repo source.
 
 ---
 
-## Example Flow
+## Outputs
 
-```
-Session: Implementing OAuth feature
-├── Encountered: Token refresh edge case
-├── Resolved: Added explicit 401 handling
-└── /reflexion captured the learning
+| Artifact | Path | Holds |
+|----------|------|-------|
+| Repo memo | `docs/analysis/<date>-<slug>-repo-failure-modes.md` | failure modes tracked to real `WO`/`ISS`/`TD` ids |
+| Instruction memo | `docs/analysis/<date>-<slug>-instruction-fixes.md` | REPHRASE/ADD/DROP per file target, with the failure mode each prevents |
 
-Session End:
-├── remind-reflect.sh suggests /reflect
-└── User invokes /reflect
-
-/reflect:
-├── Reviews session
-├── Notes OAuth pattern
-├── Suggests: "Add auth error handling to Developer agent instructions"
-└── Stores reflection record
-
-Later: User invokes /optimize
-
-/optimize:
-├── Reads reflection records
-├── Reads reflexion records
-├── Finds pattern: Auth errors recurring
-├── Proposes: Add auth checklist to Developer agent
-└── Creates optimization plan
-
-User Review:
-├── Reviews proposed change
-├── Approves modification
-└── Change applied to developer.md
-
-Result: Future sessions benefit from learned pattern
-```
+Write only the memo whose bucket has a finding. The in-chat report shows the session graph and failure
+modes in every run; the memos are the durable record.
 
 ---
 
-## Metrics (Future)
+## Re-validation
 
-Track optimization effectiveness:
-- Sessions between similar errors
-- Time to resolution trends
-- User approval rate
-- Rollback frequency
+An applied fix is not a resolved failure mode. For each mode originally identified, state whether the
+updated rules now **prevent**, **reduce**, **detect**, or **still miss** it. Report a rule that remains
+ambiguous as unresolved rather than claiming success.

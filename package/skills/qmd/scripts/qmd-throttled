@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Hard host-local CPU ceiling for every QMD entry point, including MCP servers.
+# All QMD processes share the same CPU set, so their aggregate cannot exceed the
+# configured number of logical CPUs even when several clients run concurrently.
+set -euo pipefail
+
+# Enforce the no-auto-embedding policy even for a reindex hook process that was
+# already running when newer hook files were installed.
+_is_reindex_ancestor() {
+  local _pid="$PPID" _arg _parent _depth=0
+  while [ "$_pid" -gt 1 ] 2>/dev/null && [ "$_depth" -lt 12 ]; do
+    if [ -r "/proc/$_pid/cmdline" ]; then
+      while IFS= read -r -d '' _arg; do
+        [ "${_arg##*/}" = "reindex-async.sh" ] && return 0
+      done <"/proc/$_pid/cmdline"
+    fi
+    _parent="$(ps -o ppid= -p "$_pid" 2>/dev/null | tr -d ' ' || true)"
+    case "$_parent" in ''|*[!0-9]*) break ;; esac
+    _pid="$_parent"
+    _depth=$((_depth + 1))
+  done
+  return 1
+}
+
+case "${1:-}" in
+  update|embed)
+    if _is_reindex_ancestor; then
+      echo "qmd-throttled: skipped hook-triggered qmd $1; QMD refresh is explicit" >&2
+      exit 0
+    fi
+    ;;
+esac
+
+if [ -f .git ] && [ "${QMD_ALLOW_WORKTREE:-0}" != "1" ]; then
+  echo "qmd-throttled: QMD is disabled in linked worktrees; use the primary checkout" >&2
+  exit 2
+fi
+
+_real_qmd="${QMD_REAL_BIN:-/usr/local/share/nvm/current/bin/qmd}"
+if [ ! -x "$_real_qmd" ]; then
+  echo "qmd-throttled: real qmd executable not found: $_real_qmd" >&2
+  exit 127
+fi
+
+_ncpu="$(nproc 2>/dev/null || echo 4)"
+_cap="${QMD_CPUS:-3}"
+case "$_cap" in ''|*[!0-9]*) _cap=3 ;; esac
+[ "$_cap" -lt 1 ] && _cap=1
+[ "$_cap" -gt "$_ncpu" ] && _cap="$_ncpu"
+
+_prefix=()
+command -v nice >/dev/null 2>&1 && _prefix+=(nice -n 19)
+command -v taskset >/dev/null 2>&1 && _prefix+=(taskset -c "0-$((_cap - 1))")
+
+exec "${_prefix[@]}" "$_real_qmd" "$@"

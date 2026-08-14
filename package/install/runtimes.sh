@@ -12,7 +12,7 @@
 # function. Safe to source multiple times (re-declaration is idempotent).
 #
 # ============================================================================
-# FRONTMATTER TRANSFORM SPECIFICATION (T-066)
+# FRONTMATTER TRANSFORM SPECIFICATION (WO-066)
 # ============================================================================
 #
 # Defines how SKILL.md content maps to each runtime's commands format when

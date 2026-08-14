@@ -115,7 +115,7 @@ What gets installed per runtime (default skills profile):
     - settings.json        MCP + runtime settings (hook settings only when --hooks is passed)
     - policy/              PRINCIPLES.md, RULES.md
     - workflows/           SWE.md, meta-learning.md
-    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
+    - templates/           One per record type: requirements, blueprints, ADR, plan, work order, feedback
 
   codex  (~/.agents/, .agents/):
     - agents/*.md          Agent definitions [default profile]
@@ -123,7 +123,7 @@ What gets installed per runtime (default skills profile):
     - prompts/             Commands in .md (strip frontmatter) [--profile commands only]
     - policy/              PRINCIPLES.md, RULES.md
     - workflows/           SWE.md, meta-learning.md
-    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
+    - templates/           One per record type: requirements, blueprints, ADR, plan, work order, feedback
     - [no hooks — not supported by Codex CLI]
 
   gemini  (~/.gemini/, .gemini/):
@@ -131,7 +131,7 @@ What gets installed per runtime (default skills profile):
     - commands/*.toml      Commands in TOML format (from SKILL.md transform) [--profile commands]
     - policy/              PRINCIPLES.md, RULES.md
     - workflows/           SWE.md, meta-learning.md
-    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
+    - templates/           One per record type: requirements, blueprints, ADR, plan, work order, feedback
     - [no hooks — excluded by installer policy]
 
   opencode  (~/.config/opencode/, .opencode/):
@@ -140,7 +140,7 @@ What gets installed per runtime (default skills profile):
     - commands/*.md        Commands in .md format [--profile commands only]
     - policy/              PRINCIPLES.md, RULES.md
     - workflows/           SWE.md, meta-learning.md
-    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
+    - templates/           One per record type: requirements, blueprints, ADR, plan, work order, feedback
     - [no hooks — excluded by installer policy]
 
   qwen  (~/.qwen/, .qwen/):
@@ -149,7 +149,7 @@ What gets installed per runtime (default skills profile):
     - commands/*.md        Commands in Markdown format [--profile commands only]
     - policy/              PRINCIPLES.md, RULES.md
     - workflows/           SWE.md, meta-learning.md
-    - templates/           PRD, architecture, ADR, roadmap, backlog, issues
+    - templates/           One per record type: requirements, blueprints, ADR, plan, work order, feedback
     - [no hooks — excluded by installer policy]
 
 --project installs to <path>/ (runtime-agnostic scaffolding):

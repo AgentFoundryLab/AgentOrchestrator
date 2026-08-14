@@ -39,6 +39,6 @@
 
 ## References
 
-- [VISION.md](../objectives/VISION.md)
-- [PRD.md](PRD.md)
-- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [VISION.md](VISION.md)
+- [REQUIREMENTS.md](../requirements/REQUIREMENTS.md)
+- Blueprints: [`docs/architecture/foundation/`](../architecture/foundation/), [`docs/architecture/feature/`](../architecture/feature/)

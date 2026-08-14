@@ -203,7 +203,7 @@ test_conformance_claude_default() {
     assert_any_file_in "${tmp}/.claude/skills" || ok=1
     assert_dir_absent "${tmp}/.claude/hooks" || ok=1
     assert_dir_exists "${tmp}/.claude/agents" || ok=1
-    assert_file_exists "${tmp}/.claude/templates/task-detail.md" || ok=1
+    assert_file_exists "${tmp}/.claude/templates/implementation-plan.md" || ok=1
     rm -rf "$tmp"
     return $ok
 }
@@ -278,7 +278,7 @@ test_conformance_codex_global_assets_and_scoped_refs() {
     local ok=0
     assert_file_exists "${tmp}/.agents/policy/PRINCIPLES.md" || ok=1
     assert_file_exists "${tmp}/.agents/workflows/SWE.md" || ok=1
-    assert_file_exists "${tmp}/.agents/templates/prd.md" || ok=1
+    assert_file_exists "${tmp}/.agents/templates/frd.md" || ok=1
     assert_file_contains "${tmp}/.codex/AGENTS.md" "Read @~/.agents/policy/PRINCIPLES.md" || ok=1
     assert_file_not_contains "${tmp}/.codex/AGENTS.md" "Read @~/.claude/policy/PRINCIPLES.md" || ok=1
     rm -rf "$tmp"
@@ -340,7 +340,7 @@ test_conformance_gemini_global_assets_and_scoped_refs() {
     local ok=0
     assert_file_exists "${tmp}/.gemini/policy/PRINCIPLES.md" || ok=1
     assert_file_exists "${tmp}/.gemini/workflows/SWE.md" || ok=1
-    assert_file_exists "${tmp}/.gemini/templates/prd.md" || ok=1
+    assert_file_exists "${tmp}/.gemini/templates/frd.md" || ok=1
     assert_file_contains "${tmp}/.gemini/GEMINI.md" "Read @~/.gemini/policy/PRINCIPLES.md" || ok=1
     assert_file_not_contains "${tmp}/.gemini/GEMINI.md" "Read @~/.claude/policy/PRINCIPLES.md" || ok=1
     rm -rf "$tmp"

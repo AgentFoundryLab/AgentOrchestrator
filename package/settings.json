@@ -40,7 +40,7 @@
           },
           {
             "type": "command",
-            "command": "\"$HOME\"/.claude/hooks/scripts/remind-reflexion.sh"
+            "command": "\"$HOME\"/.claude/hooks/scripts/remind-agent-learn.sh"
           }
         ]
       }
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$HOME\"/.claude/hooks/scripts/remind-reflect.sh"
+            "command": "\"$HOME\"/.claude/hooks/scripts/remind-session-learn.sh"
           }
         ]
       }

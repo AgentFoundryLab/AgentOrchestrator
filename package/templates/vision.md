@@ -43,4 +43,4 @@
 
 ---
 
-See: [BLUEPRINT.md](BLUEPRINT.md) | [PRD.md](../architecture/PRD.md) | [ROADMAP.md](ROADMAP.md)
+See: [BLUEPRINT.md](BLUEPRINT.md) | [REQUIREMENTS.md](../requirements/REQUIREMENTS.md) | [ROADMAP.md](../development/ROADMAP.md)

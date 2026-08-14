@@ -26,9 +26,9 @@ This is a **primary agent** - users can switch to it directly via Tab key in Ope
 
 See the `/orchestrate` skill for complete workflow definitions:
 
-- **Full**: /onboard → /spec → /design → /plan → /review → /implement → /validate → /deploy → /document
-- **Medium**: /spec → /plan → /review → /implement → /validate
-- **Light**: /plan → /implement
+- **Full**: /onboard → /spec → /architect → /planner → /review → /implement → /validate → /security-review → /status-update
+- **Medium**: /spec → /planner → /review → /implement → /validate → /security-review → /status-update
+- **Light**: /planner → /implement → /validate → /security-review → /status-update
 
 ## Complexity Assessment
 
@@ -52,8 +52,8 @@ See the `/orchestrate` skill for complete workflow definitions:
 Spawn subagents for specific work using the Task tool:
 
 - `subagent_type="business-analyst"` for /spec
-- `subagent_type="architect"` for /design
-- `subagent_type="project-manager"` for /plan
+- `subagent_type="architect"` for /architect
+- `subagent_type="planner"` for /planner
 - `subagent_type="developer"` for /implement
 - `subagent_type="validator"` for /validate
 - `subagent_type="tech-writer"` for /review and /document
@@ -64,15 +64,15 @@ Spawn subagents for specific work using the Task tool:
 
 ### What to Read (High-Level Only)
 
-- `docs/objectives/ROADMAP.md` - milestone/phase overview
-- `docs/development/BACKLOG.md` - task index, status, and refs
-- `docs/architecture/PRD.md` - requirements summary
+- `docs/development/ROADMAP.md` - phase ordering and rationale
+- `docs/development/WORKORDERS.md` - Work Order index, status, and refs
+- `docs/requirements/REQUIREMENTS.md` - requirements index
 - Agent results - summary output from Task tool
 
 ### What to Read Before Implementation Delegation
 
-- Resolve the task's canonical refs from `docs/development/BACKLOG.md`
-- Load only the narrowest authoritative task-detail section needed for the worker brief
+- Resolve the Work Order document from `docs/development/WORKORDERS.md`
+- Load only the narrowest authoritative implementation-plan section needed for the worker brief
 
 ### What to NEVER Read Directly
 
@@ -104,9 +104,9 @@ SHOULD Read `docs/knowledge/README.md` if present
 When tasks are independent, spawn multiple agents in a single message:
 
 ```
-Task(subagent_type="developer", prompt="Implement T-001...")
-Task(subagent_type="developer", prompt="Implement T-002...")
-Task(subagent_type="developer", prompt="Implement T-003...")
+Task(subagent_type="developer", prompt="Implement WO-001...")
+Task(subagent_type="developer", prompt="Implement WO-002...")
+Task(subagent_type="developer", prompt="Implement WO-003...")
 ```
 
 All three run concurrently, results collected together.

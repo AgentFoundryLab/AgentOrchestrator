@@ -118,6 +118,11 @@ temp/
 .claude/workflows/
 .backup/
 
+# Orchestration lanes — per-worktree runtime isolation and delegation worktrees
+# ($orchestrate writes .orchestrator.env; note `.env*` above does NOT match it)
+.orchestrator.env
+.worktrees/
+
 # Serena MCP - commit project.yml, ignore runtime data
 .serena/memories/
 .serena/cache/

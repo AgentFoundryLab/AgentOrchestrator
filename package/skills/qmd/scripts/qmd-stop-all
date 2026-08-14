@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Stop running QMD CLI/MCP processes on this host.
+# Does not run automatically. Invoke explicitly as: qmd-stop-all [--dry-run]
+set -euo pipefail
+
+dry_run=0
+grace_seconds="${QMD_STOP_GRACE_SECONDS:-5}"
+
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) dry_run=1 ;;
+    --help|-h)
+      cat <<'USAGE'
+Usage: qmd-stop-all [--dry-run]
+
+Finds every running process whose command line invokes the QMD binary and its
+descendants. Sends TERM to the process trees, waits up to
+QMD_STOP_GRACE_SECONDS (default: 5), then sends KILL to any that
+remain. --dry-run only lists matching PIDs.
+USAGE
+      exit 0
+      ;;
+    *) echo "qmd-stop-all: unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
+
+case "$grace_seconds" in ''|*[!0-9]*) grace_seconds=5 ;; esac
+
+qmd_roots=()
+declare -A target_pids=()
+while IFS= read -r pid; do
+  [ "$pid" -eq "$$" ] && continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  while IFS= read -r -d '' arg; do
+    if [ "${arg##*/}" = "qmd" ]; then
+      qmd_roots+=("$pid")
+      target_pids["$pid"]=1
+      break
+    fi
+  done < "/proc/$pid/cmdline"
+done < <(pgrep -f qmd 2>/dev/null || true)
+
+if [ "${#qmd_roots[@]}" -eq 0 ]; then
+  echo "qmd-stop-all: no running QMD processes"
+  exit 0
+fi
+
+declare -A parent_pids=()
+while read -r pid ppid; do
+  [ -n "$pid" ] && [ -n "$ppid" ] && parent_pids["$pid"]="$ppid"
+done < <(ps -eo pid=,ppid=)
+changed=1
+while [ "$changed" -eq 1 ]; do
+  changed=0
+  for pid in "${!parent_pids[@]}"; do
+    [ -n "${target_pids[$pid]:-}" ] && continue
+    ppid="${parent_pids[$pid]}"
+    if [ -n "${target_pids[$ppid]:-}" ]; then
+      target_pids["$pid"]=1
+      changed=1
+    fi
+  done
+done
+qmd_pids=("${!target_pids[@]}")
+printf 'qmd-stop-all: matched QMD roots: %s\n' "${qmd_roots[*]}"
+printf 'qmd-stop-all: stopping process tree PIDs: %s\n' "${qmd_pids[*]}"
+[ "$dry_run" -eq 1 ] && exit 0
+
+kill -TERM "${qmd_pids[@]}" 2>/dev/null || true
+[ "$grace_seconds" -gt 0 ] && sleep "$grace_seconds"
+
+remaining=()
+for pid in "${qmd_pids[@]}"; do
+  [ -d "/proc/$pid" ] && remaining+=("$pid")
+done
+if [ "${#remaining[@]}" -gt 0 ]; then
+  printf 'qmd-stop-all: force-stopping PIDs: %s\n' "${remaining[*]}"
+  kill -KILL "${remaining[@]}" 2>/dev/null || true
+fi

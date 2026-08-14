@@ -10,7 +10,7 @@ Documentation for Serena MCP usage in AgentOrchestrator.
 
 Serena MCP provides persistent memory and symbolic code operations for Orchestrator. It enables:
 - Cross-session knowledge persistence
-- Error learning capture (reflexion)
+- Error learning capture (via `$meta-learn`)
 - Validation record storage
 - Codebase semantic understanding
 
@@ -73,7 +73,7 @@ knowledge/testing-strategy
 ```
 
 ### `reflexion/`
-Error learnings from `/reflexion` skill:
+Error learnings captured by the `$meta-learn` skill:
 - Known issues
 - Root causes
 - Solutions
@@ -86,7 +86,7 @@ reflexion/2026-01-23-db-connection-timeout
 ```
 
 ### `reflect/`
-Session reflection records from `/reflect` skill:
+Session reflection records captured by the `$meta-learn` skill:
 - Session summaries
 - Lessons learned
 - Patterns identified
@@ -137,8 +137,8 @@ validation/T-001-2026-01-24
 ### Storing Reflexion
 
 ```
-/reflexion
--> Captures error learning
+$meta-learn
+-> Classifies the failure mode from the session transcript
 -> write_memory("reflexion/2026-01-24-issue-name", content)
 ```
 
@@ -154,10 +154,10 @@ validation/T-001-2026-01-24
 ### Session Reflection
 
 ```
-/reflect
--> Analyzes session
+$meta-learn
+-> Analyzes the session graph
 -> write_memory("reflect/session-id", summary)
--> Available for future /optimize
+-> Feeds the same skill's rule-optimization phase
 ```
 
 ---
@@ -247,6 +247,6 @@ Link to code and docs rather than copying content into memory.
 
 ## References
 
-- [ADR-002: Four-Tier Memory](../docs/architecture/adr/002-four-tier-memory.md)
-- [ADR-003: Minimal MCP Footprint](../docs/architecture/adr/003-minimal-mcp-footprint.md)
+- [ADR-FND-002: Four-Tier Memory](../docs/architecture/ADR/ADR-FND-002.md)
+- [ADR-FND-003: Minimal MCP Footprint](../docs/architecture/ADR/ADR-FND-003.md)
 - [Serena MCP Documentation](https://github.com/oraios/serena)

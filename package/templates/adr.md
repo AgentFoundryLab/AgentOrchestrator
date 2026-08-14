@@ -1,133 +1,20 @@
-# ADR-{{NUMBER}}: {{TITLE}}
+# ADR-<TIER>-NNN: Decision Title
 
-**Status**: Proposed | Accepted | Deprecated | Superseded
-**Date**: {{DATE}}
-**Author**: {{AUTHOR}}
-**Deciders**: {{DECIDERS}}
+<!-- TIER ∈ SYS|FND|FEAT — the blueprint family this decision governs
+     (SYS=system, FND=foundation/container/component, FEAT=feature). Each tier has its own
+     counter. Ids are immutable and never recycled; the orchestrator (or the primary session
+     when working solo) allocates them — read docs/architecture/ADR/README.md for the highest
+     existing id in this tier and take the next.
 
----
+     A superseded ADR keeps its id and takes Status: Superseded with a pointer to its
+     replacement. Never renumber, and never inline a decision record in a blueprint. -->
 
-## Context
+**Status:** Proposed | Accepted | Superseded
 
-{{CONTEXT_DESCRIPTION}}
+Blueprint: [FBP-NNN](../<foundation|feature|system>/FBP-NNN.md)
 
-### Problem Statement
+**Context:** Why this decision was needed — forces, constraints, requirements in play.
 
-{{PROBLEM}}
+**Decision:** What was chosen and how it works.
 
-### Decision Drivers
-
-- {{DRIVER_1}}
-- {{DRIVER_2}}
-- {{DRIVER_3}}
-
----
-
-## Decision
-
-{{DECISION_STATEMENT}}
-
----
-
-## Rationale
-
-{{WHY_THIS_DECISION}}
-
-### Why Not Alternatives
-
-{{WHY_NOT_ALTERNATIVES}}
-
----
-
-## Alternatives Considered
-
-### Option 1: {{OPTION_NAME}}
-
-{{OPTION_DESCRIPTION}}
-
-**Pros**:
-- {{PRO_1}}
-- {{PRO_2}}
-
-**Cons**:
-- {{CON_1}}
-- {{CON_2}}
-
-**Why Rejected**: {{REJECTION_REASON}}
-
-### Option 2: {{OPTION_NAME}}
-
-{{OPTION_DESCRIPTION}}
-
-**Pros**:
-- {{PRO_1}}
-
-**Cons**:
-- {{CON_1}}
-
-**Why Rejected**: {{REJECTION_REASON}}
-
----
-
-## Consequences
-
-### Positive
-
-- {{POSITIVE_CONSEQUENCE_1}}
-- {{POSITIVE_CONSEQUENCE_2}}
-
-### Negative
-
-- {{NEGATIVE_CONSEQUENCE_1}}
-- {{NEGATIVE_CONSEQUENCE_2}}
-
-### Neutral
-
-- {{NEUTRAL_CONSEQUENCE}}
-
----
-
-## Implementation
-
-### Affected Components
-
-- {{COMPONENT_1}}
-- {{COMPONENT_2}}
-
-### Migration Path
-
-{{MIGRATION_DESCRIPTION}}
-
-### Verification
-
-{{HOW_TO_VERIFY}}
-
----
-
-## Related
-
-### Related ADRs
-
-- [ADR-{{RELATED_NUMBER}}]({{RELATED_FILE}}): {{RELATIONSHIP}}
-
-### Related Requirements
-
-- {{REQUIREMENT_REFERENCE}}
-
-### Related Documentation
-
-- {{DOC_REFERENCE}}
-
----
-
-## Notes
-
-{{ADDITIONAL_NOTES}}
-
----
-
-## Revision History
-
-| Date | Status | Notes |
-|------|--------|-------|
-| {{DATE}} | Proposed | Initial proposal |
+**Consequences:** Trade-offs, benefits, implications, and any migration/back-compat impact.

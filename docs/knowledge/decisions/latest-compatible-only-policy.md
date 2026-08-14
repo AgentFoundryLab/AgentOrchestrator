@@ -42,5 +42,5 @@ The `--profile commands` exception should be removed once supported runtimes pro
 
 ## Related
 
-- `docs/architecture/adr/014-multi-agent-installer.md`
+- `docs/architecture/ADR/ADR-FND-014.md`
 - `docs/development/ISSUES.md` (`I-004`)

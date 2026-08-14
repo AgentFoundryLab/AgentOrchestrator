@@ -169,7 +169,7 @@
 ## Related Documents
 
 - [VISION.md](../objectives/VISION.md) - Why and for whom
-- [PRD.md](../architecture/PRD.md) - Detailed requirements and user stories
-- [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Technical specification
-- [ROADMAP.md](../objectives/ROADMAP.md) - Milestones, phases, epics
-- [ADRs](../architecture/adr/) - Architecture decision records
+- [REQUIREMENTS.md](../requirements/REQUIREMENTS.md) - REQ/AC and TR/TRC index
+- [Blueprints](../architecture/) - Foundation, container, component, and feature blueprints
+- [ROADMAP.md](../development/ROADMAP.md) - Phase ordering and rationale
+- [ADRs](../architecture/ADR/README.md) - Architecture decision records

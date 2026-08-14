@@ -46,7 +46,7 @@ knowledge/
 
 ## Decision Types
 
-- **ADRs** (`docs/architecture/adr/`): significant architecture decisions with alternatives and consequences.
+- **ADRs** (`docs/architecture/ADR/`): significant architecture decisions with alternatives and consequences, tier-scoped as `ADR-<TIER>-NNN`.
 - **Technical decision records (TDRs)** (`docs/knowledge/decisions/`): lightweight technical/operational decisions, protocols, and guidance that do not rise to ADR scope.
 
 Do not duplicate ADR content in `docs/knowledge/decisions/`; link or summarize when needed.

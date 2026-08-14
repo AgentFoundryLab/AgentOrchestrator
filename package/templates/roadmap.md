@@ -1,119 +1,40 @@
 # {{PROJECT_NAME}} Roadmap
 
-**Version**: 0.1.0
-**Updated**: {{DATE}}
+Hand-authored. **Not** an index like its neighbours `WORKORDERS.md`, `ISSUES.md`, `TECH_DEBT.md`, and `status/STATUS.md`.
+
+This document is the bridge from [VISION.md](../objectives/VISION.md) to planning, and nothing else. It owns **ordering and rationale**. It does not own scope decomposition, schedule, workflow, or evidence — and it must never become a second Work Order or Milestone listing.
+
+No id is minted here. Once a phase mints its `PLAN-*`, that Plan document owns the detail.
 
 ---
 
-## Milestone Overview
+## Direction
 
-| Milestone | Goal | Phases |
-|-----------|------|--------|
-| **v0** | {{V0_GOAL}} | Initial |
-| **v1** | {{V1_GOAL}} | {{V1_PHASES}} |
+{{Two or three paragraphs: where the product is going and why this order and not another. Name the
+constraint that sets the sequence — a dependency, a risk to retire early, a decision waiting on
+evidence.}}
 
----
+## Order
 
-# v0 Milestone
+| # | Phase | Plan | Why here | Status |
+| --- | --- | --- | --- | --- |
+| 1 | {{PHASE_NAME}} | [PLAN-{{NNN}}](plans/PLAN-{{NNN}}-{{slug}}.md) | {{the reason this comes before the next}} | {{Complete / Active / Planned}} |
+| 2 | {{PHASE_NAME}} | [PLAN-{{NNN}}](plans/PLAN-{{NNN}}-{{slug}}.md) | {{...}} | Planned |
+| 3 | {{PHASE_NAME}} | — *(not yet minted)* | {{...}} | Planned |
 
-**Goal**: {{V0_GOAL_DETAIL}}
+A phase with no `PLAN-*` yet is legitimate — it means the ordering is decided but the coordination
+structure is not. Do not mint a Plan id here to fill the column.
 
-**Scope**: {{SCOPE_SUMMARY}}
+## Superseded ordering
 
----
+{{When the order changes, say what changed and why, once. Do not narrate every revision — the commit
+log holds the history. Delete this section when empty.}}
 
-## Initial Phase
+<!--
+Keep this document short. Its failure mode is growth: it accretes scope, milestone tables, and status
+until it duplicates the Plan documents and the Work Order index, and then contradicts both.
 
-{{PHASE_DESCRIPTION}}
-
-### Epic: {{EPIC_NAME}}
-**Depends on**: {{DEPENDENCIES}}
-
-**Outcomes**:
-- {{DELIVERABLE_1}}
-- {{DELIVERABLE_2}}
-- {{DELIVERABLE_3}}
-
-### Epic: {{EPIC_NAME_2}}
-**Depends on**: {{DEPENDENCIES_2}}
-
-**Outcomes**:
-- {{DELIVERABLE_4}}
-- {{DELIVERABLE_5}}
-
----
-
-## Validation Phase
-
-Integration testing and documentation.
-
-### Epic: Integration Validation
-**Depends on**: All Initial Phase epics
-
-**Outcomes**:
-- End-to-end validation complete: {{E2E_TEST}}
-- Dogfood validation complete: {{DOGFOOD_TASK}}
-- User-facing documentation updated
-
-**-> TAG: v0.1.0 **
-
----
-
-# v1 Milestone
-
-**Goal**: {{V1_GOAL_DETAIL}}
-
-**Prerequisite**: v0.1.0  complete
-
----
-
-## MVP Phase
-
-{{MVP_DESCRIPTION}}
-
-### Epic: {{V1_EPIC_1}}
-**Depends on**: v0 complete
-
-**Outcomes**:
-- {{V1_DELIVERABLE_1}}
-- {{V1_DELIVERABLE_2}}
-
----
-
-## Dependency Graph
-
-```
-v0 Milestone
-+-- Initial Phase
-|   +-- {{EPIC_1}} ----+
-|   |                  |
-|   +-- {{EPIC_2}} <---+
-|   |
-|   +-- {{EPIC_3}} (parallel)
-|
-+-- Validation Phase <-- All Initial Phase
-    +-- Integration Validation
-        -> TAG: v0.1.0
-
-v1 Milestone
-+-- MVP Phase <-- v0.1.0
-    -> TAG: v1.0.0
-```
-
----
-
-## Progress Tracking
-
-| Milestone | Phase | Epics | Outcomes | Status |
-|-----------|-------|-------|----------|--------|
-| v0 | Initial | {{EPIC_COUNT}} | {{OUTCOME_COUNT}} | Not started |
-| v0 | Validation | 1 | {{VAL_OUTCOMES}} | Not started |
-| v1 | MVP | {{V1_EPICS}} | {{V1_OUTCOMES}} | Not started |
-
----
-
-## References
-
-- **PRD**: [PRD.md](../architecture/PRD.md)
-- **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
-- **Task Hierarchy**: [ADR-005](../architecture/adr/005-task-decomposition-hierarchy.md)
+If you are about to add a Work Order, a Milestone gate, an acceptance criterion, or a piece of
+evidence here, it belongs in the Plan document, the Work Order record, the requirements document, or
+the validation coverage instead.
+-->

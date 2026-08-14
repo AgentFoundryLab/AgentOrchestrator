@@ -23,7 +23,7 @@
 - New skills MUST have their artifact output location documented in the skill's `## Outputs` section
 - ADRs SHOULD cross-reference related ADRs and decision records
 - `docs/knowledge/decisions/` entries SHOULD include status, context, decision, consequences, and references
-- Diagrams live in `docs/architecture/diagrams/` — reference from ARCHITECTURE.md, do not embed inline
+- System diagrams live in `docs/architecture/system/` — reference from the governing blueprint, do not embed inline
 - `docs/INDEX.md` SHOULD be updated when new top-level directories or artifact types are added
 
 ## Collaboration

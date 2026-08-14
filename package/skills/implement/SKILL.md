@@ -1,7 +1,7 @@
 ---
 name: implement
-description: Implement a task from the backlog with code and tests
-argument-hint: task ID or description
+description: Implement a backlog task with code and tests
+argument-hint: Work Order id, implementation-plan path, or description
 user-invocable: true
 allowed-tools:
   - Read
@@ -10,162 +10,67 @@ allowed-tools:
   - Grep
   - Glob
   - Bash
-  - Task
+  - TaskCreate
+  - TaskUpdate
+  - TaskList
   - AskUserQuestion
 context: fork
 agent: developer
 ---
 
-# /implement - Task Implementation
+# /implement - Task Implementation Procedure
 
-Implement a specific task from the backlog with production code and tests.
+- Follows the global policy loaded from the active runtime root's `policy/` directory (`PRINCIPLES.md`, `RULES.md`). Active repo `AGENTS.md` defines local task paths, commands, validation gates, git rules, and delivery requirements.
 
 ## Purpose
 
-Execute a task by:
-- Understanding the requirement and acceptance criteria
-- Writing production code following existing patterns
-- Creating tests for new functionality
-- Preparing a commit message
-
-## Inputs
-
-- `$ARGUMENTS`: Task ID (e.g., "T-001") or task description
-- BACKLOG: `docs/development/BACKLOG.md` for task lookup, status, traceability, and canonical refs
-- Task-detail docs when present: `docs/development/tasks/*.md`
-- Architecture: `docs/architecture/ARCHITECTURE.md` for patterns
-
-## Outputs
-
-- Production code in appropriate source files
-- Tests alongside implementation
-- Suggested commit message
+Implement the assigned task or implementation slice by:
+- reading the Work Order and its implementation plan first;
+- following the linked architecture and requirements;
+- refusing domain/data model changes that lack explicit Architect adversarial validation;
+- deriving tests from the acceptance criteria the task references;
+- completing scoped production behavior without TODOs, placeholders, or speculative fallback paths;
+- committing the scoped implementation before handoff to validation when a valid increment exists.
 
 ## Workflow
 
-### 1. Identify Task
-Parse `$ARGUMENTS` to find the task:
-- If task ID provided, look up in BACKLOG.md
-- If description provided, match to existing task or confirm new work
+1. Resolve the target task from `$ARGUMENTS` or the orchestrator brief.
+2. Read active repo rules, the Work Order, its implementation plan, and the blueprints and requirements needed to implement the slice. Work Orders cross-reference requirements by id only — open the owning `FRD`/`TRD` under `docs/requirements/` and read the referenced `REQ`/`AC`/`TR`/`TRC` text verbatim, and implement against that text, never against the WO's brief id-description or a guessed requirement. Use `$context-compiler` to hydrate the bundle when the slice spans several requirements.
+3. Confirm real HTTP/API/network integrations against the live endpoint before writing code.
+4. Before schema, seed, runtime model, lifecycle/status, source-of-truth, alias, or fallback changes, verify the task cites explicit Architect adversarial validation; otherwise stop and route back through `$reconcile` to `$architect`/`$planner`.
+5. For regression fixes, preserve the original regression evidence in `docs/development/ISSUES.md` and follow TDD-first order: characterize the broken behavior with tests that pass against the current regression, update the corrected acceptance criteria and tests so they fail, implement, then rerun until green.
+6. Implement incrementally with focused checks after each isolated change.
+7. Stop and escalate, or route through `$reconcile`, when the task, architecture, requirements, and code reality conflict.
+8. Before handoff, run the focused validation required for the implementation slice. If it needs the app or its stores, boot them only through the repo's own isolated launch path, which sources `.orchestrator.env` (`ORCHESTRATOR_WT` prefix + `ORCHESTRATOR_SHIFT_INDEX`); a vendor's or framework's own start command binds fixed ports and one shared instance, rejoining the lane the isolation exists to separate. Stop what you booted through that repo's stop path and report any port or store left live.
+9. Commit atomically:
+   - run `git status`;
+   - stage explicit files only — never `git add .` or `git add -A`;
+   - commit only the scoped implementation increment, citing the task id in the subject;
+   - report commit SHA, checks run, blockers, skipped scope, residual risk.
+10. Hand off to `$validate` or the orchestrator. If no valid implementation increment exists, report why no commit was made.
 
-### 2. Read Task Details
-Resolve task context in this order:
-1. Find the task in BACKLOG.md.
-2. If canonical task-detail refs exist, use them as the execution contract.
-3. Use embedded backlog detail directly only when no stronger task contract exists.
+## Delegated-slice rules
 
-Extract:
-- Task description and goal
-- Acceptance criteria
-- Epic context
-- Scope and non-goals when present
-- Dependencies and evidence refs
+- Follow the orchestrator brief's owned files/surfaces, exclusions, and validation expectations.
+- Do not redefine scope, perform final task validation, run status/PR continuation, merge, or deploy unless explicitly assigned.
+- Do not introduce hacky workarounds, outdated/contradicting fallbacks, alias mappings, lifecycle inventions, or on-the-spot schema changes to bypass a missing gate.
+- Do not revert or reformat unrelated parallel-agent work.
 
-### 3. Explore Codebase
-Before writing code:
-- Find related existing code
-- Identify patterns to follow
-- Check for similar implementations
-- Understand the module structure
+## Checkpoint discipline
 
-### 4. Plan Implementation
-Outline the approach:
-- Files to modify/create
-- Functions/classes needed
-- Test approach (derive test cases directly from AC)
-- Edge cases to handle
-- Required shape constraints from the task-detail source
+- Commit plus a status note at each meaningful increment, not one big-bang at the end.
+- When the context budget runs low, checkpoint the WIP first — commit what exists with a message naming completed vs remaining work — rather than spending the last budget on more edits.
+- Name the last checkpoint commit and the done/remaining split in the final report.
 
-**Skip TDD** (go directly to step 6) for: bug fixes in existing code, localized edits,
-refactors with no behavior change, documentation-only changes.
+## Checklist
 
-### 5. Write Tests — Red
-From the AC, write failing tests **before** writing implementation:
-- One test per acceptance criterion
-- Tests must fail (red) — confirms they actually test the right thing
-- Use contracts/interfaces from `docs/architecture/technical/contracts.md` if available
-- Follow existing test patterns and file layout
-
-Run tests and confirm they fail as expected.
-
-### 6. Implement — Green
-Write the minimum code to make the failing tests pass:
-- **Read Before Write**: Understand existing code
-- **Minimal Changes**: Only what's needed to go green
-- **Follow Patterns**: Match existing style
-- **No Over-Engineering**: Simple solutions preferred
-- **Security Aware**: Avoid common vulnerabilities
-
-Run tests after each logical unit of code. Stop when all tests pass.
-
-### 6b. Refactor (if needed)
-With tests green, clean up without changing behavior:
-- Remove duplication
-- Improve naming/readability
-- Re-run tests after each refactor step to stay green
-
-### 7. Verify
-Check against acceptance criteria:
-- [ ] Each AC is met
-- [ ] Tests pass
-- [ ] No regressions
-- [ ] Code follows patterns
-
-### 8. Prepare Commit
-Suggest commit message:
-```
-type(scope): description
-
-- Detail of change 1
-- Detail of change 2
-
-Refs: T-XXX
-```
-
-Types: feat, fix, refactor, test, docs, chore
-
-## Implementation Guidelines
-
-### Code Quality
-- Use descriptive variable/function names
-- Keep functions focused (single responsibility)
-- Add comments only where logic isn't self-evident
-- Handle errors appropriately
-
-### Testing
-- Test behavior, not implementation
-- One assertion per test when possible
-- Clear test names describing expected behavior
-- Mock external dependencies
-
-### Security
-- Validate inputs at boundaries
-- Escape outputs appropriately
-- No secrets in code
-- Follow OWASP guidelines
-
-## Validation Checklist
-Before completing:
-- [ ] All AC from the canonical task definition met (each criterion explicitly verified)
-- [ ] Tests written and passing
-- [ ] No TODO/mock/placeholder left in code
-- [ ] Code follows existing patterns
-- [ ] No hardcoded secrets or credentials
-- [ ] Commit message references task ID (Refs: T-XXX)
-- [ ] No unintended side effects on other components
-- [ ] Task ready to mark complete
-
-## Error Handling
-
-If blocked:
-1. Document the blocker clearly
-2. Suggest alternatives if possible
-3. Don't make assumptions without verification
-4. Consider invoking /analyse for investigation
-
-## Policy References
-
-**Should-read** from the active runtime root's `policy/RULES.md`:
-- Implementation Completeness - No partial features, no TODOs
-- Git Workflow - Feature branches, incremental commits
-- Safety Rules - Framework respect, pattern adherence
+- [ ] Active repo `AGENTS.md` was read.
+- [ ] Work Order / brief and its implementation plan were read first.
+- [ ] Referenced requirement text was read from the owning `FRD`/`TRD`, not inferred from the Work Order.
+- [ ] Tests/checks map to the referenced acceptance criteria or assigned behavior.
+- [ ] Changes follow the governing architecture and ADRs.
+- [ ] Domain/data model changes have explicit Architect adversarial validation.
+- [ ] Regression fixes preserve reported evidence and follow TDD-first corrected-criteria validation.
+- [ ] Focused validation ran for the implementation slice.
+- [ ] Scoped implementation was committed before validation handoff, or the exact no-commit blocker was reported.
+- [ ] Every service and store this lane booted is stopped, or named as still live.
