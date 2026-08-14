@@ -156,6 +156,9 @@ What gets installed per runtime (default skills profile):
     - docs/                Provisioned folder tree with .gitignore placeholders
     - docs/policy/         STANDARDS.md, GUIDELINES.md templates
     - docs/knowledge/      README.md
+    - docs/requirements/   FRD-*/TRD-* requirements
+    - docs/architecture/   foundation/, feature/, system/, ADR/
+    - docs/development/    plans/, workorders/, issues/, debt/, feedback/, status/
     - docs/analysis/       Analysis and review reports
     - docs/validation/     AC/TRC coverage documents
     - reports/             research/ and meta-optimization/ directories
@@ -2273,8 +2276,17 @@ install_project() {
     backup_dir=$(create_backup_dir "$target")
 
     # 1. Provision docs folder tree with .gitignore placeholders
-    local dirs=(docs/policy docs/objectives docs/architecture docs/architecture/adr
-                docs/development docs/knowledge docs/knowledge/decisions
+    # The record schema's document tree. ADR is uppercase because the record id is
+    # ADR-<TIER>-NNN and every canon reference spells the directory that way; a lowercase
+    # adr/ is invisible on a case-insensitive filesystem and a second, empty directory on
+    # every other one.
+    local dirs=(docs/policy docs/objectives docs/requirements
+                docs/architecture docs/architecture/foundation docs/architecture/feature
+                docs/architecture/system docs/architecture/ADR
+                docs/development docs/development/plans docs/development/workorders
+                docs/development/issues docs/development/debt docs/development/feedback
+                docs/development/status
+                docs/knowledge docs/knowledge/decisions
                 docs/knowledge/domain docs/knowledge/patterns docs/knowledge/runbooks
                 docs/analysis docs/validation
                 reports/research reports/meta-optimization)
