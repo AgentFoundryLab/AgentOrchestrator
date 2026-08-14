@@ -15,10 +15,30 @@ case "$HOOK_EVENT" in
         ;;
 esac
 
-# Output context for Claude (SessionStart stdout goes to context)
-cat << EOF
-<system-reminder>
-[${HOOK_EVENT}] session=${SESSION_ID} agent=${AGENT_ID:-n/a} type=${AGENT_TYPE:-n/a}
-Log: logs/sessions/${SESSION_ID}/${AGENT_ID:-}
-</system-reminder>
-EOF
+# knowledge_index — a bounded listing of docs/knowledge/ (AC-005.2).
+# A pointer alone is not discovery: an agent that does not know the directory exists will not
+# look in it. Names only, capped, so a large knowledge base cannot flood session context.
+knowledge_index() {
+    local kb="${CWD}/docs/knowledge"
+    [ -d "$kb" ] || return 0
+    local entries
+    entries=$(find "$kb" -mindepth 1 -maxdepth 1 \( -type d -o -name '*.md' \) \
+        -not -name '.*' -printf '%f\n' 2>/dev/null | sort | head -12 | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+    [ -n "$entries" ] || return 0
+    printf 'Knowledge: docs/knowledge/ — %s\n' "$entries"
+}
+
+# Output context for Claude (SessionStart stdout goes to context).
+# PROJECT_NAME and the knowledge index are SessionStart-only: a sub-agent inherits its parent's
+# context, so re-emitting them per spawn would pay the cost on every delegation (AC-005.4).
+{
+    printf '<system-reminder>\n'
+    printf '[%s] session=%s agent=%s type=%s\n' \
+        "$HOOK_EVENT" "$SESSION_ID" "${AGENT_ID:-n/a}" "${AGENT_TYPE:-n/a}"
+    if [ "$HOOK_EVENT" = "SessionStart" ]; then
+        printf 'PROJECT_NAME=%s\n' "${PROJECT_NAME:-unknown}"
+        knowledge_index
+    fi
+    printf 'Log: logs/sessions/%s/%s\n' "$SESSION_ID" "${AGENT_ID:-}"
+    printf '</system-reminder>\n'
+}
