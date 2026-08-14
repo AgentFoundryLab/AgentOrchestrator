@@ -42,13 +42,52 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # smoke-tests: run all install tests (WO-087..WO-090) in isolated temp HOME
+  #
+  # ISS-008: the matrix is the portability gate, not redundancy. A single
+  # ubuntu-latest leg pairs GNU sed with mawk, and both accept GNU-only
+  # constructs that BSD sed and BWK awk reject — so a one-leg gate reports
+  # portability it never measured. Each leg below breaks a different assumption:
+  #   ubuntu + mawk        — the baseline CI toolchain
+  #   ubuntu + original-awk — BWK awk, which rejects a newline in `awk -v`
+  #   ubuntu + gawk        — GNU awk, to catch gawk-only syntax
+  #   macos                — BSD sed, which requires -i's backup suffix
+  # Keep at least one non-GNU sed leg and one non-mawk awk leg.
   # ---------------------------------------------------------------------------
   smoke-tests:
-    name: Install Smoke & Conformance Tests
-    runs-on: ubuntu-latest
+    name: Install Smoke & Conformance Tests (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: ubuntu / mawk
+            awk: mawk
+          - os: ubuntu-latest
+            label: ubuntu / original-awk
+            awk: original-awk
+          - os: ubuntu-latest
+            label: ubuntu / gawk
+            awk: gawk
+          - os: macos-latest
+            label: macos / bsd
+            awk: ''
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # macOS ships bash 3.2; the installer needs 4+ for associative arrays.
+      - name: Install bash 4+ (macOS)
+        if: runner.os == 'macOS'
+        run: brew install bash
+
+      - name: Select system awk (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq "${{ matrix.awk }}"
+          sudo update-alternatives --set awk "/usr/bin/${{ matrix.awk }}"
+          echo "awk is now: $(readlink -f "$(command -v awk)")"
 
       - name: Run install smoke tests
         run: bash tests/install/smoke.sh

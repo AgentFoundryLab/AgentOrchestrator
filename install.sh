@@ -259,12 +259,25 @@ namespace_mode_for_runtime_artifact() {
     esac
 }
 
+# sed_in_place — portable `sed -i`. BSD sed (macOS) reads -i's argument as a
+# mandatory backup suffix, so the GNU form `sed -i <script> <file>` parses the
+# script as the suffix and the path as the script. Write via temp + mv instead,
+# matching the idiom in strip_claude_frontmatter.
+sed_in_place() {
+    local script="$1"
+    local file="$2"
+    local tmp
+    tmp="$(mktemp)"
+    sed "$script" "$file" > "$tmp"
+    mv "$tmp" "$file"
+}
+
 apply_frontmatter_name_override() {
     local file="$1"
     local old_name="$2"
     local new_name="$3"
     [ -f "$file" ] || return 0
-    sed -i "s/^name: ${old_name}$/name: ${new_name}/" "$file"
+    sed_in_place "s/^name: ${old_name}$/name: ${new_name}/" "$file"
 }
 
 # Log functions
@@ -791,8 +804,11 @@ inject_policy_refs() {
                 ((++BACKUPS))
 
                 local tmp_file="${f}.tmp"
-                awk -v s="$start_tag" -v e="$end_tag" -v r="$desired_block" '
-                    BEGIN {inblock=0; replaced=0}
+                # desired_block is multi-line: BSD awk rejects a newline inside a
+                # -v assignment, so pass it through the environment instead.
+                ORCH_REFS_BLOCK="$desired_block" \
+                awk -v s="$start_tag" -v e="$end_tag" '
+                    BEGIN {inblock=0; replaced=0; r=ENVIRON["ORCH_REFS_BLOCK"]}
                     $0 == s && replaced == 0 {
                         print r
                         inblock=1
@@ -977,7 +993,7 @@ strip_claude_frontmatter() {
 convert_args_placeholder() {
     local f="$1"
     [ -f "$f" ] || return 0
-    sed -i 's/\$ARGUMENTS/{{args}}/g' "$f"
+    sed_in_place 's/\$ARGUMENTS/{{args}}/g' "$f"
 }
 
 # ============================================================================
