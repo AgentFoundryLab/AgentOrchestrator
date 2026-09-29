@@ -763,7 +763,9 @@ restore_or_remove_installed_tree() {
     return 0
 }
 
-# Inject @-references into existing CLAUDE.md/AGENTS.md/GEMINI.md (idempotent)
+# Inject @-references into CLAUDE.md/AGENTS.md/GEMINI.md (idempotent).
+# create_missing=true provisions an absent doc holding only the refs block (global
+# docs); otherwise an absent doc is left absent (project docs belong to the project).
 inject_policy_refs() {
     local target_dir="$1"
     local sentinel="$2"
@@ -771,6 +773,7 @@ inject_policy_refs() {
     local backup_dir="$4"
     local backup_prefix="$5"
     local doc_files="$6"
+    local create_missing="${7:-false}"
     local start_tag="<!-- ${sentinel}:start -->"
     local end_tag="<!-- ${sentinel}:end -->"
     local header="## Orchestrator Policy References"
@@ -779,7 +782,14 @@ inject_policy_refs() {
 
     for md_file in $doc_files; do
         local f="${target_dir}/${md_file}"
-        [ -f "$f" ] || continue
+        if [ ! -f "$f" ]; then
+            [ "$create_missing" = true ] || continue
+            mkdir -p "$target_dir"
+            printf '%s\n' "$desired_block" > "$f"
+            log_success "Created refs: $f"
+            ((++CREATED))
+            continue
+        fi
         if grep -qF "$start_tag" "$f" 2>/dev/null; then
             if ! grep -qF "$end_tag" "$f" 2>/dev/null; then
                 log_warning "Malformed refs block (missing end tag): $f"
@@ -2243,20 +2253,20 @@ install_global() {
         local claude_global_refs
         claude_global_refs="$(global_refs_for_runtime "claude")"
         inject_policy_refs "${RUNTIME_CONF_DIR[claude]}" "orchestrator:global-refs" \
-            "$claude_global_refs" "$backup_dir" "claude" "${RUNTIME_DOC_FILE[claude]}"
+            "$claude_global_refs" "$backup_dir" "claude" "${RUNTIME_DOC_FILE[claude]}" true
     fi
     if [ "$REF_GEMINI" = true ]; then
         local gemini_global_refs
         gemini_global_refs="$(global_refs_for_runtime "gemini")"
         inject_policy_refs "${RUNTIME_CONF_DIR[gemini]}" "orchestrator:global-refs" \
-            "$gemini_global_refs" "$backup_dir" "gemini" "${RUNTIME_DOC_FILE[gemini]}"
+            "$gemini_global_refs" "$backup_dir" "gemini" "${RUNTIME_DOC_FILE[gemini]}" true
     fi
     if [ "$REF_CODEX" = true ]; then
         local codex_doc_dir="${RUNTIME_DOC_DIR_OVERRIDE[codex]:-${RUNTIME_CONF_DIR[codex]}}"
         local codex_global_refs
         codex_global_refs="$(global_refs_for_runtime "codex")"
         inject_policy_refs "$codex_doc_dir" "orchestrator:global-refs" \
-            "$codex_global_refs" "$backup_dir" "codex" "${RUNTIME_DOC_FILE[codex]}"
+            "$codex_global_refs" "$backup_dir" "codex" "${RUNTIME_DOC_FILE[codex]}" true
     fi
     if [ "$REF_OPENCODE" = true ]; then
         log_info "opencode: policy-ref injection into opencode.json not yet implemented (JSON format differs)"
@@ -2265,7 +2275,7 @@ install_global() {
         local qwen_global_refs
         qwen_global_refs="$(global_refs_for_runtime "qwen")"
         inject_policy_refs "${RUNTIME_CONF_DIR[qwen]}" "orchestrator:global-refs" \
-            "$qwen_global_refs" "$backup_dir" "qwen" "${RUNTIME_DOC_FILE[qwen]}"
+            "$qwen_global_refs" "$backup_dir" "qwen" "${RUNTIME_DOC_FILE[qwen]}" true
     fi
 
     log_success "Global installation complete"
@@ -2542,6 +2552,11 @@ strip_ref_block_if_present() {
         mv "$tmp_file" "$target_file"
         log_success "Stripped refs from: $target_file"
         ((++PATCHED))
+        # A doc that held only the block was provisioned by install; remove it.
+        if ! grep -q '[^[:space:]]' "$target_file"; then
+            rm -f "$target_file"
+            log_success "Removed provisioned doc: $target_file"
+        fi
         return 0
     fi
 

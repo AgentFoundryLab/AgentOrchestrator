@@ -312,6 +312,55 @@ EOF
 }
 run_test "conformance-codex-ref-block-migrated-from-claude-scope" test_conformance_codex_ref_block_migrated_from_claude_scope
 
+# Absent global docs are provisioned with the refs block; restore removes what install created.
+test_conformance_global_docs_provisioned_when_absent() {
+    local tmp
+    tmp=$(mktemp -d)
+    HOME="$tmp" bash "${INSTALL}" --global --claude --codex >/dev/null 2>&1
+    local ok=0
+    assert_file_contains "${tmp}/.claude/CLAUDE.md" "Read @~/.claude/policy/RULES.md" || ok=1
+    assert_file_contains "${tmp}/.codex/AGENTS.md" "Read @~/.agents/policy/RULES.md" || ok=1
+    HOME="$tmp" bash "${INSTALL}" --global --claude --codex --restore >/dev/null 2>&1
+    [ ! -e "${tmp}/.claude/CLAUDE.md" ] || { echo "    still present after restore: .claude/CLAUDE.md"; ok=1; }
+    [ ! -e "${tmp}/.codex/AGENTS.md" ] || { echo "    still present after restore: .codex/AGENTS.md"; ok=1; }
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-global-docs-provisioned-when-absent" test_conformance_global_docs_provisioned_when_absent
+
+# An existing global doc is patched in place and keeps its own content through restore.
+test_conformance_global_doc_patched_content_kept_on_restore() {
+    local tmp
+    tmp=$(mktemp -d)
+    mkdir -p "${tmp}/.claude"
+    printf '# Common Rules\n\n- keep me\n' > "${tmp}/.claude/CLAUDE.md"
+    HOME="$tmp" bash "${INSTALL}" --global --claude >/dev/null 2>&1
+    local ok=0
+    assert_file_contains "${tmp}/.claude/CLAUDE.md" "- keep me" || ok=1
+    assert_file_contains "${tmp}/.claude/CLAUDE.md" "orchestrator:global-refs:start" || ok=1
+    HOME="$tmp" bash "${INSTALL}" --global --claude --restore >/dev/null 2>&1
+    assert_file_contains "${tmp}/.claude/CLAUDE.md" "- keep me" || ok=1
+    assert_file_not_contains "${tmp}/.claude/CLAUDE.md" "orchestrator:global-refs:start" || ok=1
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-global-doc-patched-content-kept-on-restore" test_conformance_global_doc_patched_content_kept_on_restore
+
+# Project docs belong to the project: an absent one is never provisioned.
+test_conformance_project_docs_not_provisioned() {
+    local tmp proj
+    tmp=$(mktemp -d)
+    proj="${tmp}/proj"
+    mkdir -p "$proj"
+    HOME="$tmp" bash "${INSTALL}" --project "$proj" --claude --codex >/dev/null 2>&1
+    local ok=0
+    [ ! -e "${proj}/CLAUDE.md" ] || { echo "    unexpected: ${proj}/CLAUDE.md"; ok=1; }
+    [ ! -e "${proj}/AGENTS.md" ] || { echo "    unexpected: ${proj}/AGENTS.md"; ok=1; }
+    rm -rf "$tmp"
+    return $ok
+}
+run_test "conformance-project-docs-not-provisioned" test_conformance_project_docs_not_provisioned
+
 # Gemini: skills present by default; hooks absent by policy
 test_conformance_gemini() {
     local tmp
