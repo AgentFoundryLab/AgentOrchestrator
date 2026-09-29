@@ -201,7 +201,7 @@ Each agent's tool grant lives in its own profile under `package/agents/`.
 
 ## Workflow Depths
 
-Delivery — `/implement` → `/validate` → `/security-review` → `/status-update` — runs at every depth. The depth selects only which planning stages precede it.
+Delivery — `/implement` → `/validate` → `/security-review` → `/status-update` — runs at every depth, each stage at the item's risk tier (T0 docs · T1 bounded behaviour · T2 sensitive surfaces · T3 domain/trust boundary; see `policy/RULES.md`). The depth selects only which planning stages precede it.
 
 | Depth | Chain | Use when |
 |---|---|---|

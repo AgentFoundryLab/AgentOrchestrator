@@ -27,7 +27,7 @@ allowed-tools:
 - A plain record id, stage name, artifact path, or depth/thoroughness request does NOT start Orchestration Mode.
 - Once triggered, it persists until session end or explicit user override; blockers, corrections, failed checks, and direct skill invocations do not end it.
 
-**The orchestrator never edits product code, repo docs, tests, or status artifacts directly** for non-trivial work. It coordinates; sub-agents execute. Direct edits are allowed only for genuinely atomic, non-parallelizable glue, a security/credential boundary requiring primary-only handling, or when the user explicitly overrides delegation for that scope.
+**The orchestrator never edits product code, repo docs, tests, or status artifacts directly** for non-trivial work. It coordinates; sub-agents execute. A T0 item's `$security-review` and `$status-update` may run in this session; that is sanctioned tier depth (`RULES.md`), not a delegation skip. Other direct edits are allowed only for genuinely atomic, non-parallelizable glue, a security/credential boundary requiring primary-only handling, or when the user explicitly overrides delegation for that scope.
 
 ## Context Discipline
 
@@ -79,11 +79,11 @@ Classify every item T0–T3 before its first dispatch, from what the change touc
 3. Start/update the **orchestration ledger**: mode state + active contract + the **selected outcome** (the journey this run moves); stage chain + next gate; per-item risk tier and model tier; per-lane failure signatures; sub-agent id/name, owned slice/files, lane resources (worktree, branch, runtime stack up/down), expected output, status; handoff commits, validation state, blockers, integration decisions; per slice, the elapsed time from start to integrated verified behaviour and the agents it took. Those last two are the run's steering signal; closed-record counts are not.
 4. Split critical-path from independent slices; mark delegation-owned slices. Read each Work Order's `dependsOn` in `WORKORDERS.md` to separate dependency-ordered from parallelizable work.
    - **Scope control.** Start nothing outside the selected outcome unless it blocks that outcome. Record a discovered improvement through `$reconcile` rather than starting it. Dispatch an enabling Work Order only when the journey Work Order that consumes it is scheduled in the same run.
-5. Delegate independent slices with disjoint ownership. For non-trivial implementation/validation/planning/status work, use sub-agents.
+5. Delegate independent slices with disjoint ownership. For non-trivial implementation/validation/planning/status work, use sub-agents; T0 security and status steps are the exception above.
 6. Always delegate into an isolated worktree (see *Lane provisioning*). Every code-editing sub-agent owns one worktree; concurrent agents never share one.
 7. Parallelize a whole Phase or Milestone: enumerate its Work Orders from `WORKORDERS.md` by `Phase`/`Milestone`, derive the graph from `dependsOn`, and fan out every WO with no unmet dependency, one worktree each. Run dependents only after their blockers land. A shared dependency — schema, contract, or interface touched by multiple Work Orders — is a sequencing barrier, not a parallel slice. A Milestone is a coordination gate, never a code lane.
    - **Shared-surface preflight, before each wave.** `dependsOn` and exact file overlap do not catch a shared surface. Compare the candidate lanes' target files and surfaces (implementation plan, WO `In Scope`) for any schema, contract, test runner, index, or generated file that more than one lane would change. Name one **integration-owner** lane per shared surface in the ledger; the other lanes consume it only after it lands.
-   - **Generated indexes render at integration.** Lanes never edit `WORKORDERS.md`, `STATUS.md`, `REQUIREMENTS.md`, coverage rollups, or any other projection of shared state. They return their rows in the final report, and the integration step renders the index once, on the integration branch.
+   - **Generated indexes render at integration.** Lanes never edit `WORKORDERS.md`, `STATUS.md`, `REQUIREMENTS.md`, coverage rollups, or any other projection of shared state. They return their rows in the final report. After each merge lands, the integration step dispatches `$status-update` on the integration branch to render every returned row and assessed status in one commit. Id-allocation rows are the exception: the orchestrator writes those before dispatch (*Id allocation*).
 8. Stale/busy/excessive open agents are not a direct-execution excuse. Close, reuse, or retry supported agents first; if delegation capacity is still unavailable, report a delegation blocker.
 9. On user design rejection, "start over", or "not accepted path", mark superseded plans/outputs rejected in the ledger, stop building on scratch changes, and restart from committed source-of-truth artifacts.
 10. Integrate sub-agent outputs (merge each worktree back) without reverting unrelated parallel work, then tear the lane down (see *Lane teardown*).
@@ -105,7 +105,7 @@ A hydration blocker also stops dispatch: a criterion id that does not resolve, r
 
 ## Model calibration
 
-Three tiers, selected per item from its risk classification:
+Three tiers, selected per item from its priority and severity classification. This is independent of the delivery risk tier:
 
 | Tier | Selected by |
 |---|---|

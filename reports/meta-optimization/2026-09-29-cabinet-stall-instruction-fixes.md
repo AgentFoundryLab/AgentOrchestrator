@@ -54,19 +54,22 @@ All targets are `package/**` source paths.
 
 ## Re-validation
 
+The verdicts below come from reading the updated text; no orchestrated run exercised them. An independent validator pass on 2026-09-29 found ten issues. Those in scope were fixed in the follow-up commit: the T0 verdict path, the in-session carve-out in `orchestrate`, lanes returning index rows, the model-tier wording, `Protects` for `ISS`/`TD` only, and the README chain line.
+
+
 | Mode | Now governed by | Verdict |
 |---|---|---|
 | A | `RULES.md` done-condition bullet; `work-order.md` `Done When`; planner checklist; `validate` step 4; `orchestrate` scope control | **Reduced + detected.** A WO without `Done When` fails the planner checklist. A behaviour-bearing WO cannot pass validation below `faithful`. |
 | B | `RULES.md` three verdicts; `validate` verdict levels; `status-update` value meanings | **Reduced + detected.** A marker-only surface is capped at `accounted`/`Partial`, and the verdict level is visible on every coverage row. |
 | C | `RULES.md` fail-closed hydration; `context-compiler` `BLOCKED`; `implement` step 2; `orchestrate` pre-delegation gate | **Prevented where the stage complies.** Four surfaces now block on the same condition. Enforcement is still agent compliance, since there is no hydration script to fail mechanically. |
-| D | `orchestrate` preflight and integration owner; `implement` lane rules | **Reduced.** The preflight is a judgment comparison of declared surfaces, so an undeclared surface can still slip through. |
+| D | `orchestrate` preflight, integration owner, `$status-update` renders returned rows after each merge; `implement`/`validate`/`security-review` return index rows under `$orchestrate` | **Reduced.** The preflight is a judgment comparison of declared surfaces, so an undeclared surface can still slip through. |
 | E | `orchestrate` failure-class table; `RULES.md` escalation and retry | **Reduced + detected.** Failure signatures in the ledger make an unchanged retry visible. |
 | F | `RULES.md` and `reconcile` protected-behaviour triage; `Protects` fields; leaner templates | **Reduced.** Recursion can still occur through a finding that names a behaviour loosely. |
 | G | `status-update` release picture; `plan.md` journey gates; `orchestrate` ledger metrics | **Reduced.** Nothing computes slice time or agent cost automatically; the ledger records it by hand. |
-| Chain | `RULES.md` tier table and every stage skill | **Prevented** for the "universal full depth" failure. **Unresolved risk:** misclassifying an item down a tier. It is mitigated by resolve-up and by promotion on a finding, not eliminated. |
+| Chain | `RULES.md` tier table; `orchestrate`, `implement`, `validate`, `security-review`, `SWE.md` (`status-update` has no tier-specific depth) | **Reduced.** A T0 item reaches `faithful` only through its consistency gates on the installed copy (`RULES.md`, verdicts). **Unresolved risk:** misclassifying an item down a tier. It is mitigated by resolve-up and by promotion on a finding, not eliminated. |
 
 ## Unresolved, outside this change
 
-- `pre-commit run --all-files`: the shellcheck hook is red, with 18 findings in shell files this change does not touch, for example `package/install/runtimes.sh` SC2034. The trailing-whitespace and end-of-file hooks also fail repo-wide on untouched files. The CI gate trio is green.
+- `pre-commit run --all-files`: the shellcheck hook is red, with 18 findings in shell files this change does not touch, for example `package/install/runtimes.sh` SC2034. The trailing-whitespace and end-of-file hooks also fail repo-wide. That includes the hard line breaks (two trailing spaces) in the header of the Cabinet analysis doc, which are intentional Markdown and were left in place. The CI gate trio is green.
 - `skills/validate` names the coverage path `docs/validation/WO-NNN.md` while requiring coverage keyed on `AC`/`TRC`, never on the WO number. This contradiction predates this change.
 - The deployed Claude root is missing `skills/qmd/references`.

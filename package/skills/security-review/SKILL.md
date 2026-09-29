@@ -216,8 +216,8 @@ Map trust boundaries (Internet → WAF/Gateway → App → Service → DB → Ex
    - Any Critical or High → **FAIL**; route back to implement.
    - No Critical/High, but Medium/Low/Info present → **FINDINGS**; proceed to status.
    - No findings → **PASS**.
-8. For each Critical or High finding, record durable feedback as records under `docs/development/issues/`, then refresh the `ISSUES.md` index:
-   - Name the security property or `AC`/`TRC` each record protects in its `Protects` field.
+8. For each Critical or High finding, record durable feedback as records under `docs/development/issues/`, then refresh the `ISSUES.md` index. Under `$orchestrate`, return the index rows in the report instead, for the integration step to render:
+   - Name the security property or `AC`/`TRC` each `ISS`/`TD` protects in its `Protects` field.
    - Read the index first and inspect active security records for the same root cause. Similar wording is not proof of a shared cause, but a duplicate record costs more than a moment's reading.
    - If no record owns the cause, author a generalized `ISS` with `issueType: security`, its severity, and its root-cause state, then record the concrete symptom as a `REG` under it. A missing control with no exploitable symptom is a `TD` instead. `Priority` derives from severity (Critical/High → `P0`). **Under `$orchestrate`, ids come from the brief**; if this slice needs one the brief did not provide, report the finding with its evidence and let the orchestrator allocate.
    - The `REG` document carries: `Type: Security`, `Discovered`, `Affects`, the delivery record it was found under, then the finding's file:line, attack path (exactly how an attacker triggers it), remediation, CVSS estimate, and the verification evidence a fix must produce.
