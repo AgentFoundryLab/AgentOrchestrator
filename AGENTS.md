@@ -97,7 +97,7 @@ Support skills (no dedicated artifact): `/orchestrate` (delegation), `/reconcile
 /spec → /architect → /planner → /review → /implement → /validate → /security-review → /status-update
 ```
 
-Delivery (`/implement` → `/validate` → `/security-review` → `/status-update`) runs in every chain; the depth selects only which planning stages precede it. `/deploy` and `/document` follow delivery when the work ships or needs docs.
+Delivery (`/implement` → `/validate` → `/security-review` → `/status-update`) runs in every chain at the item's risk tier (`policy/RULES.md`); the depth selects only which planning stages precede it. `/deploy` and `/document` follow delivery when the work ships or needs docs.
 
 Detailed mechanics and depth selection are defined in:
 - `package/skills/orchestrate/SKILL.md` — depth selection, delegation, lane lifecycle
