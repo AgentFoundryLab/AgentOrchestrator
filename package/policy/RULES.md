@@ -60,7 +60,8 @@ Section tags rank enforcement, not topic:
 - Tests and validation evidence cite immutable requirement/acceptance ids and user-visible behavior. Never name a test file, title, tag, fixture, or helper after a Work Order number.
 - Project validation/release gates outrank generic local checks; neither substitutes for the other.
 - A failed full gate stays failed until the same full gate reruns and passes, or the user explicitly accepts narrower validation.
-- Do not call work validated/complete/ready/releasable until preview/release E2E, the linked regression evidence, `$security-review`, and the post-E2E `$status-update` pass; else state `NOT VALIDATED` with the exact missing or failing gate.
+- Do not call work validated/complete/ready/releasable until every gate its risk tier requires — release E2E where the tier runs it, the linked regression evidence, `$security-review`, and the post-E2E `$status-update` — passes; name the tier in the claim, else state `NOT VALIDATED` with the exact missing or failing gate.
+- Keep three verdicts apart: **accounted** (the inventory names it), **faithful** (the surface behaves as specified), **journey-complete** (a user completes the transaction at the shipping head). Only the last two support a readiness claim; a placeholder, marker, or source-text inspection proves `accounted` only.
 - A draft PR may open before validation completes, marked `NOT VALIDATED`. Transient local E2E/provider failures don't block it: rerun the focused failures, then continue to preview validation or report the blocker on the PR.
 - After a merge or promotion, validate the shipping integration SHA and its deployment, not a superseded branch alias.
 - Gate evidence names the SHA, deployment URL, invoked command, and job conclusion. `configured` or `inspected` is not `executed` or `passed`.
@@ -118,6 +119,7 @@ Preserve upstream → downstream flow:
 - Citation runs one way: downstream artifacts may cite upstream sources; upstream artifacts — blueprints and ADRs included — never use downstream execution artifacts (`WO`, implementation plans, `ISS`, status docs) as normative or design inputs.
 - A requirement cites only `REQ`/`AC`/`TR`/`TRC`. Any other id or a rules-file pointer in a requirement body is a flow violation: delete it, never re-point it.
 - Work Orders cite requirements and acceptance criteria by immutable id plus a brief description, never by copied text — copies go stale; `$context-compiler` hydrates full text on demand.
+- Hydration fails closed: an id that does not resolve, resolves empty, or resolves to conflicting text blocks the consuming stage. No stage authors the missing criterion text itself; route the gap through `$reconcile`.
 - Every commit cites the immutable ids it serves, in its subject or a trailer: code, test, and config changes cite the delivery record (`WO`/`ISS`/`TD`/`REG`); requirement, blueprint, and ADR changes cite the artifact authored; validation and status commits cite the record whose state they move.
 - A change with no citable record has no active contract: create or claim one before committing. Only contract-free housekeeping (tooling config, ignore rules, formatting) commits unreferenced.
 - ADRs are standalone files at `docs/architecture/ADR/ADR-<TIER>-NNN.md`, cross-referenced from the governing blueprint, never inlined. Operational/policy decisions below ADR scope are TDRs under `docs/knowledge/decisions/`.
@@ -127,15 +129,15 @@ Preserve upstream → downstream flow:
 
 - **Solo Mode** is the default for a direct skill invocation with no orchestration request active.
 - **Orchestration Mode** starts when the user invokes `$orchestrate` or asks to orchestrate, delegate, use sub-agents, or run parallel work, and persists until session end or explicit user override.
-- `$orchestrate` means real delegation: non-trivial implementation goes to implementation-capable sub-agents. The orchestrator plans, briefs, coordinates, reviews, integrates, and reports blockers; it does not edit product code, repo docs, status artifacts, or tests for non-trivial work.
+- `$orchestrate` means real delegation: non-trivial implementation goes to implementation-capable sub-agents. The orchestrator plans, briefs, coordinates, reviews, integrates, and reports blockers; it does not edit product code, repo docs, status artifacts, or tests for non-trivial work. Running a T0 item's `$security-review` and `$status-update` in-session is sanctioned tier depth, not a delegation skip.
 - **Non-delegable** means genuinely atomic glue that cannot be split, or a security/credential boundary requiring primary-only handling. The primary edits directly only for non-delegable work or when the user explicitly overrides delegation for that scope.
 - Valid delegation blockers: no delegation tool, no worktree support, runtime policy block, non-delegable work, or capacity still unavailable after closing, reusing, or retrying agents. Stale or busy agents are not a blocker.
 - Code-editing work runs in a dedicated isolated worktree per sub-agent, never the primary tree and never shared. Worktree setup fails closed: a missing or wrong result blocks the item; delivery never falls back to the primary tree.
 - Concurrent worktrees isolate runtime, not just git: a lane that boots the app shifts its ports and namespaces its ephemeral stores through the gitignored `.orchestrator.env` (`ORCHESTRATOR_WT`, `ORCHESTRATOR_SHIFT_INDEX`) that `$orchestrate` allocates and the active repo's launch path applies.
 - Never boot a lane with a vendor's or framework's own start command: its fixed ports and shared instance rejoin the lane the isolation separates and corrupt the neighbour's data. If the repo's isolated path is missing or broken, fix it or raise a blocker.
 - **One lane, two lifecycles.** The runtime stack comes down when the gate that booted it ends, pass or fail; whoever booted it stops it through the repo's stop path, never another lane's. The worktree, branch, and WIP survive until the branch lands or the work is explicitly discarded.
-- Calibrate the sub-agent model tier by risk — **strong** (`P0`, Critical/High), **cheap** (`P1`/`P2`, Medium/Low), **cheapest** (trivial mechanical work); unset resolves up to strong. Pass the tier explicitly at every dispatch and preserve it on resume. `$orchestrate` owns the tier→model table; never assert a model id unverified against the runtime's own config.
-- A slice is complete only at an explicit checkpoint — a scoped commit plus a status update. A truncated final message or silence is incomplete; a dead or stalled agent is neither a blocker nor a completion — recover it on the `$orchestrate` ladder.
+- Calibrate the sub-agent model tier by risk — **strong** (`P0`, Critical/High), **cheap** (`P1`/`P2`, Medium/Low), **cheapest** (trivial mechanical work); unset resolves up to strong. Pass the tier explicitly at every dispatch and preserve it on resume; only a verified reasoning failure justifies escalating it. `$orchestrate` owns the tier→model table; never assert a model id unverified against the runtime's own config.
+- A slice is complete only at an explicit checkpoint — a scoped commit plus a status update. A truncated final message or silence is incomplete; a dead or stalled agent is neither a blocker nor a completion — recover it by failure class on the `$orchestrate` ladder. A failure that recurs with nothing changed stops with its checkpoint and a blocker; it is never retried as-is.
 - **The orchestrator is the sole id allocator** (the primary session in Solo Mode). Every brief carries the ids its slice may use; a sub-agent needing another returns a blocker instead of minting one, because parallel lanes would collide permanently.
 - Ledger, briefs, messaging between slices, crash recovery, and lane reclamation follow `$orchestrate`. Branch and worktree names carry the record id so lane ownership survives a restart.
 
@@ -143,8 +145,17 @@ Preserve upstream → downstream flow:
 
 - Separate dependency-ordered from parallelizable work and record the split as dependency refs. A shared dependency (schema, contract, interface) is a sequencing barrier, not a parallel slice.
 - Implementation plans stay sequence-oriented and file/surface-level, with delegation candidates for non-trivial Work Orders; the orchestrator executes or explicitly rejects each candidate.
-- Choose the smallest chain that preserves traceability and validation: enter at the latest planning stage the work justifies; never drop `$implement` → `$validate` → `$security-review` → `$status-update`.
-- A diagnosed, bounded `ISS`/`TD` takes the direct-fix chain against its own record — `$implement` → `$validate` → `$security-review` → `$status-update`, no new `WO`, no planning run. It drops only planning ceremony, never the scoped commit, focused validation, or status record. Mint a `WO` and route through `$reconcile` when the fix needs decomposition or touches a requirement, blueprint, domain/data model, or security/trust boundary.
+- Choose the smallest chain that preserves traceability and validation: enter at the latest planning stage the work justifies. Delivery — `$implement` → `$validate` → `$security-review` → `$status-update` — runs for every item; its **risk tier** sets each stage's depth. Classify per item from what the change touches, resolve an ambiguous item up, and record the tier in the ledger and the validation evidence:
+
+  | Tier | Touches | Delivery depth |
+  |---|---|---|
+  | **T0** | documentation, metadata, instruction text only | `$validate` runs the consistency gates (lint, vocabulary, type, reference integrity); no product E2E. `$security-review` and `$status-update` may run in the orchestrating session. |
+  | **T1** | bounded, low-risk behaviour | Test-first `$implement`; an independent `$validate` agent; checklist-level `$security-review`. |
+  | **T2** | auth, billing, storage, migrations, credentials, sensitive dependencies | Tests authored independently of the implementer, first; independent verification; full `$security-review`. |
+  | **T3** | domain model, cardinality, or trust boundary | Architect adversarial review before planning, then T2. |
+
+- A Work Order states the user-visible behaviour it moves, or is marked enabling and names the journey it unblocks. Schedule an enabling item only behind that journey, and start nothing outside the selected outcome unless it blocks that outcome — record the discovery instead.
+- A diagnosed, bounded `ISS`/`TD` takes the direct-fix chain against its own record — delivery at its risk tier, no new `WO`, no planning run. It drops only planning ceremony, never the scoped commit, focused validation, or status record. Mint a `WO` and route through `$reconcile` when the fix needs decomposition or touches a requirement, blueprint, domain/data model, or security/trust boundary.
 - Implement only the active contract; escalate conflicts instead of expanding scope or broadening a task to hide them.
 - Build only what active requirements demand, MVP first: no speculative or partial features, TODO placeholders, incomplete functions, unrequired fallback paths, or mocks in product code. All committed code is production-ready.
 - User says start over / rejects a design / marks changes as an unaccepted path → quarantine that work: reject affected outputs in the ledger, stop building on it, restart from committed source-of-truth artifacts.
@@ -152,7 +163,7 @@ Preserve upstream → downstream flow:
 ## Feedback Loops and Authority [HIGH]
 
 - Route downstream discoveries through `$reconcile`, which owns the feedback taxonomy; never hide them in tactical edits.
-- Before minting an `ISS`/`REG`/`TD`, triage: read the indexes and active records in the same category/scope, with their root-cause state and linked `REG` evidence — an id spent on a duplicate is spent permanently. Group only on a defensible common root cause, not similar text.
+- Before minting an `ISS`/`REG`/`TD`, triage: read the indexes and active records in the same category/scope, with their root-cause state and linked `REG` evidence — an id spent on a duplicate is spent permanently. Group only on a defensible common root cause, not similar text. A new record names the behaviour or criterion it protects; a finding whose only remedy is another artifact and that names none goes in the report, not the index.
 - `ISS` is the generalized root cause; `REG` is one concrete symptom with its own immutable report document; `TD` is architecture-vs-code drift. With no related `ISS`, create it, then the `REG` under it; if an `ISS` already owns the cause, record the `REG` there; extract a symptom-shaped `ISS`'s symptom as a `REG` before generalizing it. Never retype or delete a durable `ISS` id.
 - A `REG` has exactly one current `ISS` parent. Relinking appends rationale to append-only history; it never moves or rewrites the `REG` document.
 - `ISSUES.md` and `TECH_DEBT.md` record problems, impact, and resolution path; neither is an execution spec unless elevated into a `WO`.
@@ -191,7 +202,7 @@ For implementation work, continue unless the user explicitly limits scope or a c
 11. PR merge + production deploy
 12. lane teardown: worktree + branch removed, `$cleanup` sweep — per lane, as soon as its branch is in the integration branch
 
-- Steps 2 and 4 run only the tests and scenarios for the touched surface and its dependents; the full local E2E gate (step 5) runs once before the draft PR.
+- Steps 2 and 4 run only the tests and scenarios for the touched surface and its dependents; the full local E2E gate (step 5) runs once before the draft PR. The risk tier sets each gate's depth: a T0 item runs its consistency gates at steps 5 and 7, not product E2E.
 - Stacks come down at steps 5 and 7, and every stack is down before step 10; worktrees and branches come down only at step 12.
 - `NOT VALIDATED` is a state report, not a workflow exit, unless the user stops the session or the next edge is blocked.
 
@@ -199,7 +210,7 @@ For implementation work, continue unless the user explicitly limits scope or a c
 
 Stage map: `$context-compiler` (persisted context) → `$spec` → `$architect` → `$planner` → `$review` → `$implement` → `$validate` → `$security-review` → `$status-update`, with `$reconcile` routing feedback and `$meta-learn` owning session/rule learning.
 
-Delivery (`$implement` → `$validate` → `$security-review` → `$status-update`) runs in every chain; the depth selects only which planning stages precede it. `$orchestrate` owns depth selection and delegation.
+Delivery (`$implement` → `$validate` → `$security-review` → `$status-update`) runs in every chain at the item's risk tier (*Planning, Implementation, and Scope*); the depth selects only which planning stages precede it. `$orchestrate` owns depth selection and delegation.
 
 | Skill | Agent | Creates |
 |-------|-------|---------|
@@ -242,8 +253,8 @@ Support skills: `$scout` and `$research` (evidence gathering), `$qmd` and `$code
 
 ## Quick Reference
 
-**[CRIT]**: `git status` first · explicit staging only · branch named for its record · read before write · root-cause analysis · no false validated claim · immutable ids never recycled · status only via `$status-update` · preserve unmerged WIP
+**[CRIT]**: `git status` first · explicit staging only · branch named for its record · read before write · root-cause analysis · no false validated claim · hydration fails closed · immutable ids never recycled · status only via `$status-update` · preserve unmerged WIP
 
-**[HIGH]**: delegate non-trivial work into isolated worktrees · pass the model tier explicitly · smallest chain that preserves traceability · complete implementations, MVP only · route discoveries through `$reconcile` · clean workspace and stop what you started · professional honesty
+**[HIGH]**: delegate non-trivial work into isolated worktrees · pass the model tier explicitly · smallest chain that preserves traceability, delivery at its risk tier · done means a journey moved · complete implementations, MVP only · route discoveries through `$reconcile` · clean workspace and stop what you started · professional honesty
 
 **[INFO]**: stage map and skill→agent→artifact table above
