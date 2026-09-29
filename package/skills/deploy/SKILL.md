@@ -162,4 +162,4 @@ Before deploying:
 ## Policy References
 
 **Should-read** from the active runtime root's `policy/RULES.md`:
-- Safety Rules - Transaction-safe, systematic changes
+- Destructive Operations; Failure, Hygiene, and Quality - transaction-safe changes
