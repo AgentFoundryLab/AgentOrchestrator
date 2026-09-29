@@ -2,9 +2,9 @@
 
 ## Overview
 
-Not every request deserves the same ceremony. A typo fix and a new subsystem both need implementation, validation, a security pass, and a status record — but only one of them needs requirements, blueprints, and a plan first. Workflow depth is the mechanism that scales the planning stages to the work while leaving the delivery gates fixed.
+Not every request deserves the same ceremony. A typo fix and a new subsystem both need implementation, validation, a security pass, and a status record — but only one of them needs requirements, blueprints, and a plan first. Workflow depth is the mechanism that scales the planning stages to the work. The risk tier scales each delivery gate to what the change can break.
 
-The fixed part is the point. Depth selection can drop planning; it can never drop the scoped commit, the focused validation, the security gate, or the status record.
+The gates are always present. Depth selection can drop planning; nothing can drop the scoped commit, the focused validation, the security gate, or the status record. The tier sets only how deep each gate runs: a documentation change is not run through product E2E, and a migration is not run through a checklist.
 
 ## Terminology
 
