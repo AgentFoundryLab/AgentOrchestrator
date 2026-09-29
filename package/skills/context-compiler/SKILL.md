@@ -44,6 +44,7 @@ context: fork
 - Do not use arbitrary line budgets. Include the directly scoped contract when correctness needs it.
 - Estimate bundle size after assembly. If it exceeds about 20k tokens, add a warning and recommend splitting by target skill or keeping related items indexed until opened on demand.
 - Hydrate scoped `REQ`/`AC`/`TR`/`TRC` text from the owning `FRD`/`TRD`, since Work Orders only cross-reference requirements by id.
+- **Hydration fails closed** (`RULES.md`, *Artifact Propagation*). An id that does not resolve, resolves to empty text, or appears with differing text in more than one place makes the bundle `BLOCKED`. Never tell the caller to author, infer, or paraphrase the missing text.
 - Do not bulk-hydrate related artifacts by keyword grep. Prefer a high-level related-items index.
 - Preserve authority levels: requirements and blueprints are normative; Work Orders are execution contracts; issues, tech debt, status, and validation are feedback/evidence.
 - Do not let downstream status or validation evidence rewrite upstream requirements, blueprints, or Work Order scope. Route conflicts through `$reconcile`.
@@ -72,7 +73,8 @@ context: fork
 
 - For each `REQ`/`AC`/`TR`/`TRC` id the Work Order cross-references:
   - confirm the id resolves in `docs/requirements/`, and hydrate its current text into the bundle (full text lives only here, pulled fresh — never copied into the WO);
-  - flag any id that no longer exists, or whose brief description in the WO misleads versus source;
+  - an id that no longer exists, hydrates empty, or carries conflicting text in another document (a copied criterion table, a contracts file) is a **blocker**. Set `Status: BLOCKED` at the top of the bundle and list each id under *Missing Context / Blockers* with the paths involved; the consuming stage stops until `$reconcile` resolves it;
+  - flag any id whose brief description in the WO misleads versus source;
   - do not silently rewrite the Work Order unless asked.
 
 ### 4. Build related-items index
@@ -122,6 +124,7 @@ Size: active contract ~N tokens; bundle ~N tokens.
 
 Generated: <timestamp>
 Target use: <stage/record>
+Status: READY | BLOCKED
 
 Sources: `<source paths>`
 Size: active contract ~N tokens; bundle ~N tokens.
@@ -146,6 +149,7 @@ Only include rows pre-filtered by scoped ids. Otherwise state: "Not read; use on
 - [ ] Bundle is written under `context/<area>/<record>.md`.
 - [ ] Direct contract is hydrated enough for the target stage.
 - [ ] Referenced `REQ`/`AC`/`TR`/`TRC` plaintext is hydrated from the owning `FRD`/`TRD` when applicable.
+- [ ] Any unresolved, empty, or conflicting criterion marks the bundle `BLOCKED`, and nothing asks the caller to author it.
 - [ ] Related items are indexed, not pasted by broad keyword grep.
 - [ ] Large status/validation indexes are not included wholesale and are only pre-filtered by scoped ids when needed.
 - [ ] Size estimate is a terse line; the warning appears only when the bundle exceeds about 20k tokens.
