@@ -44,6 +44,8 @@ These journeys are also the acceptance surface for delegation. A journey that co
 - **AC-011.2:** Each `WO` shall carry `Phase`, `Milestone`, `Category`, `Scope`, `Title`, `Complexity`, and `Priority` at creation.
 - **AC-011.3:** `dependsOn` shall reflect the real dependency graph, and a shared surface touched by several Work Orders shall be stated as a sequencing barrier.
 - **AC-011.4:** Multi-file, high-risk, or dependency-sensitive work shall receive an implementation plan with a delegation map, linked from its `WO`.
+- **AC-011.5:** Each `WO` shall state a done condition naming the user-visible behaviour it moves, or shall be marked enabling and name the journey it unblocks.
+- **AC-011.6:** Hydrating a cross-referenced criterion shall fail closed: an id that does not resolve, resolves empty, or resolves to conflicting text shall block the consuming stage, and no stage shall author the missing criterion text itself.
 
 ### REQ-012: End-to-end orchestrated delivery
 
@@ -58,6 +60,8 @@ These journeys are also the acceptance surface for delegation. A journey that co
 - **AC-012.5:** The model tier shall be passed explicitly at every dispatch, derived from the item's own classification.
 - **AC-012.6:** A slice shall be treated as complete only at an explicit checkpoint; silence or a truncated report shall be treated as incomplete and recovered, not assumed done.
 - **AC-012.7:** Every runtime stack shall be stopped before its agent reports; every worktree and branch shall survive until its merge lands, then be removed.
+- **AC-012.8:** Recovery shall route by failure class: a transport, environment, or report failure shall not escalate the model tier; a missing receipt shall be read from git or the ledger rather than reconstructed by a new agent; a failure that recurs with nothing changed shall stop with its checkpoint preserved and a blocker reported.
+- **AC-012.9:** Each shared surface — schema, contract, runner, index, or generated file — touched by more than one slice shall have one integration owner, identified before dispatch, and its changes shall serialize; generated indexes shall be rendered at the integration point, not inside lanes.
 
 ### REQ-013: Session learning
 
@@ -79,3 +83,14 @@ These journeys are also the acceptance surface for delegation. A journey that co
 - **AC-014.2:** Findings shall cite source paths and symbols, and shall state confidence.
 - **AC-014.3:** A contradiction between requirements, blueprints, implementation, validation, or status shall be surfaced and routed to the owning stage, never silently reconciled.
 - **AC-014.4:** An investigation whose findings must outlive the session shall produce a report under `docs/analysis/`.
+
+### REQ-015: Outcome-anchored delivery
+
+**User Story:** As a user, I want delivery measured by journeys a customer can complete, so that activity and closed records never stand in for a usable product.
+
+**Acceptance Criteria:**
+
+- **AC-015.1:** An enabling `WO` shall be scheduled only behind the journey it unblocks, and no new start outside the selected outcome shall begin unless it blocks that outcome.
+- **AC-015.2:** Validation shall keep three verdicts distinct — inventory accounted for, surface faithful, journey complete — and only the last two shall support a readiness claim; a placeholder or a source-text inspection shall prove the first only.
+- **AC-015.3:** A new `ISS` or `TD` shall name the behaviour or criterion it protects; a finding whose only remedy is another artifact and that names none shall be reported, not minted.
+- **AC-015.4:** The status rollup shall report the journeys proven at the shipping head, and any forecast shall derive from a measured, completed slice under the current process, never from record counts or story points.

@@ -9,12 +9,13 @@ The fixed part is the point. Depth selection can drop planning; it can never dro
 ## Terminology
 
 - **Depth**: which planning stages precede delivery — Full, Medium, Light, or Direct-fix.
-- **Delivery chain**: `$implement` → `$validate` → `$security-review` → `$status-update`. Present at every depth.
+- **Delivery chain**: `$implement` → `$validate` → `$security-review` → `$status-update`. Present at every depth; each stage's rigor scales with the item's risk tier.
+- **Risk tier**: the item's delivery-rigor class — documentation, bounded behaviour, sensitive surface, or domain/trust boundary — derived from what the change touches.
 - **Direct-fix**: delivery run against an existing `ISS`/`TD` with no new `WO` and no planning run.
 
 ## Requirements
 
-### REQ-004: Complexity-scaled workflow depth with a fixed delivery chain
+### REQ-004: Complexity-scaled workflow depth with a risk-scaled delivery chain
 
 **User Story:** As a user, I want the workflow to scale to the work, so that a small change is not buried in planning ceremony and a large one is not started without it.
 
@@ -24,5 +25,5 @@ The fixed part is the point. Depth selection can drop planning; it can never dro
 - **AC-004.2:** Each planning stage shall produce a versioned artifact in the target repository.
 - **AC-004.3:** `$orchestrate` shall score complexity, propose a depth, and confirm it with the user before starting.
 - **AC-004.4:** Artifact templates shall install to the runtime root and shall not overwrite an existing file at the destination.
-- **AC-004.5:** The delivery chain shall run at every depth. Selecting a shallower depth shall drop planning stages only.
+- **AC-004.5:** Delivery stages shall run at every depth, each scaled by the item's risk tier; selecting a shallower depth shall drop planning stages only, and an ambiguous tier shall resolve to the stricter one.
 - **AC-004.6:** A diagnosed, bounded defect shall be deliverable as Direct-fix against its own `ISS`/`TD`, with no `WO` minted.
