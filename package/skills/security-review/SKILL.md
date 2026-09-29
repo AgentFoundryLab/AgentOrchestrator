@@ -203,7 +203,12 @@ Map trust boundaries (Internet → WAF/Gateway → App → Service → DB → Ex
 
 1. Resolve the task and implementation handoff from `$ARGUMENTS` or the orchestrator brief.
 2. Read active repo rules (`AGENTS.md`), the Work Order under `docs/development/workorders/` with its implementation plan, and the developer/validator handoffs.
-3. Identify the changed files from the implementation commit; confirm against the task's declared owned files.
+3. Identify the changed files from the implementation commit; confirm against the task's declared owned files. Set the review depth from the item's **risk tier** (`RULES.md`, *Planning, Implementation, and Scope*; resolve it up when the brief omits it):
+   - **T0**: confirm no secret, credential, or executable content entered the change, and that no instruction text weakens a safety or approval rule. The orchestrating session may run this.
+   - **T1**: the OWASP gate items that apply to the changed files, plus CI gate alignment.
+   - **T2/T3**: every step below.
+
+   A finding at any depth promotes the item to the full review.
 4. Run the **OWASP Top 10 2025 Gate** first — assess each item as PASS / N/A / finding. Then run the **OWASP LLM Top 10 2025 Gate** if any AI/LLM code changed. Then run the **CI Gate Alignment** checks.
 5. Run the **Detailed Vulnerability Checklist** section by section against each changed file. Use `grep`/`glob` to locate patterns; read the actual source rather than relying on filenames.
 6. For each finding: record severity, file:line, title, attack path (exactly how an attacker triggers it), and a copy-paste-ready remediation.
@@ -212,6 +217,7 @@ Map trust boundaries (Internet → WAF/Gateway → App → Service → DB → Ex
    - No Critical/High, but Medium/Low/Info present → **FINDINGS**; proceed to status.
    - No findings → **PASS**.
 8. For each Critical or High finding, record durable feedback as records under `docs/development/issues/`, then refresh the `ISSUES.md` index:
+   - Name the security property or `AC`/`TRC` each record protects in its `Protects` field.
    - Read the index first and inspect active security records for the same root cause. Similar wording is not proof of a shared cause, but a duplicate record costs more than a moment's reading.
    - If no record owns the cause, author a generalized `ISS` with `issueType: security`, its severity, and its root-cause state, then record the concrete symptom as a `REG` under it. A missing control with no exploitable symptom is a `TD` instead. `Priority` derives from severity (Critical/High → `P0`). **Under `$orchestrate`, ids come from the brief**; if this slice needs one the brief did not provide, report the finding with its evidence and let the orchestrator allocate.
    - The `REG` document carries: `Type: Security`, `Discovered`, `Affects`, the delivery record it was found under, then the finding's file:line, attack path (exactly how an attacker triggers it), remediation, CVSS estimate, and the verification evidence a fix must produce.

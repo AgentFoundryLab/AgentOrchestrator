@@ -76,7 +76,7 @@ When invoked as the planning gate between `$planner` and `$implement`, also veri
 - Complex Work Orders are safe to delegate because their implementation plan is discoverable and linked
 - Blocking gaps are surfaced before implementation begins
 
-Log blocking gaps as `ISS`/`TD` records and route them through `$reconcile` before `$implement` starts.
+Log blocking gaps as `ISS`/`TD` records and route them through `$reconcile` before `$implement` starts. Each names the behaviour it protects; a gap that protects none is a report line, not a record (`$reconcile`, *Triage before minting*).
 
 ## What To Look For
 
