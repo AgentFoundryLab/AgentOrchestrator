@@ -32,7 +32,7 @@ Validate the assigned Work Order, implementation commit, or verification slice b
 
 | Surface | Path | Holds |
 |---|---|---|
-| Validation coverage | `docs/validation/WO-NNN.md` | one row per `AC`/`TRC` in scope → layer → command → result → proof, or a gap reason |
+| Validation coverage | `docs/validation/WO-NNN.md` | one row per `AC`/`TRC` in scope → layer → command → result → verdict level → proof, or a gap reason |
 | Issue (root cause) | `docs/development/issues/ISS-NNN.md` | generalized diagnosis + remediation |
 | Regression (symptom) | `docs/development/issues/REG-NNN.md` | verbatim report + reproduction + closure matrix |
 | Tech debt (drift) | `docs/development/debt/TD-NNN.md` | blueprint-vs-code gap + removal trigger |
@@ -41,14 +41,20 @@ Validate the assigned Work Order, implementation commit, or verification slice b
 
 - The coverage document is keyed on **`AC`/`TRC` ids, never the Work Order number**. Acceptance criteria outlive the Work Order that delivered them; a file named after a WO becomes unreadable once it closes.
 - A criterion with no row is an uncovered criterion, not an implied pass.
+- Every row carries a **verdict level** (`RULES.md`, *Handoffs, Validation, and Delivery*):
+  - `accounted`: the inventory names the item;
+  - `faithful`: the surface behaves as specified;
+  - `journey-complete`: a user completes the transaction at the shipping head.
+
+  A placeholder, a marker that draws nothing, or a source-text or structural check earns `accounted` at most, however many rows it satisfies. Never report `accounted` as `faithful`.
 - The coverage document records what a run executed. It carries no status verdict for the Work Order itself.
 
 ## Workflow
 
 1. Resolve the validation target from `$ARGUMENTS` or the orchestrator brief.
 2. Read active repo rules, the Work Order and its implementation plan, the linked blueprints and requirements, and the implementation commit/scope. Requirements are cross-referenced by id only — read the `REQ`/`AC`/`TR`/`TRC` text from `docs/requirements/`, never from the WO's brief descriptions.
-3. Choose validation scope by delivery state: default to blast-radius-scoped focused tests/scenarios (touched surface + dependents) after each fix; run full local E2E once as the pre-PR gate, plus preview/release gates per active repo. Under concurrent worktrees, boot the app and its stores via the repo's own isolated launch path, which sources `.orchestrator.env` (`ORCHESTRATOR_WT` prefix + `ORCHESTRATOR_SHIFT_INDEX`) — shifting service ports and prefixing ephemeral stores — so parallel items don't contend. A vendor's or framework's own start command is not that path and never substitutes for it: its defaults bind fixed ports and one shared instance, rejoining the lane the isolation exists to separate. Stop what you booted through that repo's stop path once the gate ends, pass or fail; report any port or store left live.
-4. Verify each assigned acceptance criterion with concrete evidence.
+3. Run the gates of the item's **risk tier** (`RULES.md`, *Planning, Implementation, and Scope*; the tier is in the brief, or resolve it up when absent), and state the tier in the report. T0 runs the consistency gates and no product E2E. Within the tier, choose validation scope by delivery state: default to blast-radius-scoped focused tests/scenarios (touched surface + dependents) after each fix; run full local E2E once as the pre-PR gate, plus preview/release gates per active repo. Under concurrent worktrees, boot the app and its stores via the repo's own isolated launch path, which sources `.orchestrator.env` (`ORCHESTRATOR_WT` prefix + `ORCHESTRATOR_SHIFT_INDEX`) — shifting service ports and prefixing ephemeral stores — so parallel items don't contend. A vendor's or framework's own start command is not that path and never substitutes for it: its defaults bind fixed ports and one shared instance, rejoining the lane the isolation exists to separate. Stop what you booted through that repo's stop path once the gate ends, pass or fail; report any port or store left live.
+4. Verify each assigned acceptance criterion with concrete evidence, then the Work Order's `Done When`. An enabling WO passes on its criteria. A WO that names a user-visible behaviour passes only when that behaviour is demonstrated at `faithful` or `journey-complete`.
 5. For linked regressions, complete the `REG` **closure matrix**: each exact reported condition → corrected `AC`/`TRC` → RED evidence → focused post-fix pass → full/preview gate. A missing row is a validation failure. Broken-behavior characterization is evidence only and never counts as acceptance coverage.
 6. Fail closed when evidence is missing, stale, generic, only proves broken-behavior characterization, or only partially covers the claim.
    - Read a remote gate's verdict from the job that ran it. An empty query result is unknown, never "no run" — a freshly pushed run is routinely not yet indexed by the key you filtered on, so re-query on another key before concluding. An aggregate roll-up status cannot separate "still running" from "failing": never merge on it and never call a gate red on it alone.
@@ -62,6 +68,7 @@ Validate the assigned Work Order, implementation commit, or verification slice b
    - **If the existing `ISS` is symptom-shaped:** extract its symptom as a `REG` under the same issue before generalizing it. Never retype or delete a durable `ISS` id.
    - **A `REG` always has exactly one current `ISS` parent.** Relinking changes that parent and appends to the `REG`'s `Link history` with a rationale; it never moves or rewrites the report.
    - **Blueprint-versus-code drift is a `TD`**, not a defect — author it from `td.md` with its removal trigger.
+   - **Name what it protects.** Every new `ISS`/`TD` fills `Protects` with the behaviour or `AC`/`TRC` at stake. A finding whose only remedy is another artifact, and that protects no named behaviour, goes in this report's Feedback line and is not minted (`$reconcile`, *Triage before minting*).
    - Preserve every reported regression **verbatim** in the `REG`'s `Reported behavior` section. Never edit, collapse, or delete it while fixing — it is the acceptance evidence the fix is validated against.
    - Refresh the `ISSUES.md` / `TECH_DEBT.md` index rows. Set **no** status here — `$status-update` owns it. Route the finding onward through `$reconcile`.
    - **Under `$orchestrate`, ids come from the brief.** If this slice needs one the brief did not provide, report the finding with its evidence and let the orchestrator allocate.
@@ -88,7 +95,8 @@ From the active runtime root's `templates/` directory:
 
 ## Report format
 
-- Status: `VALIDATED` or `NOT VALIDATED: <exact missing/failing gate>`.
+- Status: `VALIDATED (T<n>)` or `NOT VALIDATED: <exact missing/failing gate>`.
+- Verdict: the highest level proven (`accounted` / `faithful` / `journey-complete`) and whether `Done When` was met.
 - Evidence: commands run, result, relevant files/tests/artifacts, `AC`/`TRC` ids covered.
 - Validation artifacts: the coverage document path and the rows it added or updated.
 - Feedback: any `ISS`/`REG`/`TD` ids authored, with their document paths.

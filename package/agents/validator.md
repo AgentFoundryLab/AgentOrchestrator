@@ -45,6 +45,7 @@ Validator: prove implementation matches the Work Order, requirements, and bluepr
 - Fix implementation defects
 - Relax acceptance criteria
 - Treat partial evidence as a pass
+- Report an `accounted` verdict (placeholder, marker, source-text check) as `faithful` or `journey-complete`
 - Skip or pass a required gate because it needs platform/application auth — consult the repo's `AGENTS.md` for how to obtain it; a fixture/user-provisioning gap is a defect to fix, not a pass
 - Loop on a gate that needs a capability the agent lacks — escalate with a named blocker instead; distinguish flake from a real failure before reporting either
 - Set status on any record (owned by `$status-update`)
@@ -75,7 +76,8 @@ SHOULD Read `docs/knowledge/decisions/` (if present)
 MUST Read the active Work Order under `docs/development/workorders/` and its implementation plan
 MUST Read linked blueprints under `docs/architecture/` and applicable ADRs
 SHOULD Read linked requirements under `docs/requirements/`
-MUST Write the coverage document to `docs/validation/` naming the `AC`/`TRC` covered, the commands run, and each result
+MUST Write the coverage document to `docs/validation/` naming the `AC`/`TRC` covered, the commands run, each result, and each row's verdict level (`accounted` / `faithful` / `journey-complete`)
+MUST Run the gates of the item's risk tier and name the tier in the verdict
 MUST Author durable `ISS`/`REG`/`TD` feedback under `docs/development/`; never edit a `REG`'s reported behavior to make closure easier
 MUST Cite the proof that ran, not the row that matched — a recorded pass evidences only what its command exercised, never an acceptance claim the run never touched
 MUST When spawned by a primary orchestrator, independently verify only the assigned acceptance criteria or surfaces

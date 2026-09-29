@@ -33,7 +33,7 @@ The versioned planning docs are the source of truth for status — there is no s
 | `TD` | `docs/development/TECH_DEBT.md` | `Open` \| `Deferred` \| `Closed` \| `Decommissioned` |
 | `FB` | `docs/development/FEEDBACK.md` | triage lifecycle — **not assessed here** |
 | Milestone | its `PLAN-NNN` document | gate passed / not passed |
-| Rollup | `docs/development/status/STATUS.md` | derived from the above |
+| Rollup | `docs/development/status/STATUS.md` | derived from the above, led by the release picture |
 
 - Use **only** the type's own vocabulary. Never invent a value, and never convert `Decommissioned` to `Postponed`.
 - `Blocked` requires at least one blocker id in the same edit. `Deferred` is non-terminal: the record stays in the active index and still accepts links.
@@ -55,8 +55,8 @@ The versioned planning docs are the source of truth for status — there is no s
 
 The table above owns *which* values each type accepts. This is what they mean:
 
-- **`Implemented` / `Validated`** — the required behavior exists in the codebase with credible runtime or test evidence.
-- **`Partial`** — some meaningful portion exists, but a required path, enforcement layer, provider, persistence boundary, or verification proof is still missing.
+- **`Implemented` / `Validated`** — the required behavior exists in the codebase with credible runtime or test evidence at the `faithful` verdict level or higher. For a journey requirement, the evidence must be `journey-complete` at the shipping head.
+- **`Partial`** — some meaningful portion exists, but a required path, enforcement layer, provider, persistence boundary, or verification proof is still missing. A surface that is only `accounted` (placeholders, markers that draw nothing, structural or source-text checks) is `Partial` at most.
 - **`Postponed` / `Deferred`** — intentionally set aside by a product or stakeholder decision. Not an implementation assessment, and non-terminal: the record stays active.
 - **`Decommissioned`** — an immutable record intentionally retired, split, merged, moved, or superseded. Stays traceable without being assessed as active scope.
 - **`Not Implemented` / `Open`** — behavior absent, or only described in docs with no implementation proof.
@@ -75,7 +75,11 @@ Never invent an intermediate value, and never convert `Decommissioned` to `Postp
 5. Set the assessed status on each in-scope record in its index. For a `Blocked` Work Order, record the blocking ids in the same edit — `blockers` is an id list, never prose. Close a `WO` only after validation passes and the user accepts. Close an `ISS` only after every `REG` linked to it is closed. Do not upgrade a parent `REQ` while a required child `AC` is still materially missing.
 6. Reconcile authored living docs against assessed reality. `README.md` and `docs/**` prose are hand-written and drift from the code they describe; update drifted sections to match what was delivered. If a doc reveals the requirement itself is wrong — not just stale prose — route through `$reconcile` → `$spec` rather than editing scope here. Reuse the `git:update-docs` skill for the drift pass when available.
 7. Before any closure or upgrade, verify each linked `REG`'s **closure matrix** is complete and passing. Active linked regression evidence blocks `Implemented`, `Validated`, and `Closed`. Broken-behavior characterization is evidence only and never counts as acceptance coverage.
-8. Refresh `docs/development/status/STATUS.md` and the header counters on the indexes you touched (`Updated:` date, done/total tallies) so no index contradicts its own rows.
+8. Refresh `docs/development/status/STATUS.md` and the header counters on the indexes you touched (`Updated:` date, done/total tallies) so no index contradicts its own rows. `STATUS.md` leads with a **release picture**:
+   - the journey requirements, each with its highest proven verdict level at the shipping head (SHA);
+   - the forecast basis: the most recent representative slice completed under the current process, with its measured start-to-integrated time and agent cost. With no such slice, state `No forecast basis`.
+
+   Never forecast from story points, closed-record counts, or remaining-record counts. Drop a deadline that the measured basis does not support, and say so.
 9. Commit the status change atomically before handoff when rows changed — stage explicit files only (the indexes touched, `STATUS.md`, any updated authored docs), citing the record ids whose state moved.
 10. Stop before any external sheet/workbook write unless the user explicitly asks for the sync skill.
 11. Finalization hygiene (delivery-run close): once integration has landed, hand off to (or run) `$cleanup` to prune merged worktrees and delivery branches, and to triage any worktree with unmerged commits or uncommitted changes — never delete unmerged/uncommitted work; surface it for a merge or discard decision.
@@ -84,6 +88,7 @@ Never invent an intermediate value, and never convert `Decommissioned` to `Postp
 
 - Prefer repo-visible proof over architectural intent.
 - Tests count as strong evidence only if they exercise the claimed behavior.
+- Closed Work Orders are not evidence of a requirement. A requirement moves only on verdict-level evidence for its own criteria.
 - Broken-behavior characterization tests document regressions but do not prove corrected acceptance behavior.
 - Documentation alone is not implementation.
 - Environment failures are real. If a code path exists but fails in the current environment, the status is usually `Partial`, not `Implemented`.
