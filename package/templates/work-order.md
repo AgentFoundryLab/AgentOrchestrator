@@ -8,6 +8,12 @@ Implementation Plan: [WO-XXX-implementation-plan.md](WO-XXX-implementation-plan.
 
 If no implementation plan is needed, write `Implementation Plan: None required.`
 
+## Done When
+
+Name the one user-visible behaviour this Work Order moves, as a user would observe it at the shipping head.
+
+If it moves none, write `Enabling — unblocks <REQ-NNN or WO-NNN>`, naming the journey that consumes it. An enabling Work Order is scheduled only behind that journey.
+
 ## In Scope
 
 - Responsibility owned by this work order
@@ -41,13 +47,11 @@ Keep Unit and Integration concise. Reserve structured scenario templates for E2E
 
 ### Unit Tests
 
-- Focus on behavior, state transitions, invariants, and failure handling.
-- Organize tests around the underlying behavior being validated, not surface-level symptoms.
+- <behavior, state transition, invariant, or failure case this WO must prove>
 
 ### Integration Tests
 
-- Focus on boundaries, contracts, interfaces, persistence, and messaging behavior.
-- Keep concise unless setup or sequencing is unusual.
+- <boundary, contract, or persistence behavior this WO must prove>
 
 ### E2E Tests
 

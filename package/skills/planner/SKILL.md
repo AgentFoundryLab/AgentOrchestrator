@@ -99,9 +99,10 @@ Every Work Order carries its identity fields at allocation — **`Phase`, `Miles
 - Split large or mixed concerns into separate Work Orders
 
 ### 4. Write the Work Order
-Use the template's sections exactly: `Summary`, `In Scope`, `Out of Scope`, `Requirements`, `Blueprints`, `Test Plan`.
+Use the template's sections exactly: `Summary`, `Done When`, `In Scope`, `Out of Scope`, `Requirements`, `Blueprints`, `Test Plan`.
 
 - Keep `Summary` to the delivery outcome in 2-3 sentences, not background narrative
+- `Done When` names the one user-visible behaviour the WO moves. A WO that moves none is `Enabling — unblocks <REQ/WO>`. Seams, models, producers, and placeholder surfaces are enabling; they never stand in for the journey
 - Immediately after the summary add `Implementation Plan: [WO-NNN-implementation-plan.md](WO-NNN-implementation-plan.md)`, or `Implementation Plan: None required.`
 - **Cross-reference requirements by immutable id with a one-line description each.** The requirements document is the single source of truth; never copy `REQ`/`AC`/`TR`/`TRC` text verbatim — copies go stale, and `$context-compiler` hydrates the full text on demand at implementation time
 - List governing blueprints with one-line summaries; implementers read the full blueprint directly
@@ -114,13 +115,15 @@ Use the template's sections exactly: `Summary`, `In Scope`, `Out of Scope`, `Req
 ### 5. Sequence the work
 - Set `dependsOn` accurately: this is the graph `$orchestrate` uses to parallelize a Phase — Work Orders with no unmet dependency fan out concurrently, one worktree each. Omit only when the WO is truly independent
 - A shared surface touched by multiple Work Orders (schema, contract, interface) is a **sequencing barrier, not a parallel slice** — say so explicitly
+- An enabling WO `dependsOn` nothing it does not need, and its consuming journey WO lists it in `dependsOn`. Never plan enabling work without the journey that consumes it
 - Assign `Phase` (a `PLAN-*` id) and `Milestone` (an `M-*` id) on the record
 
 ### 6. Add an Implementation Plan only when needed
 - Required for multi-file, high-risk, or dependency-sensitive work
 - Sections exactly: `Objective`, `Assumptions and Dependencies`, `Target Files and Surfaces`, `Delegation Map`, `Execution Steps`, `Verification`, `Risks`
 - Keep it file-level and sequence-oriented; validate one isolated change at a time
-- `Delegation Map` names the developer and validator slices suitable for sub-agents, plus any primary-only work
+- `Delegation Map` states only departures from `$orchestrate`'s default slicing (multiple lanes, a shared-surface owner, primary-only steps), or `Default`
+- Never copy delivery procedure, gate lists, or skill text into a plan; cite the owning skill
 - When a plan exists, the owning WO must link it explicitly in `Summary`
 
 ### 7. Maintain the Plan and Roadmap
@@ -151,6 +154,8 @@ From the active runtime root's `templates/` directory:
 ## Validation Checklist
 
 - [ ] Work Order scope is explicit and bounded, at the right path, with the template's sections
+- [ ] `Done When` names a user-visible behaviour, or the WO is marked enabling and its consuming journey is planned
+- [ ] Every Milestone gate names a user journey unless it is purely integration or promotion
 - [ ] Requirements cross-referenced by immutable id with brief descriptions, not copied verbatim
 - [ ] Blueprint references sufficient for implementation
 - [ ] Test plan covers unit, integration, and E2E where applicable; nothing named after the WO number

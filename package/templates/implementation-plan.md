@@ -19,15 +19,14 @@ State the delivery outcome this plan is meant to achieve.
 
 ## Delegation Map
 
-- Developer sub-agent slice: files/surfaces owned, dependencies, and expected output
-- Validator sub-agent slice: acceptance criteria, commands, and evidence to verify independently
-- Primary-only work: integration, credentials, branch/PR/status continuation, or non-delegable steps
+State only what departs from `$orchestrate`'s default slicing: a split into several developer lanes, the shared surface a lane owns as integration owner, or primary-only steps. Write `Default` when nothing departs.
 
 ## Execution Steps
 
-1. Make the first change needed to establish the implementation path.
-2. Validate that change before moving on.
-3. Continue with the next isolated change.
+1. <first concrete change, naming its file or surface>
+2. <next change and the dependency that orders it>
+
+List only steps specific to this Work Order. The delivery procedure lives in the skills, not in each plan.
 
 ## Verification
 

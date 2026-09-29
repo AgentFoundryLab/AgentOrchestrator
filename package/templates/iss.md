@@ -14,6 +14,7 @@
 - Severity: `<Critical | High | Medium | Low>`
 - Root-cause state: `<Unknown | Suspected | Confirmed>`
 - Root cause: <current concise hypothesis or confirmed cause>
+- Protects: <the user-visible behaviour or `AC`/`TRC` this issue guards; a finding that names none is reported, not minted>
 
 ## Status
 

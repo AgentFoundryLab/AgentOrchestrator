@@ -10,6 +10,7 @@
 - Category / scope: `{{category}}` / `{{scope}}`
 - Severity: `{{Critical | High | Medium | Low}}`
 - Priority: `{{P0 | P1 | P2 | P3}}`
+- Protects: {{the user-visible behaviour or `AC`/`TRC` this drift puts at risk; drift that endangers none is reported, not minted}}
 
 ## Status
 

@@ -12,8 +12,10 @@ gate has recorded evidence; a failed Milestone creates remediation Work Orders.
 
 | Milestone | Gate | Passes when |
 | --- | --- | --- |
-| M1 | {{what is being coordinated}} | {{the evidence that closes it}} |
-| M2 | {{what is being coordinated}} | {{the evidence that closes it}} |
+| M1 | {{what is being coordinated}} | {{the journey a user completes at the integrated head, and its evidence}} |
+| M2 | {{what is being coordinated}} | {{the journey a user completes at the integrated head, and its evidence}} |
+
+A gate that names no user journey measures activity, not delivery. Give every gate a journey unless it is purely an integration or promotion step.
 
 Declare no Milestones when the Phase is sequenced by Work Order `dependsOn` alone. Say so explicitly
 rather than leaving the section empty.
