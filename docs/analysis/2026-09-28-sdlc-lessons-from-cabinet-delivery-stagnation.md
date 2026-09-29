@@ -138,4 +138,4 @@ Candidates for `/meta-learn`, listed so the evidence lands where the decision wi
 | `RULES.md` — Artifact Propagation | `$context-compiler` hydrates full text on demand | States the mechanism, not its failure behaviour (§1.C). |
 | `RULES.md` — Feedback Loops | Triage before minting `ISS`/`REG`/`TD` | Guards duplicates, not recursion; nothing asks what behaviour a finding protects (§1.F). |
 | `orchestrate/SKILL.md` — recovery ladder | Rung 1 resume, Rung 2 worktree hand-over | No failure-class routing, no unchanged-failure stop, no receipt-from-ledger rule (§1.E). |
-| `orchestrate/SKILL.md` — parallelization | Fan out every WO with no unmet dependency | Parallelism bounded by the dependency graph, not by a WIP cap or shared-surface ownership (§1.D, §2). |
+| `orchestrate/SKILL.md` — parallelization | Fan out every WO with no unmet dependency; a declared shared dependency is a sequencing barrier | The barrier fires only on dependencies someone declared. Nothing detects an undeclared shared surface before dispatch, names its integration owner, or keeps lanes from rendering shared indexes (§1.D). No WIP cap (§2). |
