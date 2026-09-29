@@ -96,9 +96,10 @@ owned by `$status-update`. Ids are immutable — `../development/ID-MAP.md` reso
 | WO-180 | PLAN-003 | — | feature | agents | Proactive collaboration | `WO-178`, `WO-179` | Low | P2 | `REQ-004` | Open |
 | WO-181 | PLAN-004 | M1 | refactor | policy | Adopt the record schema across the distributed package | — | High | P0 | `REQ-002`, `AC-002.4`, `REQ-011`, `TR-004`, `TRC-004.2` | Implementing |
 | WO-182 | PLAN-004 | M2 | refactor | orchestration | Migrate this repository's artifacts to the record schema | `WO-181` | High | P0 | `REQ-009`, `REQ-010`, `AC-010.3`, `REQ-011`, `AC-011.2` | Implementing |
+| WO-183 | PLAN-002 | — | refactor | orchestration | Anchor delivery on journey outcomes and fail-closed recovery | — | High | P0 | `AC-004.5`, `AC-011.5`, `AC-011.6`, `AC-012.8`, `AC-012.9`, `REQ-015` | Open |
 
 ---
 
-83 active Work Orders. `WO-001`–`WO-096` and `WO-098`–`WO-100` are closed and live in the
-archive index. The next free id is `WO-183`.
+84 active Work Orders. `WO-001`–`WO-096` and `WO-098`–`WO-100` are closed and live in the
+archive index. The next free id is `WO-184`.
 
