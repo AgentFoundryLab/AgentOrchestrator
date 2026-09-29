@@ -102,4 +102,3 @@ owned by `$status-update`. Ids are immutable — `../development/ID-MAP.md` reso
 
 84 active Work Orders. `WO-001`–`WO-096` and `WO-098`–`WO-100` are closed and live in the
 archive index. The next free id is `WO-184`.
-

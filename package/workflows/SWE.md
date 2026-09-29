@@ -173,7 +173,7 @@ For a defect whose remediation is already diagnosed and bounded, run delivery ag
 
 ```
 ┌──────────────────────┐
-│      delivery        │  against ISS / TD    
+│      delivery        │  against ISS / TD
 └──────────────────────┘
 ```
 
