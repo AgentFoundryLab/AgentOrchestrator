@@ -31,7 +31,7 @@ Ids are immutable. `docs/development/ID-MAP.md` resolves the pre-migration `FR`/
 | REQ-012 | End-to-end orchestrated delivery | orc | P0 | `AC-012.1`–`AC-012.9` | [FRD-ORC-001.md](FRD-ORC-001.md) | Implemented |
 | REQ-013 | Session learning | orc | P1 | `AC-013.1`–`AC-013.3` | [FRD-ORC-001.md](FRD-ORC-001.md) | Implemented |
 | REQ-014 | Codebase investigation | orc | P2 | `AC-014.1`–`AC-014.4` | [FRD-ORC-001.md](FRD-ORC-001.md) | Implemented |
-| REQ-015 | Outcome-anchored delivery | orc | P0 | `AC-015.1`–`AC-015.4` | [FRD-ORC-001.md](FRD-ORC-001.md) | Not Implemented |
+| REQ-015 | Outcome-anchored delivery | orc | P0 | `AC-015.1`–`AC-015.4` | [FRD-ORC-001.md](FRD-ORC-001.md) | Implemented |
 
 ## Technical Requirements
 
