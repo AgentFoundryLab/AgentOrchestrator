@@ -43,7 +43,7 @@ Keep orchestrator turns focused on: assess → delegate → checkpoint → proce
 
 ## Workflow Depths
 
-Select the smallest chain that preserves traceability and validation. The delivery chain that runs at every depth is defined in the `RULES.md` stage map; the depth below selects only which planning stages precede it.
+Select the smallest chain that preserves traceability and validation. The depth below selects only which planning stages precede delivery; the item's **risk tier** (`RULES.md`, *Planning, Implementation, and Scope*) sets how deep each delivery stage runs.
 
 | Depth | Chain | Use when |
 |---|---|---|
@@ -68,15 +68,22 @@ The direct-fix path drops only the planning ceremony — never the scoped commit
 
 Score >= 4 → Full; 1-3 → Medium; <= 0 → Light. Confirm the proposed depth with `AskUserQuestion` before starting.
 
+### Risk tier
+
+Classify every item T0–T3 before its first dispatch, from what the change touches: the WO's `Category`, the surfaces its plan names, and the escalation triggers above (requirement, blueprint, domain/data model, security/trust boundary). Resolve an ambiguous item up. The tier is independent of the model tier: a T0 docs sweep can still need a strong model, and a T2 migration can run on a cheap one. Record both in the ledger, and brief each stage with the depth its tier requires, never the full chain by default.
+
 ## Procedure
 
 1. Read the global policy, this skill, and the relevant stage skills. Read the active repo `AGENTS.md`.
 2. Resolve the active contract from the user request and repo artifacts. Assess complexity, propose a depth, and confirm it.
-3. Start/update the **orchestration ledger**: mode state + active contract; stage chain + next gate; sub-agent id/name, owned slice/files, lane resources (worktree, branch, runtime stack up/down), expected output, status; handoff commits, validation state, blockers, integration decisions.
+3. Start/update the **orchestration ledger**: mode state + active contract + the **selected outcome** (the journey this run moves); stage chain + next gate; per-item risk tier and model tier; per-lane failure signatures; sub-agent id/name, owned slice/files, lane resources (worktree, branch, runtime stack up/down), expected output, status; handoff commits, validation state, blockers, integration decisions; per slice, the elapsed time from start to integrated verified behaviour and the agents it took. Those last two are the run's steering signal; closed-record counts are not.
 4. Split critical-path from independent slices; mark delegation-owned slices. Read each Work Order's `dependsOn` in `WORKORDERS.md` to separate dependency-ordered from parallelizable work.
+   - **Scope control.** Start nothing outside the selected outcome unless it blocks that outcome. Record a discovered improvement through `$reconcile` rather than starting it. Dispatch an enabling Work Order only when the journey Work Order that consumes it is scheduled in the same run.
 5. Delegate independent slices with disjoint ownership. For non-trivial implementation/validation/planning/status work, use sub-agents.
 6. Always delegate into an isolated worktree (see *Lane provisioning*). Every code-editing sub-agent owns one worktree; concurrent agents never share one.
 7. Parallelize a whole Phase or Milestone: enumerate its Work Orders from `WORKORDERS.md` by `Phase`/`Milestone`, derive the graph from `dependsOn`, and fan out every WO with no unmet dependency, one worktree each. Run dependents only after their blockers land. A shared dependency — schema, contract, or interface touched by multiple Work Orders — is a sequencing barrier, not a parallel slice. A Milestone is a coordination gate, never a code lane.
+   - **Shared-surface preflight, before each wave.** `dependsOn` and exact file overlap do not catch a shared surface. Compare the candidate lanes' target files and surfaces (implementation plan, WO `In Scope`) for any schema, contract, test runner, index, or generated file that more than one lane would change. Name one **integration-owner** lane per shared surface in the ledger; the other lanes consume it only after it lands.
+   - **Generated indexes render at integration.** Lanes never edit `WORKORDERS.md`, `STATUS.md`, `REQUIREMENTS.md`, coverage rollups, or any other projection of shared state. They return their rows in the final report, and the integration step renders the index once, on the integration branch.
 8. Stale/busy/excessive open agents are not a direct-execution excuse. Close, reuse, or retry supported agents first; if delegation capacity is still unavailable, report a delegation blocker.
 9. On user design rejection, "start over", or "not accepted path", mark superseded plans/outputs rejected in the ledger, stop building on scratch changes, and restart from committed source-of-truth artifacts.
 10. Integrate sub-agent outputs (merge each worktree back) without reverting unrelated parallel work, then tear the lane down (see *Lane teardown*).
@@ -93,6 +100,8 @@ Before delegating implementation or validation work:
 5. Delegate.
 
 If the Work Order is complex and has no discoverable implementation plan, stop and report incomplete execution context rather than delegating from a weak index row.
+
+A hydration blocker also stops dispatch: a criterion id that does not resolve, resolves empty, or resolves to conflicting text (`$context-compiler` marks the bundle `BLOCKED`). Route it through `$reconcile`. Never brief a worker to author the missing criterion.
 
 ## Model calibration
 
@@ -119,7 +128,7 @@ Verified against each runtime's own configuration. **Never guess a model id** �
 - **An unbound cheapest cell resolves DOWN to that harness's cheap tier, never up to strong.** Cheapest-tier work is trivial by definition and never earns the expensive model. Kimi is the only harness with no cheapest model — its cheapest work runs `kimi-code/kimi-for-coding`.
 - A harness with no bindings recorded at all runs the **strong** tier until one is. Record a binding here only after verifying the id in that runtime's own config (`~/.codex/config.toml`, `~/.kimi-code/config.toml`, and so on).
 - Retain the harness's configured reasoning effort; the tier selects the model, not the effort.
-- Pass the tier explicitly at every dispatch. A spawn given none inherits the session default rather than the item's classification, so cheap work quietly buys the expensive tier and the ledger holds no tier decision to review. Calibrate per item, not per phase, and preserve the selected tier on resume.
+- Pass the tier explicitly at every dispatch. A spawn given none inherits the session default rather than the item's classification, so cheap work quietly buys the expensive tier and the ledger holds no tier decision to review. Calibrate per item, not per phase, and preserve the selected tier on resume. Only a verified reasoning failure justifies re-dispatch on a higher tier (see *Checkpointing and context-limit recovery*).
 
 ## Id allocation — the orchestrator is the sole allocator
 
@@ -161,10 +170,11 @@ Every delegated brief must be self-contained and include:
 - repo path, the dedicated isolated worktree/branch the agent owns, and a warning that other agents may edit unrelated files in their own worktrees;
 - instruction files to read: the global policy in the active runtime root's `policy/` directory, the active repo `AGENTS.md`, and the relevant skill/procedure;
 - exact objective, stage, inputs, owned files/surfaces, exclusions, dependency boundaries;
-- expected validation for the slice and whether the sub-agent may commit;
+- the item's risk tier and the stage depth it requires, the Work Order's done condition, expected validation for the slice, and whether the sub-agent may commit;
+- the shared surfaces this lane owns, and those it must not touch because another lane owns them;
 - checkpoint discipline (see below): commit + status note at each meaningful increment, and — when context runs low — checkpoint WIP first with a message naming done vs remaining;
 - stack discipline: if the slice boots the app or its stores, start via the repo's isolated launch path — never a vendor's own start command — and stop it through that repo's stop path before returning; never leave a lane's services or stores running, and never stop another lane's;
-- required final response: changed files/artifacts, checks run, last checkpoint commit SHA, done vs remaining, runtime stack down (or the ports/stores left live), blockers, skipped scope, residual risk.
+- required final response: changed files/artifacts, checks run, last checkpoint commit SHA, done vs remaining, index rows for the integration step to render, runtime stack down (or the ports/stores left live), blockers, skipped scope, residual risk.
 
 Code-editing workers also: do not revert or overwrite others' changes; adapt to concurrent edits; stage/commit/push/PR only if explicitly assigned.
 
@@ -177,13 +187,24 @@ Code-editing workers also: do not revert or overwrite others' changes; adapt to 
   - checkpoint at each meaningful increment, not one big-bang at the end;
   - watch their own context budget and, when the limit approaches, checkpoint WIP first — commit what exists with a message naming completed vs remaining — so a successor can resume; never burn the last budget on more edits;
   - name the last checkpoint commit and the done/remaining split in the final report.
-- Orchestrator recovery when an agent dies, stalls, or hits a session/runtime limit:
+- Orchestrator recovery when an agent dies, stalls, fails, or returns without a usable report:
   1. Do NOT assume the slice is complete. The only evidence of progress is an explicit checkpoint (commit + status note); silence or a truncated final message means incomplete.
   2. Recover the lane binding: the ledger names the agent's worktree and branch, and `git worktree list` plus `git branch --list 'task/*' 'fix/*'` re-derives it independently when the ledger is lost.
-  3. **Rung 1 — same-runtime session-resume (fast path):** if the session is still reachable in this runtime, resume it via the runtime's own primitive, briefed to reconcile against the objective and finish.
-  4. **Rung 2 — worktree hand-over (universal):** otherwise — a different runtime, a context-dead session, or no session-resume — dispatch a fresh agent into the SAME worktree. Brief it to inventory BOTH the committed checkpoint (`git log`/`git show`) AND uncommitted dirty state (`git status`/`git diff`), verify that partial work for correctness rather than resuming blindly, then finish and checkpoint.
-  5. Repeat until an explicit final checkpoint confirms the slice complete and validated. Only then integrate.
-- Record each death, hand-over, and resume point in the ledger. A session-limit death is not a delegation blocker on its own — try same-runtime resume, then worktree hand-over, before ever reporting one.
+  3. **Classify the failure, then route it.** Record its signature (class plus the failing step or message) in the ledger.
+
+     | Class | Looks like | Route | Model tier |
+     |---|---|---|---|
+     | **Transport/runtime** | session died, context limit, API or harness error | Rung 1, else Rung 2 | unchanged |
+     | **Report** | work committed but the final report is missing or truncated | Read the receipt (commit SHA, changed files, checks) from `git log`/`git show` and the ledger. Dispatch no agent to reconstruct it. | — |
+     | **Environment** | gate cannot run, missing credential, broken launch path | Blocker naming the exact check; fix the environment or ask the user. Do not retry the slice. | unchanged |
+     | **Reasoning** | verified wrong or incomplete output against the brief | Re-dispatch with a changed brief (narrower scope, the missing input, the failing evidence) | may escalate |
+
+  4. **Rung 1 — same-runtime session-resume (fast path):** if the session is still reachable in this runtime, resume it via the runtime's own primitive, briefed to reconcile against the objective and finish.
+  5. **Rung 2 — worktree hand-over (universal):** otherwise — a different runtime, a context-dead session, or no session-resume — dispatch a fresh agent into the SAME worktree. Brief it to inventory BOTH the committed checkpoint (`git log`/`git show`) AND uncommitted dirty state (`git status`/`git diff`), verify that partial work for correctness rather than resuming blindly, then finish and checkpoint.
+  6. **An unchanged failure stops.** A retry must change something: the brief, the inputs, the environment, or the tier. When a failure signature repeats with nothing changed, stop, preserve the checkpoint and worktree, and report the blocker.
+  7. **Resume, don't redo.** Reuse a completed stage only when its item, contract, head SHA, and inputs still match. Never reuse a validation result across changed code.
+  8. **The harness waits, not an agent.** Wait on a background agent or process through the runtime's completion notification or monitor. Never dispatch an agent, or spend an agent's tool calls, to poll.
+- Record each death, classification, hand-over, and resume point in the ledger. A session-limit death is not a delegation blocker on its own — try same-runtime resume, then worktree hand-over, before ever reporting one.
 
 ## Stage outputs
 
@@ -230,6 +251,10 @@ After each major phase, verify:
 - [ ] Artifacts flow correctly between phases; upstream conflicts routed through `$reconcile`
 - [ ] Every non-trivial slice was delegated, each into its own isolated worktree
 - [ ] Model tier was passed explicitly at every dispatch
+- [ ] Every item carried a recorded risk tier, and each stage ran at that tier's depth
+- [ ] Every shared surface in a wave had one named integration owner; no lane edited a generated index
+- [ ] Every recovery was classified; no unchanged failure was retried and no receipt was reconstructed by an agent
+- [ ] Every started item served the selected outcome or blocked it
 - [ ] `$review` completed between `$planner` and `$implement` on Full/Medium depth; blocking issues resolved
 - [ ] Decision points consulted the user appropriately
 - [ ] Context stayed lean (no code/detail clutter in the orchestrator)
