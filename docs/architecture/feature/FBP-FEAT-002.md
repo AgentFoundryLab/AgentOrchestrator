@@ -93,7 +93,7 @@ constraints:
 
 ### Integration Contracts
 
-- **`$context-compiler`**: hydrates full requirement text on demand so no downstream artifact needs a copy.
+- **`$context-compiler`**: hydrates full requirement text on demand so no downstream artifact needs a copy. It fails closed: an unresolved, empty, or conflicting criterion blocks the consuming stage and is never authored in place.
 - **`$reconcile`**: the only sanctioned upstream path; classifies a finding and names the owning stage.
 - **Archive**: closed and decommissioned records move to `docs/archive/development/` and keep their ids.
 

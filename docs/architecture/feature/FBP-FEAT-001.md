@@ -2,7 +2,7 @@
 
 ## Feature Summary
 
-A user hands over a goal and gets it delivered through delegated agents working in parallel without overwriting each other. This feature composes every foundation component into one flow: depth selection scales the planning stages, delegation isolates each lane in its own worktree with its own ports and stores, and a fixed delivery chain gates every item regardless of depth.
+A user hands over a goal and gets it delivered through delegated agents working in parallel without overwriting each other. This feature composes every foundation component into one flow: depth selection scales the planning stages, delegation isolates each lane in its own worktree with its own ports and stores, and the delivery chain gates every item regardless of depth, each stage scaled by the item's risk tier.
 
 Serves `REQ-004` (workflow depth) and `REQ-012` (end-to-end orchestrated delivery), with `REQ-009`–`REQ-011` as the planning journeys it sequences.
 
@@ -72,7 +72,10 @@ responsibilities:
 
 ### Key Contracts
 
-- The delivery chain runs at every depth; depth selection drops planning stages only.
+- The delivery chain runs at every depth, each stage at the item's risk tier; depth selection drops planning stages only, and an ambiguous tier resolves up.
+- The run carries one selected outcome. Nothing outside it starts unless it blocks it, and an enabling item is dispatched only behind the journey that consumes it.
+- Each shared surface in a wave has one integration-owner lane. Generated indexes render at the integration point, never inside a lane.
+- Recovery routes by failure class. Only a reasoning failure escalates the model tier, a missing receipt is read from git or the ledger, and a failure that recurs unchanged stops with its checkpoint preserved.
 - Every non-trivial slice is delegated into its own worktree; concurrent agents never share one.
 - A lane that boots the application shifts every port and namespaces every store.
 - The orchestrator is the sole id allocator; a lane returns a blocker rather than minting.
