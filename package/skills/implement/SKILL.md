@@ -35,11 +35,11 @@ Implement the assigned task or implementation slice by:
 ## Workflow
 
 1. Resolve the target task from `$ARGUMENTS` or the orchestrator brief.
-2. Read active repo rules, the Work Order, its implementation plan, and the blueprints and requirements needed to implement the slice. Work Orders cross-reference requirements by id only — open the owning `FRD`/`TRD` under `docs/requirements/` and read the referenced `REQ`/`AC`/`TR`/`TRC` text verbatim, and implement against that text, never against the WO's brief id-description or a guessed requirement. Use `$context-compiler` to hydrate the bundle when the slice spans several requirements.
+2. Read active repo rules, the Work Order, its implementation plan, and the blueprints and requirements needed to implement the slice. Work Orders cross-reference requirements by id only — open the owning `FRD`/`TRD` under `docs/requirements/` and read the referenced `REQ`/`AC`/`TR`/`TRC` text verbatim, and implement against that text, never against the WO's brief id-description or a guessed requirement. Use `$context-compiler` to hydrate the bundle when the slice spans several requirements. If a referenced id does not resolve, resolves empty, or carries conflicting text elsewhere, stop and return a blocker. Never write the missing criterion yourself (`RULES.md`, *Artifact Propagation*).
 3. Confirm real HTTP/API/network integrations against the live endpoint before writing code.
 4. Before schema, seed, runtime model, lifecycle/status, source-of-truth, alias, or fallback changes, verify the task cites explicit Architect adversarial validation; otherwise stop and route back through `$reconcile` to `$architect`/`$planner`.
 5. For regression fixes, preserve the original regression evidence in `docs/development/ISSUES.md` and follow TDD-first order: characterize the broken behavior with tests that pass against the current regression, update the corrected acceptance criteria and tests so they fail, implement, then rerun until green.
-6. Implement incrementally with focused checks after each isolated change.
+6. At T1 and above, write the failing behavioural tests for the referenced criteria and the Work Order's `Done When` first. At T2/T3, when the brief supplies independently authored tests, implement against those. Then implement incrementally, with focused checks after each isolated change.
 7. Stop and escalate, or route through `$reconcile`, when the task, architecture, requirements, and code reality conflict.
 8. Before handoff, run the focused validation required for the implementation slice. If it needs the app or its stores, boot them only through the repo's own isolated launch path, which sources `.orchestrator.env` (`ORCHESTRATOR_WT` prefix + `ORCHESTRATOR_SHIFT_INDEX`); a vendor's or framework's own start command binds fixed ports and one shared instance, rejoining the lane the isolation exists to separate. Stop what you booted through that repo's stop path and report any port or store left live.
 9. Commit atomically:
@@ -55,6 +55,8 @@ Implement the assigned task or implementation slice by:
 - Do not redefine scope, perform final task validation, run status/PR continuation, merge, or deploy unless explicitly assigned.
 - Do not introduce hacky workarounds, outdated/contradicting fallbacks, alias mappings, lifecycle inventions, or on-the-spot schema changes to bypass a missing gate.
 - Do not revert or reformat unrelated parallel-agent work.
+- Do not edit generated indexes (`WORKORDERS.md`, `STATUS.md`, `REQUIREMENTS.md`, coverage rollups). Return their rows in the final report for the integration step to render.
+- Change a shared surface only when the brief names this lane as its integration owner.
 
 ## Checkpoint discipline
 
