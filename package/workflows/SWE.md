@@ -8,7 +8,8 @@
 ## Workflow Overview
 
 Delivery — `implement → validate → security-review → status-update` — runs in every depth. The depth
-selects only which planning stages precede it.
+selects only which planning stages precede it; the item's risk tier (T0–T3, owned by `RULES.md`)
+sets how deep each delivery stage runs.
 
 | Depth | Planning stages | Use When |
 |-------|-----------------|----------|
@@ -75,7 +76,7 @@ delivery when the work ships or needs docs.
    - Input: Roadmap, Plans, Work Orders, requirements, blueprints, ADRs
    - Output: `docs/analysis/review-YYYY-MM-DD.md`, blocking issues in `docs/development/ISSUES.md`
    - Activities: Cross-artifact consistency, `REQ` coverage, Work Order traceability
-   - Note: **Blocking gate** — halt if blocking issues found. Skip for medium/light workflows.
+   - Note: **Blocking gate** — halt if blocking issues found. Runs in Full and Medium; skipped in Light and Direct fix.
 
 5. **Implementation** (`/implement` → Developer)
    - Input: Work Order plus its implementation plan when present
@@ -92,7 +93,7 @@ delivery when the work ships or needs docs.
    - Input: Implementation commit and the validator handoff
    - Output: Verdict (PASS | FAIL | FINDINGS), issue rows for Critical/High findings
    - Activities: OWASP Top 10 + LLM Top 10 assessment, threat modeling, CI gate alignment
-   - Note: Any Critical or High finding is FAIL and routes back to `/implement`.
+   - Note: Depth follows the risk tier — in-session check at T0, applicable gate items at T1, full review at T2/T3. Any Critical or High finding is FAIL and routes back to `/implement`.
 
 8. **Status Update** (`/status-update` → Validator)
    - Input: Validation evidence and the security verdict
@@ -138,7 +139,7 @@ delivery when the work ships or needs docs.
    - Cross-artifact consistency gate before implementation starts
 
 4. **Delivery** (`/implement` → `/validate` → `/security-review` → `/status-update`)
-   - Full delivery chain, same gates as the Full workflow
+   - Same delivery stages as the Full workflow, each at the item's risk tier
 
 ---
 
@@ -161,7 +162,7 @@ delivery when the work ships or needs docs.
    - May be a single task, no epic structure needed
 
 2. **Delivery** (`/implement` → `/validate` → `/security-review` → `/status-update`)
-   - The chain never shortens below this; only the planning stages drop out
+   - Every delivery stage still runs at the item's risk tier; only the planning stages drop out
 
 ---
 
