@@ -173,7 +173,7 @@ Based on research:
 ## Policy References
 
 **Should-read** from the active runtime root's `policy/RULES.md`:
-- Tool Optimization - MCP tool selection priority
+- Context and Retrieval - `$qmd` / `$codebase-memory` retrieval routing
 
 ### Documentation Tool Selection
 
